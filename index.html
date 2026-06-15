@@ -47,6 +47,62 @@
       </div>
     </section>
 
+    <section id="onboarding" class="card onboarding-panel hidden">
+      <p class="eyebrow">Setup</p>
+      <h2>Build your plan</h2>
+      <p class="muted">Choose one main calisthenics goal, your equipment, and your current level. The app will adapt the progression from there.</p>
+
+      <div class="setup-block">
+        <h3>1 · Main goal</h3>
+        <label class="option-row"><input type="radio" name="goal" value="pullup"> <span>First Pull-Up</span></label>
+        <label class="option-row"><input type="radio" name="goal" value="handstand"> <span>First Handstand</span></label>
+        <label class="option-row"><input type="radio" name="goal" value="lsit"> <span>First L-Sit</span></label>
+        <label class="option-row"><input type="radio" name="goal" value="muscleup"> <span>First Muscle-Up</span></label>
+        <label class="option-row"><input type="radio" name="goal" value="general"> <span>General Fitness</span></label>
+      </div>
+
+      <div class="setup-block">
+        <h3>2 · Equipment</h3>
+        <label class="option-row"><input type="checkbox" name="equipment" value="none"> <span>No equipment</span></label>
+        <label class="option-row"><input type="checkbox" name="equipment" value="pullupBar"> <span>Pull-up bar</span></label>
+        <label class="option-row"><input type="checkbox" name="equipment" value="dipBars"> <span>Dip bars</span></label>
+        <label class="option-row"><input type="checkbox" name="equipment" value="bands"> <span>Resistance bands</span></label>
+      </div>
+
+      <div class="setup-block">
+        <h3>3 · Current level</h3>
+        <p class="field-label">How many clean push-ups can you do?</p>
+        <label class="option-row"><input type="radio" name="pushups" value="zero"> <span>0</span></label>
+        <label class="option-row"><input type="radio" name="pushups" value="oneFive"> <span>1–5</span></label>
+        <label class="option-row"><input type="radio" name="pushups" value="sixTen"> <span>6–10</span></label>
+        <label class="option-row"><input type="radio" name="pushups" value="tenPlus"> <span>10+</span></label>
+
+        <p class="field-label">How many bodyweight squats can you do?</p>
+        <label class="option-row"><input type="radio" name="squats" value="zeroFive"> <span>0–5</span></label>
+        <label class="option-row"><input type="radio" name="squats" value="sixTen"> <span>6–10</span></label>
+        <label class="option-row"><input type="radio" name="squats" value="tenPlus"> <span>10+</span></label>
+      </div>
+
+      <div id="pullupAssessment" class="setup-block hidden">
+        <h3>Pull-up bar questions</h3>
+        <p class="field-label">Can you dead hang for 10 seconds?</p>
+        <label class="option-row"><input type="radio" name="deadHang" value="yes"> <span>Yes</span></label>
+        <label class="option-row"><input type="radio" name="deadHang" value="no"> <span>No</span></label>
+        <p class="field-label">Can you do one negative pull-up?</p>
+        <label class="option-row"><input type="radio" name="negativePullup" value="yes"> <span>Yes</span></label>
+        <label class="option-row"><input type="radio" name="negativePullup" value="no"> <span>No</span></label>
+      </div>
+
+      <div id="dipAssessment" class="setup-block hidden">
+        <h3>Dip bars question</h3>
+        <p class="field-label">Can you do one dip?</p>
+        <label class="option-row"><input type="radio" name="dip" value="yes"> <span>Yes</span></label>
+        <label class="option-row"><input type="radio" name="dip" value="no"> <span>No</span></label>
+      </div>
+
+      <button id="saveProfileBtn" class="primary-btn">Create My Plan</button>
+    </section>
+
     <section id="today" class="screen active">
       <section id="energyCard" class="card step-card">
         <p class="eyebrow">Step 1</p>
@@ -89,7 +145,7 @@
     <section id="goals" class="screen">
       <section class="hero-card goal-hero">
         <p class="muted-light">Main goal</p>
-        <h2>First Pull-Up</h2>
+        <h2 id="goalHeroTitle">First Pull-Up</h2>
         <p id="pullupStage">Current stage: Negative Pull-Ups</p>
         <div class="progress-bar"><span id="pullupProgressBar"></span></div>
         <p id="pullupNext" class="goal-next">Next milestone: Scapular Pull-Ups</p>

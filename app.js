@@ -286,7 +286,10 @@ async function loadCloudState() {
     renderAll();
     setSyncStatus('Cloud progress loaded.');
   } else {
+    // First login/signup for this user: create the cloud row, then re-render.
+    // Without this render, the account panel can hide while onboarding does not appear yet.
     await saveCloudState();
+    renderAll();
     setSyncStatus('New cloud profile created from this device.');
   }
 }
@@ -314,25 +317,14 @@ function friendlyAuthError(message = '') {
   return message || 'Something went wrong. Please try again.';
 }
 
-function setAuthMode(mode = 'welcome') {
-  const welcome = document.getElementById('authWelcome');
-  const signup = document.getElementById('authSignupForm');
-  const login = document.getElementById('authLoginForm');
-  if (!welcome || !signup || !login) return;
-  welcome.classList.toggle('hidden', mode !== 'welcome');
-  signup.classList.toggle('hidden', mode !== 'signup');
-  login.classList.toggle('hidden', mode !== 'login');
-  setAuthMessage('');
-}
-
-function togglePasswordVisibility(button) {
-  const inputId = button?.dataset?.togglePassword;
-  const input = inputId ? document.getElementById(inputId) : null;
-  if (!input || !button) return;
+function togglePasswordVisibility() {
+  const input = document.getElementById('passwordInput');
+  const btn = document.getElementById('togglePasswordBtn');
+  if (!input || !btn) return;
   const isHidden = input.type === 'password';
   input.type = isHidden ? 'text' : 'password';
-  button.textContent = isHidden ? 'Hide' : 'Show';
-  button.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+  btn.textContent = isHidden ? 'Hide' : 'Show';
+  btn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
 }
 
 
@@ -754,51 +746,49 @@ function renderAccount() {
 
 async function initCloudSync() {
   if (!supabaseClient) {
-    renderAll();
+    renderAccount();
     return;
   }
 
   const { data } = await supabaseClient.auth.getSession();
   currentUser = data.session?.user || null;
+  renderAccount();
   if (currentUser) await loadCloudState();
-  renderAll();
 
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
     currentUser = session?.user || null;
+    renderAccount();
     if (currentUser) await loadCloudState();
-    renderAll();
   });
 }
 
 async function signUp() {
   if (!supabaseClient) return setAuthMessage('Cloud sync is not configured yet.', 'error');
-  const email = document.getElementById('signupEmailInput')?.value.trim();
-  const password = document.getElementById('signupPasswordInput')?.value;
-  const confirmPassword = document.getElementById('signupConfirmPasswordInput')?.value;
-  if (!email || !password || !confirmPassword) return setAuthMessage('Enter your email, password, and confirmation.', 'error');
+  const email = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  if (!email || !password) return setAuthMessage('Enter your email and password.', 'error');
   if (password.length < 6) return setAuthMessage('Password must be at least 6 characters.', 'error');
-  if (password !== confirmPassword) return setAuthMessage('Passwords do not match.', 'error');
   setAuthMessage('Creating your account...', 'info');
   const { data, error } = await supabaseClient.auth.signUp({ email, password });
   if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
-  currentUser = data?.session?.user || data?.user || currentUser;
-  if (currentUser) await loadCloudState();
-  setAuthMessage('Account created. Let’s build your plan.', 'success');
-  renderAll();
+  currentUser = data?.user || currentUser;
+  setAuthMessage('Account created. You are logged in.', 'success');
+  if (currentUser) {
+    await loadCloudState();
+  } else {
+    renderAll();
+  }
 }
 
 async function login() {
   if (!supabaseClient) return setAuthMessage('Cloud sync is not configured yet.', 'error');
-  const email = document.getElementById('loginEmailInput')?.value.trim();
-  const password = document.getElementById('loginPasswordInput')?.value;
+  const email = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
   if (!email || !password) return setAuthMessage('Enter your email and password.', 'error');
   setAuthMessage('Logging in...', 'info');
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
-  currentUser = data?.session?.user || currentUser;
-  if (currentUser) await loadCloudState();
   setAuthMessage('Logged in. Loading your progress...', 'success');
-  renderAll();
 }
 
 async function logout() {
@@ -843,13 +833,10 @@ document.addEventListener('click', event => {
   if (event.target.id === 'completeBtn') completeWorkout();
 
   if (event.target.id === 'accountBtn' && currentUser) document.getElementById('accountPanel').classList.toggle('hidden');
-  if (event.target.id === 'showSignupBtn') setAuthMode('signup');
-  if (event.target.id === 'showLoginBtn') setAuthMode('login');
-  if (event.target.id === 'backToAuthWelcomeFromSignup' || event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');
   if (event.target.id === 'signupBtn') signUp();
   if (event.target.id === 'loginBtn') login();
   if (event.target.id === 'logoutBtn') logout();
-  if (event.target.matches('[data-toggle-password]')) togglePasswordVisibility(event.target);
+  if (event.target.id === 'togglePasswordBtn') togglePasswordVisibility();
   if (event.target.id === 'saveProfileBtn') saveProfileFromOnboarding();
   if (event.target.id === 'exportBtn' || event.target.id === 'backupBtn') exportProgress();
 

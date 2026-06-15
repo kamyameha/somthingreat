@@ -399,3 +399,67 @@ button, .import-label {
 .auth-message[data-type="success"] {
   color: var(--main);
 }
+
+.onboarding-panel {
+  margin-top: 16px;
+}
+
+.setup-block {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.setup-block:first-of-type {
+  border-top: none;
+}
+
+.field-label {
+  font-weight: 900;
+  margin: 14px 0 8px;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--soft);
+  font-weight: 900;
+}
+
+.option-row input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--main);
+}
+
+.journey-summary {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  background: var(--soft);
+}
+
+.journey-summary + .journey-summary {
+  margin-top: 10px;
+}
+
+.journey-summary strong,
+.journey-summary span {
+  display: block;
+}
+
+.journey-summary span {
+  opacity: 0.72;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.current-stage {
+  background: var(--main);
+  color: white;
+  border-color: var(--main);
+}
