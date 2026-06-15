@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calisthenics-pwa-v8';
+const CACHE_NAME = 'calisthenics-pwa-v9';
 const ASSETS = [
   './',
   './index.html',
@@ -7,10 +7,10 @@ const ASSETS = [
   './supabase-config.js',
   './session-repair.js?v=1',
   './manifest.json',
-  './apple-touch-icon.png?v=2',
-  './icons/icon-192.png?v=3',
-  './icons/icon-512.png?v=3',
-  './icons/icon-maskable-512.png?v=3'
+  './apple-touch-icon.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png'
 ];
 
 self.addEventListener('install', event => {
