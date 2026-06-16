@@ -266,10 +266,46 @@ const legacyRotation = [
 ];
 
 const energyOptions = {
-  great: { label: '😊 Great', mode: 'normal', title: 'Great', description: 'Standard workout · estimated duration 20 min.' },
-  normal: { label: '🙂 Normal', mode: 'normal', title: 'Normal', description: 'Standard workout · estimated duration 20 min.' },
-  tired: { label: '😴 Tired', mode: 'reduced', title: 'Tired', description: 'Reduced volume · estimated duration 15 min.' },
-  exhausted: { label: '🤒 Exhausted', mode: 'minimum', title: 'Exhausted', description: 'Minimum workout suggested · estimated duration 10 min.' }
+  great: {
+    label: '😊 Great',
+    mode: 'great',
+    title: 'Great',
+    description: 'Full session · 4 exercises · full sets and reps.',
+    exerciseCount: 4,
+    setMultiplier: 1,
+    repMultiplier: 1,
+    levelShift: 0
+  },
+  normal: {
+    label: '🙂 Normal',
+    mode: 'normal',
+    title: 'Normal',
+    description: 'Standard session · 4 exercises · slightly reduced sets and reps.',
+    exerciseCount: 4,
+    setMultiplier: 0.8,
+    repMultiplier: 0.85,
+    levelShift: 0
+  },
+  tired: {
+    label: '😴 Tired',
+    mode: 'tired',
+    title: 'Tired',
+    description: 'Shorter session · 3 exercises · reduced volume.',
+    exerciseCount: 3,
+    setMultiplier: 0.8,
+    repMultiplier: 0.85,
+    levelShift: 0
+  },
+  exhausted: {
+    label: '🤒 Exhausted',
+    mode: 'exhausted',
+    title: 'Exhausted',
+    description: 'Minimum session · 3 easier exercises · low sets and reps.',
+    exerciseCount: 3,
+    setMultiplier: 0.55,
+    repMultiplier: 0.65,
+    levelShift: -1
+  }
 };
 
 function defaultState() {
@@ -477,27 +513,98 @@ function togglePasswordVisibility(button) {
 }
 
 
-function getExercise(trackKey) {
-  const trackState = state.levels[trackKey];
+function getEnergyConfig(mode = 'normal') {
+  return Object.values(energyOptions).find(option => option.mode === mode) || energyOptions.normal;
+}
+
+function getExercise(trackKey, config = energyOptions.great) {
+  const trackState = state.levels[trackKey] || { level: 0, points: 0 };
   const track = getTracks()[trackKey] || baseTracks[trackKey];
-  return { trackKey, ...track[Math.min(trackState.level, track.length - 1)], level: trackState.level + 1 };
+  const baseLevel = Math.min(trackState.level, track.length - 1);
+  const adjustedLevel = Math.max(0, Math.min(baseLevel + (config.levelShift || 0), track.length - 1));
+  const baseExercise = track[adjustedLevel];
+  const prescription = adaptPrescription(baseExercise.prescription, config);
+
+  return {
+    trackKey,
+    ...baseExercise,
+    prescription,
+    basePrescription: baseExercise.prescription,
+    level: adjustedLevel + 1,
+    originalLevel: baseLevel + 1,
+    setCount: getSetCount(prescription)
+  };
+}
+
+function buildWorkoutTracks(workout, desiredCount) {
+  const fillByWorkout = {
+    Push: ['pushup', 'dip', 'core', 'legs', 'rope'],
+    Pull: ['pullup', 'core', 'rope', 'legs', 'pushup'],
+    'Legs + Core': ['legs', 'core', 'rope', 'pushup', 'pullup'],
+    Skills: ['core', 'lsit', 'crow', 'handstand', 'pullup', 'rope']
+  };
+  const tracks = [...workout.tracks];
+  const fillers = fillByWorkout[workout.name] || ['core', 'legs', 'pushup', 'pullup', 'rope'];
+
+  fillers.forEach(trackKey => {
+    if (tracks.length < desiredCount && !tracks.includes(trackKey)) tracks.push(trackKey);
+  });
+
+  return tracks.slice(0, desiredCount);
+}
+
+function adaptPrescription(prescription, config = energyOptions.great) {
+  const setMultiplier = config.setMultiplier ?? 1;
+  const repMultiplier = config.repMultiplier ?? 1;
+
+  let adapted = prescription.replace(/(\d+)\s*×\s*(\d+)(s?)(\/side)?/g, (_, sets, reps, seconds, side = '') => {
+    const nextSets = Math.max(1, Math.round(Number(sets) * setMultiplier));
+    const nextReps = Math.max(1, Math.round(Number(reps) * repMultiplier));
+    return `${nextSets} × ${nextReps}${seconds || ''}${side || ''}`;
+  });
+
+  adapted = adapted.replace(/(\d+)\s+attempts(\/side)?/g, (_, attempts, side = '') => {
+    const nextAttempts = Math.max(1, Math.round(Number(attempts) * repMultiplier));
+    return `${nextAttempts} attempts${side || ''}`;
+  });
+
+  adapted = adapted.replace(/(\d+)\s+min/g, (_, minutes) => {
+    const nextMinutes = Math.max(1, Math.round(Number(minutes) * repMultiplier));
+    return `${nextMinutes} min`;
+  });
+
+  return adapted;
+}
+
+function getSetCount(prescription) {
+  const setMatch = prescription.match(/(\d+)\s*×/);
+  if (setMatch) return Math.max(1, Number(setMatch[1]));
+  const attemptMatch = prescription.match(/(\d+)\s+attempts/);
+  if (attemptMatch) return Math.max(1, Number(attemptMatch[1]));
+  return 1;
 }
 
 function getTodayWorkout(mode = 'normal') {
   const rotation = getRotation();
   const workout = rotation[state.rotationIndex % rotation.length];
-  const count = mode === 'minimum' ? 2 : workout.tracks.length;
+  const config = getEnergyConfig(mode);
+  const tracks = buildWorkoutTracks(workout, config.exerciseCount);
+
   return {
-    mode,
+    mode: config.mode,
     workoutName: workout.name,
-    exercises: workout.tracks.slice(0, count).map(getExercise)
+    energyTitle: config.title,
+    energyDescription: config.description,
+    exercises: tracks.map(trackKey => getExercise(trackKey, config))
   };
 }
 
 function modeLabel(mode) {
-  if (mode === 'minimum') return '10 min · Minimum Mode';
-  if (mode === 'reduced') return '15 min · Reduced Mode';
-  return '20 min · Standard Mode';
+  if (mode === 'great') return 'Great · 4 exercises · Full volume';
+  if (mode === 'normal') return 'Normal · 4 exercises · Reduced volume';
+  if (mode === 'tired' || mode === 'reduced') return 'Tired · 3 exercises · Reduced volume';
+  if (mode === 'exhausted' || mode === 'minimum') return 'Exhausted · 3 easier exercises · Minimum volume';
+  return 'Workout';
 }
 
 function renderToday() {
@@ -578,7 +685,7 @@ function startWorkout() {
   if (!state.generated) generateWorkout();
   state.current = { ...state.generated, ratings: {}, sets: {} };
   state.current.exercises.forEach(exercise => {
-    state.current.sets[exercise.trackKey] = [false, false, false];
+    state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
   });
   state.generated = null;
   saveState();
@@ -604,14 +711,16 @@ function renderExercises() {
     card.className = 'exercise-card';
     const selectedRating = state.current.ratings[exercise.trackKey];
     if (!state.current.sets) state.current.sets = {};
-    if (!state.current.sets[exercise.trackKey]) state.current.sets[exercise.trackKey] = [false, false, false];
+    if (!state.current.sets[exercise.trackKey]) state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
     const completedSets = state.current.sets[exercise.trackKey];
+    const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => `
+      <div class="set-row"><span>Set ${index + 1}</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="${index}" ${completedSets[index] ? 'checked' : ''}></div>
+    `).join('');
+    const levelLabel = exercise.originalLevel && exercise.originalLevel !== exercise.level ? `L${exercise.level} · easier` : `L${exercise.level}`;
     card.innerHTML = `
-      <h3>${exercise.name}<span>L${exercise.level}</span></h3>
+      <h3>${exercise.name}<span>${levelLabel}</span></h3>
       <p class="prescription">${exercise.prescription}</p>
-      <div class="set-row"><span>Set 1</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="0" ${completedSets[0] ? 'checked' : ''}></div>
-      <div class="set-row"><span>Set 2</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="1" ${completedSets[1] ? 'checked' : ''}></div>
-      <div class="set-row"><span>Set 3</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="2" ${completedSets[2] ? 'checked' : ''}></div>
+      ${setRows}
       <p class="rating-label">How was it?</p>
       <div class="rating-row" data-track="${exercise.trackKey}">
         <button data-rating="easy" class="${selectedRating === 'easy' ? 'selected' : ''}">Easy</button>
@@ -649,7 +758,7 @@ function completeWorkout() {
   }
 
   Object.entries(state.current.ratings).forEach(([trackKey, rating]) => applyRating(trackKey, rating));
-  state.history.push({ date: new Date().toISOString(), workout: state.current.workoutName, mode: state.current.mode });
+  state.history.push({ date: new Date().toISOString(), workout: state.current.workoutName, mode: state.current.mode, exercises: state.current.exercises.map(ex => ({ name: ex.name, prescription: ex.prescription, trackKey: ex.trackKey })) });
   state.rotationIndex = (state.rotationIndex + 1) % getRotation().length;
   state.current = null;
   state.selectedEnergy = null;
