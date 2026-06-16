@@ -523,7 +523,7 @@ button, .import-label {
 
 /* Welcome screen */
 .welcome-screen {
-  min-height: 100vh;
+  min-height: 100%;
   background: var(--bg);
   color: var(--main);
   display: flex;
@@ -532,7 +532,7 @@ button, .import-label {
   inset: 0;
   z-index: 9999;
   overflow-y: auto;
-  padding-bottom: 120px;
+  padding: 56px 28px calc(120px + env(safe-area-inset-bottom));
 }
 
 .welcome-inner {
@@ -560,7 +560,7 @@ button, .import-label {
 }
 
 .welcome-copy {
-  margin-top: auto;
+  margin-top: 24px;
 }
 
 .welcome-copy h1 {
