@@ -434,9 +434,22 @@ function setAuthMode(mode = 'welcome') {
   const login = document.getElementById('authLoginForm');
   const reset = document.getElementById('authResetForm');
   if (!welcome || !login || !reset) return;
+
+  const isReset = mode === 'reset';
+  document.body.classList.toggle('password-recovery-mode', isReset);
+
+  // Reset password is a standalone flow. It must never share the page with
+  // onboarding or app screens, even though Supabase temporarily logs the user in.
+  if (isReset) {
+    document.getElementById('onboarding')?.classList.add('hidden');
+    document.querySelectorAll('.screen').forEach(screen => screen.classList.add('auth-locked'));
+    document.querySelector('.bottom-nav')?.classList.add('hidden');
+    document.getElementById('accountBtn')?.classList.add('hidden');
+  }
+
   welcome.classList.toggle('hidden', mode !== 'welcome');
   login.classList.toggle('hidden', mode !== 'login');
-  reset.classList.toggle('hidden', mode !== 'reset');
+  reset.classList.toggle('hidden', !isReset);
   setAuthMessage('');
 }
 

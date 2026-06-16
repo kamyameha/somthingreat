@@ -582,3 +582,16 @@ button, .import-label {
   font-size: 18px;
   margin-top: 0;
 }
+
+/* Password recovery is a standalone auth screen.
+   Prevent onboarding/app content from appearing underneath it. */
+.password-recovery-mode #onboarding,
+.password-recovery-mode .screen,
+.password-recovery-mode .bottom-nav,
+.password-recovery-mode #accountBtn {
+  display: none !important;
+}
+
+.password-recovery-mode #accountPanel {
+  display: block !important;
+}
