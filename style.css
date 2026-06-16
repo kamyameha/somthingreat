@@ -1799,3 +1799,42 @@ html, body { background: #f7f7f7 !important; }
   white-space: nowrap !important;
 }
 .bottom-nav { bottom: calc(20px + env(safe-area-inset-bottom)) !important; }
+
+
+/* v4.1 fixes */
+.auth-back-btn,.text-btn{
+  margin-top: 60px;
+  margin-bottom: 40px;
+}
+.auth-message{
+  min-height:40px;
+  margin:12px 0;
+  position:relative;
+  z-index:2;
+}
+.welcome-copy p{
+  margin-bottom:60px;
+}
+.welcome-next,
+.account-submit{
+  min-height:72px;
+  padding:18px 24px;
+}
+.account-submit{
+  margin-top:38px;
+}
+.auth-switch{
+  margin-top:60px;
+  margin-bottom:60px;
+}
+.password-toggle{
+  width:118px;
+  height:44px;
+}
+.password-field .text-input{
+  padding-right:130px;
+}
+.goal-hero .journey-list,
+.journey-list{
+  border:none;
+}
