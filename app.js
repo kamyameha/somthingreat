@@ -761,10 +761,14 @@ function importProgress(file) {
 function renderOnboarding() {
   const onboarding = document.getElementById('onboarding');
   if (!onboarding) return;
-  if (!currentUser || hasCompletedProfile()) {
+
+  // During password recovery, Supabase creates a temporary logged-in session.
+  // Do not show onboarding while the user is only here to set a new password.
+  if (passwordRecoveryMode || !currentUser || hasCompletedProfile()) {
     onboarding.classList.add('hidden');
     return;
   }
+
   onboarding.classList.remove('hidden');
 }
 
