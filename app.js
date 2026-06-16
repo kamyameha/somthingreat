@@ -31,7 +31,7 @@ function setWelcomeVisible(visible) {
 
   if (welcome) welcome.classList.toggle('hidden', !visible);
   if (app) app.classList.toggle('hidden', visible);
-  if (bottomNav) bottomNav.classList.toggle('hidden', visible);
+  if (bottomNav) bottomNav.classList.add('hidden');
 }
 
 function setupStarAnimation() {
