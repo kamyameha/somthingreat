@@ -522,11 +522,15 @@ button, .import-label {
 
 /* Welcome screen */
 .welcome-screen {
-  min-height: 100svh;
+  min-height: 100vh;
   background: var(--bg);
   color: var(--main);
   display: flex;
   justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
 }
 
 .welcome-inner {
