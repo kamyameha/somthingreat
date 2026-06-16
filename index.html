@@ -85,11 +85,85 @@
 
         <p id="authMessage" class="auth-message" aria-live="polite"></p>
       </div>
-      <div id="loggedInAccount" class="hidden">
-        <h2>Account</h2>
-        <p class="muted" id="accountEmail"></p>
-        <p class="sync-status" id="syncStatus">Progress saved.</p>
-        <button id="logoutBtn" class="ghost-btn">Log out</button>
+      <div id="loggedInAccount" class="hidden account-modal-content">
+        <div class="account-modal-header">
+          <div>
+            <p class="eyebrow">Account</p>
+            <h2 id="accountModalTitle">Account</h2>
+          </div>
+          <button id="closeAccountModalBtn" class="ghost-btn compact" type="button" aria-label="Close account">×</button>
+        </div>
+
+        <div id="accountMainView" class="account-view">
+          <p class="muted" id="accountEmail"></p>
+          <p class="sync-status" id="syncStatus">Progress saved.</p>
+
+          <div class="account-section">
+            <h3>Plan settings</h3>
+            <button class="account-list-btn" type="button" data-account-view="goal">Change goal <span id="accountGoalSummary"></span></button>
+            <button class="account-list-btn" type="button" data-account-view="equipment">Change equipment <span id="accountEquipmentSummary"></span></button>
+          </div>
+
+          <div class="account-section">
+            <h3>Security</h3>
+            <button class="account-list-btn" type="button" data-account-view="password">Change password</button>
+          </div>
+
+          <div class="account-section">
+            <h3>Workout history</h3>
+            <button class="account-list-btn" type="button" data-account-view="history">Monthly view <span id="accountHistorySummary"></span></button>
+          </div>
+
+          <button id="logoutBtn" class="ghost-btn account-full-btn" type="button">Log out</button>
+        </div>
+
+        <div id="accountGoalView" class="account-view hidden">
+          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <p class="muted">Choose the main goal your workouts should prioritize.</p>
+          <label class="option-row"><input type="radio" name="accountGoal" value="pullup"> <span>First Pull-Up</span></label>
+          <label class="option-row"><input type="radio" name="accountGoal" value="handstand"> <span>First Handstand</span></label>
+          <label class="option-row"><input type="radio" name="accountGoal" value="lsit"> <span>First L-Sit</span></label>
+          <label class="option-row"><input type="radio" name="accountGoal" value="muscleup"> <span>First Muscle-Up</span></label>
+          <label class="option-row"><input type="radio" name="accountGoal" value="general"> <span>General Fitness</span></label>
+          <button id="saveAccountGoalBtn" class="primary-btn account-full-btn" type="button">Save goal</button>
+        </div>
+
+        <div id="accountEquipmentView" class="account-view hidden">
+          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <p class="muted">Update the equipment you can use right now.</p>
+          <label class="option-row"><input type="checkbox" name="accountEquipment" value="none"> <span>No equipment</span></label>
+          <label class="option-row"><input type="checkbox" name="accountEquipment" value="pullupBar"> <span>Pull-up bar</span></label>
+          <label class="option-row"><input type="checkbox" name="accountEquipment" value="dipBars"> <span>Dip bars</span></label>
+          <label class="option-row"><input type="checkbox" name="accountEquipment" value="bands"> <span>Resistance bands</span></label>
+          <button id="saveAccountEquipmentBtn" class="primary-btn account-full-btn" type="button">Save equipment</button>
+        </div>
+
+        <div id="accountPasswordView" class="account-view hidden">
+          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <p class="muted">Choose a new password for your account.</p>
+          <div class="password-field">
+            <input id="accountNewPasswordInput" class="text-input" type="password" placeholder="New password" autocomplete="new-password" />
+            <button class="password-toggle" type="button" data-toggle-password="accountNewPasswordInput" aria-label="Show password">Show</button>
+          </div>
+          <div class="password-field">
+            <input id="accountConfirmPasswordInput" class="text-input" type="password" placeholder="Confirm new password" autocomplete="new-password" />
+            <button class="password-toggle" type="button" data-toggle-password="accountConfirmPasswordInput" aria-label="Show password">Show</button>
+          </div>
+          <button id="saveAccountPasswordBtn" class="primary-btn account-full-btn" type="button">Update password</button>
+          <p id="accountPasswordMessage" class="auth-message" aria-live="polite"></p>
+        </div>
+
+        <div id="accountHistoryView" class="account-view hidden">
+          <button class="text-btn" type="button" data-account-view="main">← Back</button>
+          <div class="history-header">
+            <button id="historyPrevMonthBtn" class="ghost-btn compact" type="button">←</button>
+            <h3 id="historyMonthTitle">This month</h3>
+            <button id="historyNextMonthBtn" class="ghost-btn compact" type="button">→</button>
+          </div>
+          <div class="history-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          <div id="historyCalendar" class="history-calendar"></div>
+          <div id="historyList" class="history-list"></div>
+        </div>
       </div>
     </section>
 

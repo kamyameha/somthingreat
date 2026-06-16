@@ -47,6 +47,7 @@ function clearAuthUrlParams() {
 }
 
 let passwordRecoveryMode = isPasswordRecoveryUrl();
+let accountHistoryMonth = new Date();
 
 function setWelcomeVisible(visible) {
   const welcome = document.getElementById('welcomeScreen');
@@ -974,8 +975,11 @@ function renderAccount() {
 
   if (!panel || !loggedOut || !loggedIn) return;
 
+  panel.classList.toggle('account-modal', Boolean(currentUser));
+
   if (!SUPABASE_READY) {
     panel.classList.remove('hidden');
+    panel.classList.remove('account-modal');
     loggedOut.classList.remove('hidden');
     loggedIn.classList.add('hidden');
     screens.forEach(screen => screen.classList.add('auth-locked'));
@@ -988,6 +992,7 @@ function renderAccount() {
 
   if (passwordRecoveryMode && currentUser) {
     panel.classList.remove('hidden');
+    panel.classList.remove('account-modal');
     loggedOut.classList.remove('hidden');
     loggedIn.classList.add('hidden');
     setAuthMode('reset');
@@ -999,7 +1004,6 @@ function renderAccount() {
 
   if (currentUser) {
     setAuthMessage('');
-    panel.classList.add('hidden');
     loggedOut.classList.add('hidden');
     loggedIn.classList.remove('hidden');
     const profileDone = hasCompletedProfile();
@@ -1010,14 +1014,180 @@ function renderAccount() {
       accountBtn.textContent = 'Account';
     }
     if (email) email.textContent = currentUser.email;
+    renderAccountMainSummary();
+    if (!panel.classList.contains('account-open')) panel.classList.add('hidden');
   } else {
     panel.classList.remove('hidden');
+    panel.classList.remove('account-modal', 'account-open');
     loggedOut.classList.remove('hidden');
     loggedIn.classList.add('hidden');
     screens.forEach(screen => screen.classList.add('auth-locked'));
     if (bottomNav) bottomNav.classList.add('hidden');
     if (accountBtn) accountBtn.classList.add('hidden');
   }
+}
+
+function openAccountModal() {
+  const panel = document.getElementById('accountPanel');
+  if (!panel || !currentUser) return;
+  panel.classList.add('account-modal', 'account-open');
+  panel.classList.remove('hidden');
+  showAccountView('main');
+}
+
+function closeAccountModal() {
+  const panel = document.getElementById('accountPanel');
+  if (!panel) return;
+  panel.classList.remove('account-open');
+  panel.classList.add('hidden');
+  showAccountView('main');
+}
+
+function showAccountView(view) {
+  const titles = {
+    main: 'Account',
+    goal: 'Change goal',
+    equipment: 'Change equipment',
+    password: 'Change password',
+    history: 'Workout history'
+  };
+  document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
+  const target = document.getElementById(`account${view[0].toUpperCase()}${view.slice(1)}View`);
+  if (target) target.classList.remove('hidden');
+  const title = document.getElementById('accountModalTitle');
+  if (title) title.textContent = titles[view] || 'Account';
+  if (view === 'goal') populateAccountGoal();
+  if (view === 'equipment') populateAccountEquipment();
+  if (view === 'history') renderAccountHistory();
+}
+
+function renderAccountMainSummary() {
+  const profile = getProfile() || {};
+  const goalSummary = document.getElementById('accountGoalSummary');
+  const equipmentSummary = document.getElementById('accountEquipmentSummary');
+  const historySummary = document.getElementById('accountHistorySummary');
+  if (goalSummary) goalSummary.textContent = goalLabels[profile.goal] || 'Not set';
+  if (equipmentSummary) {
+    const equipment = profile.equipment || [];
+    equipmentSummary.textContent = equipment.length ? equipment.map(item => equipmentLabels[item] || item).join(', ') : 'Not set';
+  }
+  if (historySummary) {
+    const count = state.history.length;
+    historySummary.textContent = `${count} workout${count === 1 ? '' : 's'}`;
+  }
+}
+
+function populateAccountGoal() {
+  const goal = getProfile()?.goal || 'pullup';
+  const input = document.querySelector(`input[name="accountGoal"][value="${goal}"]`);
+  if (input) input.checked = true;
+}
+
+function populateAccountEquipment() {
+  const equipment = getProfile()?.equipment || ['none'];
+  document.querySelectorAll('input[name="accountEquipment"]').forEach(input => {
+    input.checked = equipment.includes(input.value);
+  });
+}
+
+async function saveAccountGoal() {
+  const goal = document.querySelector('input[name="accountGoal"]:checked')?.value;
+  if (!goal) return alert('Choose a goal first.');
+  state.profile = { ...(state.profile || {}), goal, updatedAt: new Date().toISOString() };
+  state.current = null;
+  state.generated = null;
+  state.selectedEnergy = null;
+  saveState();
+  renderAll();
+  openAccountModal();
+  showAccountView('main');
+}
+
+async function saveAccountEquipment() {
+  const equipment = Array.from(document.querySelectorAll('input[name="accountEquipment"]:checked')).map(input => input.value);
+  if (equipment.length === 0) return alert('Choose at least one equipment option.');
+  state.profile = { ...(state.profile || {}), equipment, updatedAt: new Date().toISOString() };
+  state.current = null;
+  state.generated = null;
+  state.selectedEnergy = null;
+  saveState();
+  renderAll();
+  openAccountModal();
+  showAccountView('main');
+}
+
+async function changePasswordFromAccount() {
+  if (!supabaseClient || !currentUser) return;
+  const message = document.getElementById('accountPasswordMessage');
+  const password = document.getElementById('accountNewPasswordInput')?.value;
+  const confirmPassword = document.getElementById('accountConfirmPasswordInput')?.value;
+  if (message) message.textContent = '';
+  if (!password || !confirmPassword) {
+    if (message) message.textContent = 'Enter and confirm your new password.';
+    return;
+  }
+  if (password.length < 6) {
+    if (message) message.textContent = 'Password must be at least 6 characters.';
+    return;
+  }
+  if (password !== confirmPassword) {
+    if (message) message.textContent = 'Passwords do not match.';
+    return;
+  }
+  if (message) message.textContent = 'Updating password...';
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  if (error) {
+    if (message) message.textContent = friendlyAuthError(error.message);
+    return;
+  }
+  document.getElementById('accountNewPasswordInput').value = '';
+  document.getElementById('accountConfirmPasswordInput').value = '';
+  if (message) message.textContent = 'Password updated.';
+}
+
+function renderAccountHistory() {
+  const title = document.getElementById('historyMonthTitle');
+  const calendar = document.getElementById('historyCalendar');
+  const list = document.getElementById('historyList');
+  if (!title || !calendar || !list) return;
+
+  const month = accountHistoryMonth.getMonth();
+  const year = accountHistoryMonth.getFullYear();
+  const label = accountHistoryMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  title.textContent = label;
+
+  const monthItems = state.history
+    .map(item => ({ ...item, parsedDate: new Date(item.date) }))
+    .filter(item => item.parsedDate.getMonth() === month && item.parsedDate.getFullYear() === year)
+    .sort((a, b) => a.parsedDate - b.parsedDate);
+
+  const byDay = new Map();
+  monthItems.forEach(item => {
+    const day = item.parsedDate.getDate();
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(item);
+  });
+
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const mondayOffset = (firstDay.getDay() + 6) % 7;
+  calendar.innerHTML = '';
+  for (let i = 0; i < mondayOffset; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'history-day history-empty';
+    calendar.appendChild(empty);
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement('div');
+    const workouts = byDay.get(day) || [];
+    cell.className = `history-day${workouts.length ? ' has-workout' : ''}`;
+    cell.innerHTML = `<span>${day}</span>${workouts.length ? '<strong>✓</strong>' : ''}`;
+    calendar.appendChild(cell);
+  }
+
+  list.innerHTML = monthItems.length
+    ? monthItems.map(item => `<div class="history-item"><strong>${item.parsedDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</strong><span>${item.workout || 'Workout'} · ${energyOptions[item.mode]?.title || item.mode || 'Done'}</span></div>`).join('')
+    : '<p class="muted">No workouts completed this month yet.</p>';
 }
 
 async function initCloudSync() {
@@ -1168,7 +1338,16 @@ document.addEventListener('click', event => {
 
   if (event.target.id === 'completeBtn') completeWorkout();
 
-  if (event.target.id === 'accountBtn' && currentUser) document.getElementById('accountPanel').classList.toggle('hidden');
+  if (event.target.id === 'accountBtn' && currentUser) openAccountModal();
+  if (event.target.id === 'closeAccountModalBtn') closeAccountModal();
+  if (event.target.id === 'accountPanel' && event.target.classList.contains('account-modal')) closeAccountModal();
+  const accountViewButton = event.target.closest('[data-account-view]');
+  if (accountViewButton) showAccountView(accountViewButton.dataset.accountView);
+  if (event.target.id === 'saveAccountGoalBtn') saveAccountGoal();
+  if (event.target.id === 'saveAccountEquipmentBtn') saveAccountEquipment();
+  if (event.target.id === 'saveAccountPasswordBtn') changePasswordFromAccount();
+  if (event.target.id === 'historyPrevMonthBtn') { accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() - 1, 1); renderAccountHistory(); }
+  if (event.target.id === 'historyNextMonthBtn') { accountHistoryMonth = new Date(accountHistoryMonth.getFullYear(), accountHistoryMonth.getMonth() + 1, 1); renderAccountHistory(); }
   if (event.target.id === 'showLoginBtn') setAuthMode('login');
   if (event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');
   if (event.target.id === 'signupBtn') signUp();
@@ -1206,6 +1385,13 @@ document.addEventListener('change', event => {
     if (event.target.value === 'none' && event.target.checked) others.forEach(input => input.checked = false);
     if (event.target.value !== 'none' && event.target.checked && none) none.checked = false;
     updateConditionalQuestions();
+  }
+
+  if (event.target.matches('input[name="accountEquipment"]')) {
+    const none = document.querySelector('input[name="accountEquipment"][value="none"]');
+    const others = Array.from(document.querySelectorAll('input[name="accountEquipment"]:not([value="none"])'));
+    if (event.target.value === 'none' && event.target.checked) others.forEach(input => input.checked = false);
+    if (event.target.value !== 'none' && event.target.checked && none) none.checked = false;
   }
 });
 
