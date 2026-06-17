@@ -165,3 +165,44 @@ using (
       and lower(p.email) = lower(auth.jwt() ->> 'email')
   )
 );
+
+
+-- Keep workout_profiles in sync with Supabase Auth users.
+-- Run this in Supabase SQL Editor so the Admin dashboard can list users
+-- even before they have completed onboarding or saved a workout.
+create or replace function public.handle_auth_user_workout_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.email is not null then
+    insert into public.workout_profiles (email, current_auth_user_id, deleted_at, updated_at)
+    values (lower(new.email), new.id, null, now())
+    on conflict (email) do update set
+      current_auth_user_id = excluded.current_auth_user_id,
+      deleted_at = null,
+      updated_at = now();
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_workout_profile on auth.users;
+create trigger on_auth_user_workout_profile
+after insert or update of email
+on auth.users
+for each row
+execute function public.handle_auth_user_workout_profile();
+
+-- Backfill profiles for users who already exist in Supabase Auth.
+insert into public.workout_profiles (email, current_auth_user_id, deleted_at, updated_at)
+select lower(u.email), u.id, null, now()
+from auth.users u
+where u.email is not null
+on conflict (email) do update set
+  current_auth_user_id = excluded.current_auth_user_id,
+  deleted_at = null,
+  updated_at = now();

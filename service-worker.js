@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somthingreat-v7-3-state-cleanup';
+const CACHE_NAME = 'somthingreat-v7-5-admin-banner-fix';
 const APP_SHELL = [
   './',
   './index.html',
