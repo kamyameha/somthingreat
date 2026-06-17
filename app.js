@@ -1565,9 +1565,69 @@ if (importInput) {
   });
 }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js');
+function showUpdateBanner(registration) {
+  if (document.getElementById('appUpdateBanner')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'appUpdateBanner';
+  banner.className = 'app-update-banner';
+  banner.innerHTML = `
+    <div>
+      <strong>New version available</strong>
+      <span>Refresh to get the latest updates.</span>
+    </div>
+    <button type="button" id="refreshAppBtn">Refresh</button>
+  `;
+
+  document.body.appendChild(banner);
+
+  const refreshBtn = document.getElementById('refreshAppBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      if (registration && registration.waiting) {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      } else {
+        window.location.reload();
+      }
+    });
+  }
 }
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  let refreshing = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+
+  navigator.serviceWorker.register('./service-worker.js').then(registration => {
+    if (registration.waiting) {
+      showUpdateBanner(registration);
+    }
+
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      if (!newWorker) return;
+
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateBanner(registration);
+        }
+      });
+    });
+
+    // Ask the browser to check for a new service worker whenever the app opens.
+    registration.update();
+  }).catch(error => {
+    console.warn('Service worker registration failed:', error);
+  });
+}
+
+registerServiceWorker();
 
 setupStarAnimation();
 renderAll();

@@ -2144,3 +2144,50 @@ html, body { background: #f7f7f7 !important; }
 .welcome-copy p {
   margin: 0 !important;
 }
+
+/* App update banner */
+.app-update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: min(520px, calc(100% - 28px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 14px 14px 16px;
+  background: var(--main);
+  color: white;
+  border-radius: 20px;
+  box-shadow: 0 18px 42px rgba(1, 45, 237, 0.22);
+}
+
+.app-update-banner div {
+  display: grid;
+  gap: 2px;
+}
+
+.app-update-banner strong {
+  font-size: 14px;
+  line-height: 1.15;
+}
+
+.app-update-banner span {
+  font-size: 12px;
+  line-height: 1.25;
+  opacity: 0.82;
+}
+
+.app-update-banner button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: white;
+  color: var(--main);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
