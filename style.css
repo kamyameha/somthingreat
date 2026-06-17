@@ -2226,3 +2226,16 @@ html, body { background: #f7f7f7 !important; }
   font-size: 0.9rem;
   opacity: 0.78;
 }
+
+
+/* v7.1 auth isolation repair
+   The auth page must be the only visible app content while logged out. */
+.logged-out .screen,
+.logged-out .bottom-nav,
+.logged-out #accountBtn {
+  display: none !important;
+}
+
+.logged-out #accountPanel {
+  display: block !important;
+}

@@ -1565,6 +1565,11 @@ document.addEventListener('click', event => {
   if (event.target.id === 'welcomeNextBtn') {
     welcomeDismissed = true;
     updateWelcomeGate();
+    // Re-apply auth/onboarding visibility after the welcome screen is dismissed.
+    // Without this, the hidden app shell can reappear with the active Today screen
+    // still mounted behind the logged-out auth form.
+    renderAccount();
+    renderOnboarding();
     return;
   }
 

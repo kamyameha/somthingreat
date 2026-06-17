@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somthingreat-v7-warmup-stretch';
+const CACHE_NAME = 'somthingreat-v7-1-auth-isolation';
 const APP_SHELL = [
   './',
   './index.html',
