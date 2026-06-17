@@ -10,11 +10,6 @@
       flowType: 'implicit'
     }
   });
-  let pendingAccountPasswordChange = null;
-
-  function appClient() {
-    return window.appSupabaseClient || resetClient;
-  }
 
   function appUser() {
     if (typeof currentUser !== 'undefined' && currentUser) return currentUser;
@@ -52,6 +47,12 @@
       window.location.hash.replace(/^#/, '')
     ].join('&');
     return new URLSearchParams(combined);
+  }
+
+  function resetRedirectUrl() {
+    const redirectUrl = new URL(window.location.origin + window.location.pathname);
+    redirectUrl.searchParams.set('reset-password', '1');
+    return redirectUrl.toString();
   }
 
   async function waitForSession(client, attempts = 12, delayMs = 250) {
@@ -104,53 +105,22 @@
     return { client: resetClient, session };
   }
 
+  function accountEmail() {
+    const user = appUser();
+    return user?.email || document.getElementById('accountEmail')?.textContent.trim() || '';
+  }
+
   function ensureAccountPasswordUi() {
     const view = document.getElementById('accountPasswordView');
     if (!view) return;
 
     const intro = view.querySelector('p.muted');
-    if (intro) intro.textContent = 'Choose a new password. We will email you a verification code before saving it.';
+    if (intro) intro.textContent = 'We will email you a secure reset link. After choosing a new password, log in again with the new password.';
 
-    const currentField = document.getElementById('accountCurrentPasswordInput')?.closest('.password-field');
-    if (currentField) currentField.remove();
-
-    let nonceInput = document.getElementById('accountPasswordNonceInput');
-    if (!nonceInput) {
-      const confirmInput = document.getElementById('accountConfirmPasswordInput');
-      const wrapper = document.createElement('div');
-      wrapper.id = 'accountPasswordNonceField';
-      wrapper.className = 'password-field hidden';
-
-      nonceInput = document.createElement('input');
-      nonceInput.id = 'accountPasswordNonceInput';
-      nonceInput.className = 'text-input';
-      nonceInput.type = 'text';
-      nonceInput.inputMode = 'numeric';
-      nonceInput.autocomplete = 'one-time-code';
-      nonceInput.placeholder = 'Email verification code';
-
-      wrapper.appendChild(nonceInput);
-      const confirmWrapper = confirmInput?.closest('.password-field') || confirmInput;
-      confirmWrapper?.insertAdjacentElement('afterend', wrapper);
-    }
+    view.querySelectorAll('.password-field').forEach(field => field.remove());
 
     const button = document.getElementById('saveAccountPasswordBtn');
-    if (button && !pendingAccountPasswordChange) button.textContent = 'Send verification code';
-  }
-
-  function showAccountNonceInput() {
-    ensureAccountPasswordUi();
-    document.getElementById('accountPasswordNonceField')?.classList.remove('hidden');
-    const button = document.getElementById('saveAccountPasswordBtn');
-    if (button) button.textContent = 'Update password';
-  }
-
-  function clearAccountNonceInput() {
-    const input = document.getElementById('accountPasswordNonceInput');
-    if (input) input.value = '';
-    document.getElementById('accountPasswordNonceField')?.classList.add('hidden');
-    const button = document.getElementById('saveAccountPasswordBtn');
-    if (button) button.textContent = 'Send verification code';
+    if (button) button.textContent = 'Email reset link';
   }
 
   async function syncPrimarySession(client) {
@@ -177,17 +147,19 @@
     return message || 'Something went wrong. Please try again.';
   }
 
+  async function sendPasswordResetToEmail(email, successMessage) {
+    if (!email) return { error: new Error('Please enter a valid email address.') };
+    try { localStorage.setItem('somthingreat-password-reset-requested-at', String(Date.now())); } catch (error) {}
+    const { error } = await resetClient.auth.resetPasswordForEmail(email, { redirectTo: resetRedirectUrl() });
+    return { error, successMessage };
+  }
+
   async function sendPasswordResetFixed() {
     const email = document.getElementById('loginEmailInput')?.value.trim();
     if (!email) return showAuthMessage('Enter your email first, then tap Forgot password.', 'error');
 
-    const redirectUrl = new URL(window.location.origin + window.location.pathname);
-    redirectUrl.searchParams.set('reset-password', '1');
-
-    try { localStorage.setItem('somthingreat-password-reset-requested-at', String(Date.now())); } catch (error) {}
-
     showAuthMessage('Sending reset link...', 'info');
-    const { error } = await resetClient.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl.toString() });
+    const { error } = await sendPasswordResetToEmail(email, 'Password reset link sent. Check your email.');
     if (error) return showAuthMessage(friendlyAuthErrorOverride(error.message), 'error');
     showAuthMessage('Password reset link sent. Check your email.', 'success');
   }
@@ -238,68 +210,21 @@
   }
 
   async function changePasswordFromAccountFixed() {
-    const user = appUser();
-    if (!user) return;
     ensureAccountPasswordUi();
-
-    const client = appClient();
     const message = document.getElementById('accountPasswordMessage');
-    const passwordInput = document.getElementById('accountNewPasswordInput');
-    const confirmPasswordInput = document.getElementById('accountConfirmPasswordInput');
-    const nonceInput = document.getElementById('accountPasswordNonceInput');
-    const password = passwordInput?.value;
-    const confirmPassword = confirmPasswordInput?.value;
-    const nonce = nonceInput?.value.trim();
-    if (message) message.textContent = '';
-
-    if (pendingAccountPasswordChange) {
-      if (password && pendingAccountPasswordChange.password !== password) {
-        pendingAccountPasswordChange = null;
-        clearAccountNonceInput();
-      } else if (!nonce) {
-        showAccountNonceInput();
-        if (message) message.textContent = 'Enter the verification code from your email, then tap Update password.';
-        return;
-      } else {
-        if (message) message.textContent = 'Updating password...';
-        const { error } = await client.auth.updateUser({ password: pendingAccountPasswordChange.password, nonce });
-        if (error) {
-          if (message) message.textContent = friendlyAuthErrorOverride(error.message);
-          return;
-        }
-
-        pendingAccountPasswordChange = null;
-        clearAccountNonceInput();
-        passwordInput.value = '';
-        confirmPasswordInput.value = '';
-        if (message) message.textContent = 'Password updated.';
-        return;
-      }
-    }
-
-    if (!password || !confirmPassword) {
-      if (message) message.textContent = 'Enter your new password twice.';
-      return;
-    }
-    if (password.length < 6) {
-      if (message) message.textContent = 'Password must be at least 6 characters.';
-      return;
-    }
-    if (password !== confirmPassword) {
-      if (message) message.textContent = 'Passwords do not match.';
+    const email = accountEmail();
+    if (!email) {
+      if (message) message.textContent = 'Log in again before changing your password.';
       return;
     }
 
-    if (message) message.textContent = 'Sending verification code...';
-    const { error } = await client.auth.reauthenticate();
+    if (message) message.textContent = 'Sending reset link...';
+    const { error } = await sendPasswordResetToEmail(email, 'Password reset link sent. Check your email.');
     if (error) {
       if (message) message.textContent = friendlyAuthErrorOverride(error.message);
       return;
     }
-
-    pendingAccountPasswordChange = { password, requestedAt: Date.now() };
-    showAccountNonceInput();
-    if (message) message.textContent = 'Verification code sent. Check your email, enter the code here, then tap Update password.';
+    if (message) message.textContent = 'Password reset link sent. Check your email.';
   }
 
   function bindButton(id, handler) {
