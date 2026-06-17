@@ -16,7 +16,8 @@ const supabaseClient = SUPABASE_READY
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: true,
+        flowType: 'pkce'
       }
     })
   : null;
@@ -26,6 +27,15 @@ let currentUser = null;
 let currentProfileId = null;
 let syncTimer = null;
 let welcomeDismissed = false;
+function hasPendingRecoveryMarker() {
+  try {
+    const ts = Number(localStorage.getItem('somthingreat-password-reset-requested-at') || 0);
+    return ts && Date.now() - ts < 1000 * 60 * 60;
+  } catch (error) {
+    return false;
+  }
+}
+
 function isPasswordRecoveryUrl() {
   // Use the original URL captured before Supabase can consume/clean auth params.
   // A password-reset redirect can look like:
@@ -39,7 +49,10 @@ function isPasswordRecoveryUrl() {
     params.get('reset-password') === '1' ||
     params.get('type') === 'recovery' ||
     params.get('event') === 'PASSWORD_RECOVERY' ||
-    params.has('code')
+    params.has('code') ||
+    params.has('access_token') ||
+    params.has('refresh_token') ||
+    window.location.pathname.includes('reset-password')
   );
 }
 
@@ -60,6 +73,23 @@ async function ensureRecoverySession() {
   // detectSessionInUrl does not always finish before our welcome gate runs,
   // so we explicitly exchange the code before rendering the normal app flow.
   const params = getAuthUrlParams();
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+
+  if (accessToken && refreshToken) {
+    try {
+      const { data, error } = await supabaseClient.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+      if (error) throw error;
+      currentUser = data?.session?.user || currentUser;
+      return data?.session || null;
+    } catch (error) {
+      setAuthMessage(friendlyAuthError(error.message || 'Could not open this reset link. Please request a new one.'), 'error');
+    }
+  }
+
   const hasCode = params.has('code');
 
   if (hasCode) {
@@ -1413,11 +1443,12 @@ async function saveAccountEquipment() {
 async function changePasswordFromAccount() {
   if (!supabaseClient || !currentUser) return;
   const message = document.getElementById('accountPasswordMessage');
+  const currentPassword = document.getElementById('accountCurrentPasswordInput')?.value;
   const password = document.getElementById('accountNewPasswordInput')?.value;
   const confirmPassword = document.getElementById('accountConfirmPasswordInput')?.value;
   if (message) message.textContent = '';
-  if (!password || !confirmPassword) {
-    if (message) message.textContent = 'Enter and confirm your new password.';
+  if (!currentPassword || !password || !confirmPassword) {
+    if (message) message.textContent = 'Enter your current password, then your new password twice.';
     return;
   }
   if (password.length < 6) {
@@ -1429,11 +1460,16 @@ async function changePasswordFromAccount() {
     return;
   }
   if (message) message.textContent = 'Updating password...';
-  const { error } = await supabaseClient.auth.updateUser({ password });
+  const { error } = await supabaseClient.auth.updateUser({
+    password,
+    currentPassword,
+    current_password: currentPassword
+  });
   if (error) {
     if (message) message.textContent = friendlyAuthError(error.message);
     return;
   }
+  document.getElementById('accountCurrentPasswordInput').value = '';
   document.getElementById('accountNewPasswordInput').value = '';
   document.getElementById('accountConfirmPasswordInput').value = '';
   if (message) message.textContent = 'Password updated.';
@@ -1643,10 +1679,13 @@ async function sendPasswordReset() {
   const email = document.getElementById('loginEmailInput')?.value.trim();
   if (!email) return setAuthMessage('Enter your email first, then tap Forgot password.', 'error');
 
-  const redirectUrl = new URL(window.location.href);
+  const redirectUrl = new URL(window.location.origin + window.location.pathname);
   redirectUrl.searchParams.set('reset-password', '1');
-  redirectUrl.hash = '';
   const redirectTo = redirectUrl.toString();
+
+  try {
+    localStorage.setItem('somthingreat-password-reset-requested-at', String(Date.now()));
+  } catch (error) {}
 
   setAuthMessage('Sending reset link...', 'info');
   const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
@@ -1677,6 +1716,7 @@ async function updatePasswordFromRecovery() {
     return setAuthMessage(friendlyAuthError(error.message), 'error');
   }
   passwordRecoveryMode = false;
+  try { localStorage.removeItem('somthingreat-password-reset-requested-at'); } catch (error) {}
   clearAuthUrlParams();
   currentProfileId = null;
   if (currentUser) await loadCloudState();

@@ -10,6 +10,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json" />
+  <script>
+    (function () {
+      var search = window.location.search || '';
+      var hash = window.location.hash || '';
+      var path = window.location.pathname || '';
+      if (search.indexOf('reset-password') !== -1 || search.indexOf('code=') !== -1 || hash.indexOf('type=recovery') !== -1 || hash.indexOf('access_token') !== -1 || path.indexOf('reset-password') !== -1) {
+        document.documentElement.classList.add('recovery-boot');
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
@@ -145,7 +155,11 @@
 
         <div id="accountPasswordView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main">← Back</button>
-          <p class="muted">Choose a new password for your account.</p>
+          <p class="muted">For security, enter your current password before choosing a new one.</p>
+          <div class="password-field">
+            <input id="accountCurrentPasswordInput" class="text-input" type="password" placeholder="Current password" autocomplete="current-password" />
+            <button class="password-toggle" type="button" data-toggle-password="accountCurrentPasswordInput" aria-label="Show password">Show</button>
+          </div>
           <div class="password-field">
             <input id="accountNewPasswordInput" class="text-input" type="password" placeholder="New password" autocomplete="new-password" />
             <button class="password-toggle" type="button" data-toggle-password="accountNewPasswordInput" aria-label="Show password">Show</button>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somthingreat-v8-6-password-reset-session-fix';
+const CACHE_NAME = 'somthingreat-v8-7-password-account-fix';
 const APP_SHELL = [
   './',
   './index.html',
