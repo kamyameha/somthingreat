@@ -1,17 +1,24 @@
-const CACHE_NAME = 'somthingreat-v8-13-password-flow-hotfix';
+const CACHE_NAME = 'somthingreat-v8-14-core-auth-cleanup';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
+  './auth.js',
   './app.js',
-  './password-session-fix.js',
   './manifest.json',
   './supabase-config.js',
   './somthingreat.svg',
   './apple-touch-icon.png',
   './192x192-PWA.png',
   './512x512-regular.png',
-  './512x512-maskable.png'
+  './512x512-maskable.png',
+  './Assets/Animations/start1.png',
+  './Assets/Animations/start2.png',
+  './Assets/Animations/start3.png',
+  './Assets/Energy/great-icon.png',
+  './Assets/Energy/normal-icon.png',
+  './Assets/Energy/tired-icon.png',
+  './Assets/Energy/exhaustive-icon.png'
 ];
 
 self.addEventListener('install', event => {
@@ -52,7 +59,7 @@ self.addEventListener('fetch', event => {
   // Always try the network first for pages and core app files.
   // This prevents users from staying stuck on an old app.js/index.html.
   const isNavigation = request.mode === 'navigate';
-  const isCoreFile = /\/(index\.html|app\.js|password-session-fix\.js|style\.css|supabase-config\.js|manifest\.json)$/.test(url.pathname);
+  const isCoreFile = /\/(index\.html|app\.js|auth\.js|style\.css|supabase-config\.js|manifest\.json)$/.test(url.pathname);
 
   if (isNavigation || isCoreFile) {
     event.respondWith(networkFirst(request));
