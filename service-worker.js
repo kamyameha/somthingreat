@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somthingreat-v2026-06-17-01';
+const CACHE_NAME = 'somthingreat-v7-warmup-stretch';
 const APP_SHELL = [
   './',
   './index.html',

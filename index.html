@@ -139,6 +139,7 @@
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="pullupBar"> <span>Pull-up bar</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="dipBars"> <span>Dip bars</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="bands"> <span>Resistance bands</span></label>
+          <label class="option-row"><input type="checkbox" name="accountEquipment" value="jumpRope"> <span>Jump rope</span></label>
           <button id="saveAccountEquipmentBtn" class="primary-btn account-full-btn" type="button">Save equipment</button>
         </div>
 
@@ -199,6 +200,7 @@
         <label class="option-row"><input type="checkbox" name="equipment" value="pullupBar"> <span>Pull-up bar</span></label>
         <label class="option-row"><input type="checkbox" name="equipment" value="dipBars"> <span>Dip bars</span></label>
         <label class="option-row"><input type="checkbox" name="equipment" value="bands"> <span>Resistance bands</span></label>
+        <label class="option-row"><input type="checkbox" name="equipment" value="jumpRope"> <span>Jump rope</span></label>
       </div>
 
       <div class="setup-block">
@@ -256,6 +258,12 @@
           <button class="text-btn selected-back-btn" id="changeEnergyBtn" type="button">← Back</button>
           <h2 id="selectedWorkoutName">Push</h2>
           <p id="selectedWorkoutMeta">4 exercises · Full volume</p>
+          <div class="add-on-panel" aria-label="Optional workout add-ons">
+            <p class="add-on-title">Optional add-ons</p>
+            <label class="add-on-row"><input id="includeWarmup" type="checkbox"> <span>Add 2-min warm-up before</span></label>
+            <label class="add-on-row"><input id="includeStretch" type="checkbox"> <span>Add 2-min stretch after</span></label>
+            <p id="sessionTotalPreview" class="add-on-summary">Workout only</p>
+          </div>
           <button class="hero-action" id="generateWorkoutBtn" type="button">Generate today's workout</button>
         </div>
       </section>

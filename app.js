@@ -183,7 +183,8 @@ const equipmentLabels = {
   none: 'No equipment',
   pullupBar: 'Pull-up bar',
   dipBars: 'Dip bars',
-  bands: 'Resistance bands'
+  bands: 'Resistance bands',
+  jumpRope: 'Jump rope'
 };
 
 function getProfile() {
@@ -196,6 +197,7 @@ function getTracks() {
   const hasPullupBar = equipment.includes('pullupBar');
   const hasDipBars = equipment.includes('dipBars');
   const hasBands = equipment.includes('bands');
+  const hasJumpRope = equipment.includes('jumpRope');
   const tracks = JSON.parse(JSON.stringify(baseTracks));
 
   if (!hasPullupBar) {
@@ -231,6 +233,11 @@ function getTracks() {
   ];
 
   if (!hasPullupBar) {
+    // Muscle-up work needs a pull-up bar. If the user does not have one,
+    // do not generate muscle-up-specific exercises. The pull-up track already
+    // gets swapped to safe no-bar pulling prep above.
+    tracks.muscleup = [];
+
     tracks.core = [
       { name: 'Plank', prescription: '3 × 20s' },
       { name: 'Plank', prescription: '3 × 30s' },
@@ -241,12 +248,28 @@ function getTracks() {
       { name: 'Reverse crunch', prescription: '3 × 12' }
     ];
   }
+  if (!hasJumpRope) {
+    // Jump rope exercises should only appear when the user explicitly selects a rope.
+    tracks.rope = [];
+  }
+
   return tracks;
 }
 
 function getRotation() {
-  const goal = getProfile()?.goal || 'pullup';
-  const skillTrack = goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : goal === 'general' ? 'crow' : 'pullup';
+  const profile = getProfile();
+  const goal = profile?.goal || 'pullup';
+  const equipment = profile?.equipment || [];
+  const hasPullupBar = equipment.includes('pullupBar');
+  const skillTrack = goal === 'handstand'
+    ? 'handstand'
+    : goal === 'lsit'
+      ? 'lsit'
+      : goal === 'muscleup' && hasPullupBar
+        ? 'muscleup'
+        : goal === 'general'
+          ? 'crow'
+          : 'pullup';
   return [
     { name: 'Push', tracks: ['pushup', 'dip', 'core'] },
     { name: 'Pull', tracks: ['pullup', 'core'] },
@@ -314,10 +337,66 @@ const energyOptions = {
   }
 };
 
+
+const workoutAddOns = {
+  warmup: {
+    trackKey: 'warmup',
+    name: '2-min full-body warm-up',
+    prescription: '2 min · 30s each',
+    setCount: 4,
+    isAddOn: true,
+    addOnType: 'warmup',
+    setLabels: ['March in place', 'Arm circles', 'Hip circles', 'Bodyweight squats']
+  },
+  stretch: {
+    trackKey: 'stretch',
+    name: '2-min full-body stretch',
+    prescription: '2 min · 30s each',
+    setCount: 4,
+    isAddOn: true,
+    addOnType: 'stretch',
+    setLabels: ['Hamstring stretch', 'Quad stretch', 'Chest opener', "Child\'s pose"]
+  }
+};
+
+function getSelectedAddOns() {
+  return {
+    warmup: Boolean(state.includeWarmup),
+    stretch: Boolean(state.includeStretch)
+  };
+}
+
+function getExtraSessionMinutes(addOns = getSelectedAddOns()) {
+  return (addOns.warmup ? 2 : 0) + (addOns.stretch ? 2 : 0);
+}
+
+function cloneAddOn(addOn) {
+  return JSON.parse(JSON.stringify(addOn));
+}
+
+function applyWorkoutAddOns(workout, addOns = getSelectedAddOns()) {
+  const exercises = [...(workout.exercises || [])];
+  if (addOns.warmup) exercises.unshift(cloneAddOn(workoutAddOns.warmup));
+  if (addOns.stretch) exercises.push(cloneAddOn(workoutAddOns.stretch));
+  return {
+    ...workout,
+    includeWarmup: addOns.warmup,
+    includeStretch: addOns.stretch,
+    extraMinutes: getExtraSessionMinutes(addOns),
+    exercises
+  };
+}
+
+function sessionTotalLabel(workout) {
+  const extra = workout?.extraMinutes || 0;
+  if (!extra) return 'Workout only';
+  return `+ ${extra} min add-ons`;
+}
+
 function defaultState() {
   const levels = {};
   Object.keys(baseTracks).forEach(key => levels[key] = { level: 0, points: 0 });
-  return { rotationIndex: 0, levels, history: [], current: null, selectedEnergy: null, generated: null, profile: null };
+  return { rotationIndex: 0, levels, history: [], current: null, selectedEnergy: null, generated: null, profile: null, includeWarmup: false, includeStretch: false };
 }
 
 let state = loadState();
@@ -572,16 +651,22 @@ function getEnergyConfig(mode = 'normal') {
   return Object.values(energyOptions).find(option => option.mode === mode) || energyOptions.normal;
 }
 
+function isTrackAvailable(trackKey, tracks = getTracks()) {
+  return Array.isArray(tracks[trackKey]) && tracks[trackKey].length > 0;
+}
+
 function getExercise(trackKey, config = energyOptions.great) {
-  const trackState = state.levels[trackKey] || { level: 0, points: 0 };
-  const track = getTracks()[trackKey] || baseTracks[trackKey];
+  const tracks = getTracks();
+  const track = isTrackAvailable(trackKey, tracks) ? tracks[trackKey] : tracks.core;
+  const safeTrackKey = isTrackAvailable(trackKey, tracks) ? trackKey : 'core';
+  const trackState = state.levels[safeTrackKey] || { level: 0, points: 0 };
   const baseLevel = Math.min(trackState.level, track.length - 1);
   const adjustedLevel = Math.max(0, Math.min(baseLevel + (config.levelShift || 0), track.length - 1));
   const baseExercise = track[adjustedLevel];
   const prescription = adaptPrescription(baseExercise.prescription, config);
 
   return {
-    trackKey,
+    trackKey: safeTrackKey,
     ...baseExercise,
     prescription,
     basePrescription: baseExercise.prescription,
@@ -592,14 +677,16 @@ function getExercise(trackKey, config = energyOptions.great) {
 }
 
 function buildWorkoutTracks(workout, desiredCount) {
+  const availableTracks = getTracks();
   const fillByWorkout = {
     Push: ['pushup', 'dip', 'core', 'legs', 'rope'],
     Pull: ['pullup', 'core', 'rope', 'legs', 'pushup'],
     'Legs + Core': ['legs', 'core', 'rope', 'pushup', 'pullup'],
     Skills: ['core', 'lsit', 'crow', 'handstand', 'pullup', 'rope']
   };
-  const tracks = [...workout.tracks];
-  const fillers = fillByWorkout[workout.name] || ['core', 'legs', 'pushup', 'pullup', 'rope'];
+  const tracks = [...workout.tracks].filter(trackKey => isTrackAvailable(trackKey, availableTracks));
+  const fillers = (fillByWorkout[workout.name] || ['core', 'legs', 'pushup', 'pullup', 'rope'])
+    .filter(trackKey => isTrackAvailable(trackKey, availableTracks));
 
   fillers.forEach(trackKey => {
     if (tracks.length < desiredCount && !tracks.includes(trackKey)) tracks.push(trackKey);
@@ -698,6 +785,8 @@ function renderToday() {
 function selectEnergy(feel) {
   state.selectedEnergy = feel;
   state.generated = null;
+  state.includeWarmup = false;
+  state.includeStretch = false;
   saveState();
   renderSelectedEnergy();
 }
@@ -722,11 +811,24 @@ function renderSelectedEnergy() {
 
   const workoutMeta = document.getElementById('selectedWorkoutMeta');
   if (workoutMeta) workoutMeta.textContent = modeLabel(previewWorkout.mode).replace(/^\w+ · /, '');
+
+  const warmupInput = document.getElementById('includeWarmup');
+  const stretchInput = document.getElementById('includeStretch');
+  if (warmupInput) warmupInput.checked = Boolean(state.includeWarmup);
+  if (stretchInput) stretchInput.checked = Boolean(state.includeStretch);
+  updateAddOnSummary();
+}
+
+function updateAddOnSummary() {
+  const total = document.getElementById('sessionTotalPreview');
+  const extra = getExtraSessionMinutes();
+  if (total) total.textContent = extra ? `Workout + ${extra} min add-ons` : 'Workout only';
 }
 
 function generateWorkout() {
   const option = energyOptions[state.selectedEnergy || 'normal'];
-  state.generated = getTodayWorkout(option.mode);
+  const baseWorkout = getTodayWorkout(option.mode);
+  state.generated = applyWorkoutAddOns(baseWorkout);
   saveState();
   renderGeneratedWorkout();
 }
@@ -738,7 +840,7 @@ function renderGeneratedWorkout() {
   document.getElementById('generatedWorkoutCard').classList.remove('hidden');
   document.getElementById('exercisePreview').classList.remove('hidden');
   document.getElementById('workoutName').textContent = generated.workoutName;
-  document.getElementById('workoutMeta').textContent = modeLabel(generated.mode);
+  document.getElementById('workoutMeta').textContent = `${modeLabel(generated.mode)} · ${sessionTotalLabel(generated)}`;
 
   const preview = document.getElementById('previewList');
   preview.innerHTML = '';
@@ -772,7 +874,7 @@ function renderExercises() {
 
   const titleCard = document.createElement('div');
   titleCard.className = 'hero-card';
-  titleCard.innerHTML = `<p class="muted-light">Today's workout</p><h2>${state.current.workoutName}</h2><p>${modeLabel(state.current.mode)}</p>`;
+  titleCard.innerHTML = `<p class="muted-light">Today's workout</p><h2>${state.current.workoutName}</h2><p>${modeLabel(state.current.mode)} · ${sessionTotalLabel(state.current)}</p>`;
   list.appendChild(titleCard);
 
   state.current.exercises.forEach((exercise) => {
@@ -782,21 +884,24 @@ function renderExercises() {
     if (!state.current.sets) state.current.sets = {};
     if (!state.current.sets[exercise.trackKey]) state.current.sets[exercise.trackKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
     const completedSets = state.current.sets[exercise.trackKey];
-    const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => `
-      <div class="set-row"><span>Set ${index + 1}</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="${index}" ${completedSets[index] ? 'checked' : ''}></div>
-    `).join('');
-    const levelLabel = exercise.originalLevel && exercise.originalLevel !== exercise.level ? `L${exercise.level} · easier` : `L${exercise.level}`;
-    card.innerHTML = `
-      <h3>${exercise.name}<span>${levelLabel}</span></h3>
-      <p class="prescription">${exercise.prescription}</p>
-      ${setRows}
+    const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => {
+      const label = exercise.setLabels?.[index] || `Set ${index + 1}`;
+      return `<div class="set-row"><span>${label}</span><input type="checkbox" data-track="${exercise.trackKey}" data-set-index="${index}" ${completedSets[index] ? 'checked' : ''}></div>`;
+    }).join('');
+    const levelLabel = exercise.isAddOn ? 'Add-on' : (exercise.originalLevel && exercise.originalLevel !== exercise.level ? `L${exercise.level} · easier` : `L${exercise.level}`);
+    const ratingBlock = exercise.isAddOn ? '' : `
       <p class="rating-label">How was it?</p>
       <div class="rating-row" data-track="${exercise.trackKey}">
         <button data-rating="easy" class="${selectedRating === 'easy' ? 'selected' : ''}">Easy</button>
         <button data-rating="good" class="${selectedRating === 'good' ? 'selected' : ''}">Good</button>
         <button data-rating="hard" class="${selectedRating === 'hard' ? 'selected' : ''}">Hard</button>
         <button data-rating="failed" class="${selectedRating === 'failed' ? 'selected' : ''}">Failed</button>
-      </div>
+      </div>`;
+    card.innerHTML = `
+      <h3>${exercise.name}<span>${levelLabel}</span></h3>
+      <p class="prescription">${exercise.prescription}</p>
+      ${setRows}
+      ${ratingBlock}
     `;
     list.appendChild(card);
   });
@@ -820,14 +925,17 @@ function applyRating(trackKey, rating) {
 
 function completeWorkout() {
   if (!state.current) return;
+  const rateableExercises = state.current.exercises.filter(exercise => !exercise.isAddOn);
   const ratedCount = Object.keys(state.current.ratings).length;
-  if (ratedCount < state.current.exercises.length) {
+  if (ratedCount < rateableExercises.length) {
     const ok = confirm('Some exercises are not rated yet. Complete workout anyway?');
     if (!ok) return;
   }
 
-  Object.entries(state.current.ratings).forEach(([trackKey, rating]) => applyRating(trackKey, rating));
-  state.history.push({ date: new Date().toISOString(), workout: state.current.workoutName, mode: state.current.mode, exercises: state.current.exercises.map(ex => ({ name: ex.name, prescription: ex.prescription, trackKey: ex.trackKey })) });
+  Object.entries(state.current.ratings).forEach(([trackKey, rating]) => {
+    if (state.levels[trackKey]) applyRating(trackKey, rating);
+  });
+  state.history.push({ date: new Date().toISOString(), workout: state.current.workoutName, mode: state.current.mode, exercises: state.current.exercises.map(ex => ({ name: ex.name, prescription: ex.prescription, trackKey: ex.trackKey, isAddOn: Boolean(ex.isAddOn) })) });
   state.rotationIndex = (state.rotationIndex + 1) % getRotation().length;
   state.current = null;
   state.selectedEnergy = null;
@@ -1470,10 +1578,19 @@ document.addEventListener('click', event => {
     renderToday();
   }
 
+  if (event.target.id === 'includeWarmup' || event.target.id === 'includeStretch') {
+    state.includeWarmup = Boolean(document.getElementById('includeWarmup')?.checked);
+    state.includeStretch = Boolean(document.getElementById('includeStretch')?.checked);
+    saveState();
+    updateAddOnSummary();
+  }
+
   if (event.target.id === 'generateWorkoutBtn') generateWorkout();
   if (event.target.id === 'regenerateWorkoutBtn') {
     state.generated = null;
     state.selectedEnergy = null;
+    state.includeWarmup = false;
+    state.includeStretch = false;
     saveState();
     renderToday();
   }
