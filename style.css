@@ -4,10 +4,34 @@
   --card: #ffffff;
   --soft: rgba(1, 45, 237, 0.08);
   --border: rgba(1, 45, 237, 0.16);
-  --text: #012ded;
-  --muted-text: rgba(1, 45, 237, 0.72);
+  --text: #111318;
+  --heading: #0f172a;
+  --muted-text: #667085;
+  --placeholder: #8ea2ff;
+  --success: #138a4b;
+  --success-soft: rgba(19, 138, 75, 0.12);
+  --warning: #b26a00;
+  --warning-soft: rgba(178, 106, 0, 0.13);
+  --error: #b00020;
+  --error-soft: rgba(176, 0, 32, 0.1);
+  --rest: #52606d;
+  --rest-soft: rgba(82, 96, 109, 0.12);
   --radius: 20px;
   --screen-x: 18px;
+  --app-width: 560px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --title-sm: 24px;
+  --title-md: 28px;
+  --title-lg: 34px;
   --auth-cta-bottom: 136px;
   --auth-cta-height: 52px;
   --auth-content-gap: 43px;
@@ -29,6 +53,8 @@ body {
   margin: 0;
   color: var(--text);
   font-family: Roboto, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: var(--text-md);
+  line-height: 1.35;
 }
 
 h1,
@@ -45,7 +71,8 @@ h2,
 #loggedOutAccount h2,
 #energyCard h2,
 .account-modal-header h2 {
-  font-size: 24px;
+  color: var(--heading);
+  font-size: var(--title-sm);
   line-height: 1.08;
   font-weight: 900;
 }
@@ -56,8 +83,8 @@ h2 {
 }
 
 h3 {
-  font-size: 18px;
-  margin-bottom: 14px;
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-4);
 }
 
 .hidden {
@@ -66,34 +93,35 @@ h3 {
 
 .muted,
 .muted-light {
-  font-size: 16px;
+  font-size: var(--text-md);
   line-height: 1.28;
-  opacity: 0.72;
+  color: var(--muted-text);
 }
 
 .muted-light {
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .eyebrow {
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 12px;
   font-weight: 900;
+  color: var(--main);
 }
 
 .app {
-  max-width: 560px;
+  max-width: var(--app-width);
   margin: 0 auto;
-  padding: 24px var(--screen-x) 128px;
+  padding: var(--space-5) var(--screen-x) 128px;
 }
 
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
   margin-bottom: 42px;
 }
 
@@ -128,8 +156,8 @@ h3 {
 .card,
 .hero-card,
 .exercise-card {
-  padding: 18px;
-  margin-bottom: 18px;
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card);
@@ -142,8 +170,13 @@ h3 {
   color: #ffffff;
 }
 
+.hero-card h2,
+.hero-card .eyebrow {
+  color: #ffffff;
+}
+
 .hero-card p {
-  font-size: 17px;
+  font-size: var(--text-md);
 }
 
 button {
@@ -151,7 +184,7 @@ button {
   border-radius: var(--radius);
   background: var(--main);
   color: #ffffff;
-  padding: 13px 16px;
+  padding: 13px var(--space-4);
   font: inherit;
   font-weight: 900;
   cursor: pointer;
@@ -159,7 +192,7 @@ button {
 }
 
 .compact {
-  padding: 10px 16px;
+  padding: 10px var(--space-4);
 }
 
 .ghost-btn,
@@ -174,18 +207,18 @@ button {
   width: 100%;
   min-height: 52px;
   height: 52px;
-  padding: 13px 16px;
+  padding: 13px var(--space-4);
   border-radius: var(--radius);
   line-height: 1.1;
 }
 
 .primary-btn {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .hero-action {
   width: 100%;
-  margin-top: 10px;
+  margin-top: var(--space-3);
   border-color: #ffffff;
   background: #ffffff;
   color: var(--main);
@@ -203,8 +236,8 @@ button {
 }
 
 .text-btn {
-  margin: 0 0 12px;
-  font-size: 16px;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-md);
   line-height: 1.2;
   font-weight: 900;
   text-align: left;
@@ -220,16 +253,21 @@ button {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: #ffffff;
-  color: var(--main);
-  padding: 14px 16px;
+  color: var(--text);
+  padding: 14px var(--space-4);
   font: inherit;
   font-weight: 700;
-  margin: 8px 0;
+  margin: var(--space-2) 0;
   outline: none;
 }
 
+.text-input:focus {
+  border-color: var(--main);
+  box-shadow: 0 0 0 3px rgba(1, 45, 237, 0.1);
+}
+
 .text-input::placeholder {
-  color: rgba(1, 45, 237, 0.45);
+  color: var(--placeholder);
 }
 
 .password-field {
@@ -264,20 +302,24 @@ button {
   font-size: 14px;
   line-height: 1.25;
   font-weight: 700;
-  opacity: 0.85;
+  color: var(--muted-text);
 }
 
 .auth-message[data-type="error"] {
-  color: #b00020;
+  color: var(--error);
 }
 
 .auth-message[data-type="success"] {
-  color: var(--main);
+  color: var(--success);
+}
+
+.auth-message[data-type="info"] {
+  color: var(--muted-text);
 }
 
 .sync-status {
   font-weight: 900;
-  opacity: 0.75;
+  color: var(--success);
 }
 
 /* Welcome screen */
@@ -291,7 +333,7 @@ button {
   justify-content: center;
   padding: 24px var(--screen-x) calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
   background: var(--bg);
-  color: var(--main);
+  color: var(--text);
 }
 
 .welcome-inner {
@@ -323,16 +365,17 @@ button {
 }
 
 .welcome-copy h1 {
-  font-size: 24px;
+  color: var(--heading);
+  font-size: var(--title-lg);
   line-height: 1.08;
   margin: 0 0 12px;
   font-weight: 900;
 }
 
 .welcome-copy p {
-  font-size: 16px;
+  color: var(--muted-text);
+  font-size: var(--text-md);
   line-height: 1.28;
-  opacity: 1;
   margin: 0;
 }
 
@@ -392,6 +435,8 @@ body.logged-out #accountBtn {
 }
 
 #loggedOutAccount h2 {
+  color: var(--heading);
+  font-size: var(--title-lg);
   margin: 0 0 12px;
 }
 
@@ -409,7 +454,7 @@ body.logged-out #accountBtn {
 
 #loggedOutAccount .text-input {
   padding: 0 16px;
-  font-size: 16px;
+  font-size: var(--text-md);
   line-height: 52px;
 }
 
@@ -563,6 +608,7 @@ html.recovery-boot #authLoginForm {
   border-radius: 16px;
   background: var(--soft);
   font-weight: 900;
+  color: var(--text);
 }
 
 .option-row input {
@@ -595,10 +641,10 @@ html.recovery-boot #authLoginForm {
   padding: 0;
   display: grid;
   place-items: center;
-  border-color: var(--main);
+  border-color: var(--border);
   border-radius: var(--radius);
-  background: var(--main);
-  color: #ffffff;
+  background: var(--card);
+  color: var(--heading);
   box-shadow: none;
 }
 
@@ -607,10 +653,34 @@ html.recovery-boot #authLoginForm {
 }
 
 .energy-option span {
-  color: #ffffff;
+  color: currentColor;
   font-size: 14px;
   font-weight: 900;
   line-height: 1;
+}
+
+.energy-option[data-feel="great"] {
+  border-color: rgba(19, 138, 75, 0.22);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.energy-option[data-feel="normal"] {
+  border-color: rgba(1, 45, 237, 0.22);
+  background: var(--soft);
+  color: var(--main);
+}
+
+.energy-option[data-feel="tired"] {
+  border-color: rgba(178, 106, 0, 0.28);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.energy-option[data-feel="exhausted"] {
+  border-color: rgba(82, 96, 109, 0.22);
+  background: var(--rest-soft);
+  color: var(--rest);
 }
 
 .energy-option:active,
@@ -654,10 +724,35 @@ html.recovery-boot #authLoginForm {
   min-height: 24px;
   padding: 4px 16px;
   border-radius: 999px;
-  background: var(--main);
-  color: #ffffff;
+  background: var(--soft);
+  color: var(--main);
+  border: 1px solid var(--border);
   font-size: 12px;
   font-weight: 900;
+}
+
+.selected-energy-stack[data-energy="great"] .energy-pill {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: rgba(19, 138, 75, 0.22);
+}
+
+.selected-energy-stack[data-energy="tired"] .energy-pill {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border-color: rgba(178, 106, 0, 0.28);
+}
+
+.selected-energy-stack[data-energy="exhausted"] .energy-pill {
+  background: var(--rest-soft);
+  color: var(--rest);
+  border-color: rgba(82, 96, 109, 0.22);
+}
+
+.selected-energy-stack[data-energy="normal"] .energy-pill {
+  background: var(--soft);
+  color: var(--main);
+  border-color: var(--border);
 }
 
 .selected-energy-mascot {
@@ -757,7 +852,7 @@ html.recovery-boot #authLoginForm {
 .preview-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }
@@ -767,18 +862,18 @@ html.recovery-boot #authLoginForm {
 }
 
 .preview-row strong {
-  color: var(--main);
+  color: var(--heading);
 }
 
 .preview-row span {
-  opacity: 0.72;
+  color: var(--muted-text);
   text-align: right;
 }
 
 .exercise-card h3 {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .prescription {
@@ -791,7 +886,7 @@ html.recovery-boot #authLoginForm {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 8px 0;
+  margin: var(--space-2) 0;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -804,15 +899,15 @@ html.recovery-boot #authLoginForm {
 }
 
 .rating-label {
-  margin: 14px 0 8px;
+  margin: 14px 0 var(--space-2);
   font-weight: 900;
 }
 
 .rating-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .rating-row button {
@@ -867,13 +962,13 @@ html.recovery-boot #authLoginForm {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 12px;
-  padding: 16px 0;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
   border: 0;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
   background: transparent;
-  color: var(--main);
+  color: var(--text);
   margin: 0;
 }
 
@@ -892,11 +987,10 @@ html.recovery-boot #authLoginForm {
 }
 
 .journey-summary span {
-  margin-top: 4px;
-  color: var(--main);
-  font-size: 16px;
+  margin-top: var(--space-1);
+  color: var(--muted-text);
+  font-size: var(--text-md);
   line-height: 1.28;
-  opacity: 0.72;
 }
 
 .journey-summary em {
@@ -913,7 +1007,7 @@ html.recovery-boot #authLoginForm {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
@@ -926,7 +1020,7 @@ html.recovery-boot #authLoginForm {
 .skill-row p,
 .level-row p {
   margin: 3px 0 0;
-  opacity: 0.72;
+  color: var(--muted-text);
   line-height: 1.35;
 }
 
@@ -1032,7 +1126,7 @@ html.recovery-boot #authLoginForm {
   margin: 8px 0;
   border-radius: 18px;
   background: var(--soft);
-  color: var(--main);
+  color: var(--text);
   text-align: left;
 }
 
@@ -1043,7 +1137,7 @@ html.recovery-boot #authLoginForm {
   white-space: nowrap;
   text-align: right;
   font-size: 13px;
-  opacity: 0.72;
+  color: var(--muted-text);
 }
 
 .account-full-btn {
@@ -1083,7 +1177,7 @@ html.recovery-boot #authLoginForm {
   margin-bottom: 6px;
   font-size: 11px;
   font-weight: 900;
-  opacity: 0.65;
+  color: var(--muted-text);
   text-align: center;
 }
 
@@ -1103,8 +1197,8 @@ html.recovery-boot #authLoginForm {
 }
 
 .history-day.has-workout {
-  border-color: var(--main);
-  background: var(--main);
+  border-color: var(--success);
+  background: var(--success);
   color: #ffffff;
 }
 
@@ -1129,7 +1223,7 @@ html.recovery-boot #authLoginForm {
 }
 
 .history-item span {
-  opacity: 0.72;
+  color: var(--muted-text);
   font-weight: 700;
 }
 
@@ -1194,7 +1288,7 @@ html.recovery-boot #authLoginForm {
   padding: 11px 8px;
   border: 0;
   background: transparent;
-  color: var(--main);
+  color: var(--muted-text);
 }
 
 .nav-btn.active {
