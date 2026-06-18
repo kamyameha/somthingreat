@@ -310,7 +310,7 @@ button {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(20px + 52px + 60px + env(safe-area-inset-bottom));
+  bottom: calc(20px + 52px + 38px + env(safe-area-inset-bottom));
   margin: 0;
 }
 
