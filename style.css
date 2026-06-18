@@ -994,7 +994,7 @@ h3 {
 .welcome-copy p {
   font-size: 14px;
   line-height: 1.25;
-  margin-bottom: 48px;
+  margin-bottom: 38px;
   opacity: 1;
 }
 
@@ -1253,7 +1253,7 @@ h2,
 }
 
 .welcome-copy p {
-  margin-bottom: 44px;
+  margin-bottom: 38px;
   opacity: 1;
 }
 
@@ -1413,7 +1413,7 @@ body {
 .welcome-copy {
   align-self: end;
   margin-top: 0;
-  margin-bottom: 44px;
+  margin-bottom: 38px;
 }
 
 .welcome-copy h1,
