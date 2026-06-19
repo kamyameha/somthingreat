@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-37-workout-timers';
+const APP_VERSION = 'v8-39-rest-option-cleanup';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -899,6 +899,16 @@ function updateAddOnSummary() {
   total.textContent = extras.length ? `Workout + ${extras.join(' · ')}` : 'Workout only';
 }
 
+function workoutToolSummary(workout) {
+  const base = sessionTotalLabel(workout);
+  const timerParts = [];
+  if (workout?.includeExerciseTimer) timerParts.push('exercise timers');
+  if (workout?.includeRestTimer) timerParts.push(`${workout.restTimerSeconds || 60}s rest`);
+  if (!timerParts.length) return base;
+  if (base === 'Workout only') return timerParts.join(' · ');
+  return `${base} · ${timerParts.join(' · ')}`;
+}
+
 function generateWorkout() {
   const option = energyOptions[state.selectedEnergy || 'normal'];
   const baseWorkout = getTodayWorkout(option.mode);
@@ -918,7 +928,7 @@ function renderGeneratedWorkout() {
   document.getElementById('generatedWorkoutCard').classList.remove('hidden');
   document.getElementById('exercisePreview').classList.remove('hidden');
   document.getElementById('workoutName').textContent = generated.workoutName;
-  document.getElementById('workoutMeta').textContent = `${modeLabel(generated.mode)} · ${sessionTotalLabel(generated)}`;
+  document.getElementById('workoutMeta').textContent = `${modeLabel(generated.mode)} · ${workoutToolSummary(generated)}`;
 
   const preview = document.getElementById('previewList');
   preview.innerHTML = '';
@@ -967,7 +977,7 @@ function renderExercises() {
 
   const titleCard = document.createElement('div');
   titleCard.className = 'hero-card';
-  titleCard.innerHTML = `<p class="muted-light">Today's workout</p><h2>${state.current.workoutName}</h2><p>${modeLabel(state.current.mode)} · ${sessionTotalLabel(state.current)}</p>`;
+  titleCard.innerHTML = `<p class="muted-light">Today's workout</p><h2>${state.current.workoutName}</h2><p>${modeLabel(state.current.mode)} · ${workoutToolSummary(state.current)}</p>`;
   list.appendChild(titleCard);
 
   state.current = sanitizeWorkout(state.current);

@@ -315,9 +315,7 @@
   justify-content: center;
   gap: 7px;
   min-height: 36px;
-  padding: 6px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 999px;
+  padding: 4px 8px;
   font-weight: 900;
 }
 
