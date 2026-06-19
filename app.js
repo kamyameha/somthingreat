@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-31-ipad-consistency';
+const APP_VERSION = 'v8-32-label-case';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -269,11 +269,11 @@ const modeLabel = workoutModule.modeLabel;
 const sessionTotalLabel = workoutModule.sessionTotalLabel;
 
 const goalLabels = {
-  pullup: 'First Pull-Up',
-  handstand: 'First Handstand',
-  lsit: 'First L-Sit',
-  muscleup: 'First Muscle-Up',
-  general: 'General Fitness'
+  pullup: 'First pull-up',
+  handstand: 'First handstand',
+  lsit: 'First L-sit',
+  muscleup: 'First muscle-up',
+  general: 'General fitness'
 };
 
 const equipmentLabels = {
@@ -954,12 +954,12 @@ function getGoalTrackKey(goal) {
 
 function getGoalJourneyTitle(goal) {
   return {
-    pullup: 'Pull-Up Journey',
-    muscleup: 'Muscle-Up Journey',
-    handstand: 'Handstand Journey',
-    lsit: 'L-Sit Journey',
-    general: 'General Fitness Path'
-  }[goal] || 'Goal Journey';
+    pullup: 'Pull-up journey',
+    muscleup: 'Muscle-up journey',
+    handstand: 'Handstand journey',
+    lsit: 'L-sit journey',
+    general: 'General fitness path'
+  }[goal] || 'Goal journey';
 }
 
 function renderGeneralGoalJourney(journey) {
@@ -989,7 +989,7 @@ function renderGoals() {
   const percent = Math.round(((level + 1) / track.length) * 100);
 
   const heroTitle = document.getElementById('goalHeroTitle');
-  if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'First Pull-Up';
+  if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'First pull-up';
   const progress = document.getElementById('pullupProgressBar');
   if (progress) progress.style.width = `${percent}%`;
 
@@ -1018,10 +1018,10 @@ function renderGoals() {
   }
 
   const skills = [
-    { key: 'pullup', label: 'Pull-Up' },
+    { key: 'pullup', label: 'Pull-up' },
     { key: 'handstand', label: 'Handstand' },
-    { key: 'lsit', label: 'L-Sit' },
-    { key: 'muscleup', label: 'Muscle-Up' }
+    { key: 'lsit', label: 'L-sit' },
+    { key: 'muscleup', label: 'Muscle-up' }
   ].filter(skill => goal === 'general' || skill.key !== goalTrackKey).slice(0, 3);
   const skillList = document.getElementById('skillList');
   if (!skillList) return;
@@ -1048,16 +1048,16 @@ function renderProgress() {
   const levels = document.getElementById('levelsList');
   levels.innerHTML = '';
   const labels = {
-    pushup: 'Push-Up',
-    pullup: 'Pull-Up',
+    pushup: 'Push-up',
+    pullup: 'Pull-up',
     dip: 'Dip',
     legs: 'Legs',
     core: 'Core',
-    crow: 'Crow Pose',
-    lsit: 'L-Sit',
+    crow: 'Crow pose',
+    lsit: 'L-sit',
     handstand: 'Handstand',
-    muscleup: 'Muscle-Up',
-    rope: 'Jump Rope'
+    muscleup: 'Muscle-up',
+    rope: 'Jump rope'
   };
 
   Object.keys(labels).forEach(key => {
