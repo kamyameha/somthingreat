@@ -1,0 +1,67 @@
+/* Welcome screen */
+.welcome-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  padding: 24px var(--screen-x) calc(var(--welcome-cta-bottom) + env(safe-area-inset-bottom));
+  background: var(--bg);
+  color: var(--main);
+}
+
+.welcome-inner {
+  width: 100%;
+  max-width: 560px;
+  min-height: calc(100dvh - 24px - var(--welcome-cta-bottom) - env(safe-area-inset-bottom));
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.welcome-star {
+  width: min(430px, 94vw);
+  height: min(430px, 94vw);
+  margin: 0 auto;
+  display: block;
+  object-fit: contain;
+}
+
+.welcome-copy {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--welcome-cta-bottom) + var(--auth-cta-height) + var(--auth-content-gap) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: var(--auth-control-width);
+  margin: 0;
+  z-index: 1;
+}
+
+.welcome-copy h1 {
+  color: var(--main);
+  font-size: var(--title-lg);
+  line-height: 1.08;
+  margin: 0 0 12px;
+  font-weight: 900;
+}
+
+.welcome-copy p {
+  color: var(--main);
+  font-size: var(--text-md);
+  line-height: 1.28;
+  margin: 0;
+}
+
+.welcome-next {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--welcome-cta-bottom) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: var(--auth-control-width);
+  padding: 0 18px;
+  margin: 0;
+  z-index: 20;
+}

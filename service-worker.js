@@ -1,17 +1,21 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-29-goal-help-polish';
+const CACHE_NAME = 'somthingreat-v8-30-css-help-cleanup';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=v8-29-goal-help-polish',
-  './auth.js?v=v8-29-goal-help-polish',
-  './workouts.js?v=v8-29-goal-help-polish',
-  './state.js?v=v8-29-goal-help-polish',
-  './account.js?v=v8-29-goal-help-polish',
-  './admin.js?v=v8-29-goal-help-polish',
-  './render.js?v=v8-29-goal-help-polish',
-  './app.js?v=v8-29-goal-help-polish',
+  './style.css?v=v8-30-css-help-cleanup',
+  './welcome.css?v=v8-30-css-help-cleanup',
+  './auth.css?v=v8-30-css-help-cleanup',
+  './workout.css?v=v8-30-css-help-cleanup',
+  './account.css?v=v8-30-css-help-cleanup',
+  './auth.js?v=v8-30-css-help-cleanup',
+  './workouts.js?v=v8-30-css-help-cleanup',
+  './state.js?v=v8-30-css-help-cleanup',
+  './account.js?v=v8-30-css-help-cleanup',
+  './admin.js?v=v8-30-css-help-cleanup',
+  './render.js?v=v8-30-css-help-cleanup',
+  './app.js?v=v8-30-css-help-cleanup',
   './version.json',
   './manifest.json',
   './supabase-config.js',

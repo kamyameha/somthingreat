@@ -1,0 +1,196 @@
+/* Logged-out auth screens */
+body.logged-out #onboarding,
+body.logged-out .screen,
+body.logged-out .bottom-nav,
+body.logged-out #accountBtn {
+  display: none !important;
+}
+
+.logged-out .app {
+  min-height: 100dvh;
+  padding: 24px var(--screen-x) calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+
+.logged-out .topbar {
+  margin-bottom: 42px;
+}
+
+.logged-out #accountPanel.card {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.logged-out #loggedOutAccount {
+  position: relative;
+  min-height: calc(100dvh - 84px - env(safe-area-inset-bottom));
+  min-height: calc(100svh - 84px - env(safe-area-inset-bottom));
+}
+
+.logged-out #authWelcome,
+.logged-out #authLoginForm,
+.logged-out #authResetForm {
+  display: block;
+  position: absolute;
+  inset: 0;
+  min-height: 100%;
+  padding-top: 0;
+}
+
+.logged-out #authWelcome.hidden,
+.logged-out #authLoginForm.hidden,
+.logged-out #authResetForm.hidden {
+  display: none !important;
+}
+
+#loggedOutAccount h2 {
+  color: var(--main);
+  font-size: var(--title-lg);
+  margin: 0 0 12px;
+}
+
+#loggedOutAccount .muted {
+  color: var(--main);
+  margin: 0 0 38px;
+}
+
+#loggedOutAccount .text-input,
+#loggedOutAccount .password-field {
+  height: 52px;
+  min-height: 52px;
+  margin: 0 0 16px;
+  border-radius: var(--radius);
+}
+
+#loggedOutAccount .text-input {
+  color: var(--main);
+  caret-color: var(--main);
+  padding: 0 16px;
+  font-size: var(--text-md);
+  line-height: 52px;
+}
+
+#loggedOutAccount .password-field {
+  display: block;
+}
+
+#loggedOutAccount .password-field .text-input {
+  height: 52px;
+  margin: 0;
+  padding-right: 88px;
+}
+
+.logged-out .auth-content {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--auth-cta-bottom) + var(--auth-cta-height) + var(--auth-content-gap) + env(safe-area-inset-bottom));
+}
+
+.logged-out .auth-content > :last-child {
+  margin-bottom: 0;
+}
+
+#loggedOutAccount .auth-message {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--auth-cta-bottom) + var(--auth-cta-height) + 14px + env(safe-area-inset-bottom));
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0 4px;
+  text-align: center;
+  pointer-events: auto;
+  z-index: 22;
+}
+
+#loggedOutAccount .auth-message:empty {
+  display: none;
+}
+
+.logged-out #authWelcome .account-submit,
+.logged-out #authLoginForm .account-submit,
+.logged-out #authResetForm .account-submit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--auth-cta-bottom) + env(safe-area-inset-bottom));
+  width: 100%;
+  margin: 0;
+  z-index: 1;
+}
+
+.auth-switch,
+.logged-out #authWelcome .auth-switch,
+.logged-out #authLoginForm .auth-switch {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--auth-cta-bottom) - var(--auth-footer-gap) - var(--auth-footer-line) + env(safe-area-inset-bottom));
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--main);
+}
+
+.logged-out #authWelcome .auth-switch *,
+.logged-out #authLoginForm .auth-switch * {
+  text-align: center;
+  color: var(--main);
+}
+
+#authLoginForm .text-btn {
+  align-self: flex-start;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+#authLoginForm h2 {
+  margin-top: 0;
+}
+
+/* Password recovery */
+.password-recovery-mode #onboarding,
+.password-recovery-mode .screen,
+.password-recovery-mode .bottom-nav,
+.password-recovery-mode #accountBtn {
+  display: none !important;
+}
+
+.password-recovery-mode #accountPanel {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.recovery-boot #welcomeScreen,
+html.recovery-boot #onboarding,
+html.recovery-boot .screen,
+html.recovery-boot .bottom-nav,
+html.recovery-boot #accountBtn {
+  display: none !important;
+}
+
+html.recovery-boot .app,
+html.recovery-boot #accountPanel,
+html.recovery-boot #loggedOutAccount,
+html.recovery-boot #authResetForm {
+  display: block !important;
+}
+
+html.recovery-boot #loggedInAccount,
+html.recovery-boot #authWelcome,
+html.recovery-boot #authLoginForm {
+  display: none !important;
+}

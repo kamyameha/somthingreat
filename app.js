@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-29-goal-help-polish';
+const APP_VERSION = 'v8-30-css-help-cleanup';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&

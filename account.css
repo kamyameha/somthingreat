@@ -1,0 +1,282 @@
+/* Account modal */
+.account-panel {
+  margin-top: 16px;
+}
+
+.account-panel.account-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 0;
+  padding: calc(24px + env(safe-area-inset-top)) var(--screen-x) calc(24px + env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: 0;
+  background: var(--bg);
+  box-shadow: none;
+  overflow-y: auto;
+}
+
+.account-panel.account-modal.hidden {
+  display: none !important;
+}
+
+.account-modal-content {
+  width: min(100%, 520px);
+  max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 22px 60px rgba(1, 45, 237, 0.22);
+}
+
+.account-panel.account-password-mode {
+  padding-top: calc(24px + env(safe-area-inset-top));
+}
+
+.account-panel.account-password-mode .account-modal-content {
+  max-height: none;
+  overflow: visible;
+  padding: 0 3px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.account-panel.account-password-mode .account-modal-header {
+  margin-bottom: 42px;
+}
+
+.account-panel.account-password-mode #accountModalTitle,
+.account-panel.account-password-mode #accountPasswordView .muted {
+  color: var(--main);
+}
+
+.account-panel.account-password-mode #accountPasswordView .muted {
+  margin-bottom: 38px;
+}
+
+.account-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.account-modal-header h2 {
+  margin-bottom: 0;
+}
+
+#closeAccountModalBtn {
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.account-section {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.account-section h3 {
+  margin-bottom: 10px;
+}
+
+.account-list-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+  border-radius: 18px;
+  background: var(--soft);
+  color: var(--text);
+  text-align: left;
+}
+
+.account-list-btn span {
+  max-width: 48%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  font-size: 13px;
+  color: var(--muted-text);
+}
+
+.support-email {
+  display: block;
+  color: var(--muted-text);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.account-full-btn {
+  width: 100%;
+  margin-top: 10px;
+}
+
+#logoutBtn {
+  background: var(--main);
+  color: #ffffff;
+  border-color: var(--main);
+}
+
+.account-view > .text-btn {
+  margin-bottom: 18px;
+}
+
+#accountHistoryView {
+  padding-top: 0;
+}
+
+.history-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.history-header h3 {
+  margin: 0;
+  text-align: center;
+}
+
+.history-weekdays,
+.history-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.history-weekdays {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--muted-text);
+  text-align: center;
+}
+
+.history-day {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  position: relative;
+  font-weight: 900;
+}
+
+.history-day span {
+  font-size: 12px;
+}
+
+.history-day.has-workout {
+  border-color: var(--main);
+  background: var(--main);
+  color: #ffffff;
+}
+
+.history-empty {
+  opacity: 0;
+}
+
+.history-list {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.history-item {
+  display: grid;
+  gap: 2px;
+  padding: 0 0 12px;
+  border-top: 0;
+}
+
+.history-item + .history-item {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.history-item span {
+  color: var(--muted-text);
+  font-weight: 700;
+}
+
+.history-list .muted {
+  margin: 0;
+}
+
+/* Admin dashboard */
+.admin-dashboard-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.admin-user-row {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.admin-user-row strong,
+.admin-user-row span {
+  display: block;
+}
+
+.admin-user-row span {
+  color: var(--muted-text);
+  font-size: 13px;
+}
+
+.admin-user-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-user-stats span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--main);
+  font-weight: 800;
+}
+
+.compact-admin-row {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.compact-admin-row > strong {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--main);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.compact-admin-row .admin-user-stats {
+  justify-content: flex-end;
+}
