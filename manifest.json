@@ -3,24 +3,24 @@
   "short_name": "Somthingreat",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#f7f7f7",
-  "theme_color": "#f7f7f7",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
-  {
-    "src": "192x192-PWA.png",
-    "sizes": "192x192",
-    "type": "image/png"
-  },
-  {
-    "src": "512x512-regular.png",
-    "sizes": "512x512",
-    "type": "image/png"
-  },
-  {
-    "src": "512x512-maskable.png",
-    "sizes": "512x512",
-    "type": "image/png",
-    "purpose": "maskable"
-  }
-]
+    {
+      "src": "192x192-PWA.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "512x512-regular.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }

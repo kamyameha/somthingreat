@@ -285,6 +285,7 @@
   padding: 0;
   background: #ffffff !important;
   overflow: hidden;
+  box-shadow: 0 -160px 0 #ffffff;
 }
 
 html.account-submenu-active,
@@ -415,7 +416,7 @@ body.account-submenu-active #accountPanel {
 .account-panel.account-modal.account-submenu-mode .account-view > .muted {
   flex: 0 0 100%;
   width: 100%;
-  margin: 0 0 25px;
+  margin: 0 0 20px;
   color: var(--main);
   font-size: 18px;
   line-height: 1.2;
@@ -471,7 +472,7 @@ body.account-submenu-active #accountPanel {
 }
 
 .account-panel.account-modal.account-submenu-mode #accountRecoveryView .muted {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .account-panel.account-modal.account-submenu-mode .recovery-select {
@@ -696,11 +697,11 @@ body.account-submenu-active #accountPanel {
 }
 
 .account-panel.account-modal.account-submenu-mode #accountSupportView > .muted {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .account-panel.account-modal.account-submenu-mode #accountAdminView > .muted {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   font-size: 16px;
   line-height: 1.45;
 }
@@ -731,7 +732,7 @@ body.account-submenu-active #accountPanel {
 
 .account-panel.account-modal.account-submenu-mode #accountSupportView .account-full-btn {
   flex: 0 0 100%;
-  margin-top: 52px;
+  margin-top: 33px;
 }
 
 .account-panel.account-modal.account-submenu-mode .admin-users-toggle {

@@ -16,6 +16,7 @@ body.welcome-active {
   padding: 0 var(--screen-x) calc(32px + env(safe-area-inset-bottom));
   background: #ffffff;
   color: var(--main);
+  box-shadow: 0 -160px 0 #ffffff;
 }
 
 .welcome-inner {
@@ -30,8 +31,8 @@ body.welcome-active {
 }
 
 .welcome-star {
-  width: min(369px, calc(100vw - 48px));
-  height: min(395px, calc((100vw - 48px) * 1.0705));
+  width: min(388px, calc((100vw - 48px) * 1.05));
+  height: min(415px, calc((100vw - 48px) * 1.124));
   padding-top: 71px;
   margin: 0 auto 91px;
   display: block;

@@ -43,9 +43,12 @@
   position: absolute;
   top: 20px;
   right: 20px;
-  min-width: 44px;
+  min-width: 26px;
   width: 26px;
   height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -1060,7 +1063,7 @@ body.workout-active .bottom-nav {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 19px;
-  margin: 46px 0 0;
+  margin: 41px 0 0;
   padding: 0;
   border: 0;
 }

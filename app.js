@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-67-targeted-ui';
+const APP_VERSION = 'v8-69-auth-support-polish';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -406,14 +406,31 @@ function isAdminUser() {
   return adminModule.isAdminUser(currentUser, ADMIN_EMAILS);
 }
 
-function canChangePassword() {
-  if (!currentUser) return false;
+function authProviders() {
+  if (!currentUser) return [];
   const identities = Array.isArray(currentUser.identities) ? currentUser.identities : [];
   const identityProviders = identities.map(identity => identity?.provider).filter(Boolean);
   const appProviders = Array.isArray(currentUser.app_metadata?.providers)
     ? currentUser.app_metadata.providers
     : [currentUser.app_metadata?.provider].filter(Boolean);
-  return [...identityProviders, ...appProviders].includes('email');
+  return [...identityProviders, ...appProviders];
+}
+
+function isGoogleUser() {
+  return authProviders().includes('google');
+}
+
+function canChangePassword() {
+  return authProviders().includes('email');
+}
+
+function getAccountDisplayName() {
+  if (!currentUser) return '';
+  const metadata = currentUser.user_metadata || {};
+  if (isGoogleUser()) {
+    return metadata.full_name || metadata.name || metadata.display_name || currentUser.email || '';
+  }
+  return currentUser.email || '';
 }
 
 function getCompletedWorkoutCount(savedState) {
@@ -2018,7 +2035,7 @@ function renderAccount() {
       accountBtn.classList.remove('hidden');
       accountBtn.textContent = 'Account';
     }
-    if (email) email.textContent = currentUser.email;
+    if (email) email.textContent = getAccountDisplayName();
     renderAccountMainSummary();
     if (!panel.classList.contains('account-open')) panel.classList.add('hidden');
   } else {
@@ -2248,13 +2265,10 @@ async function changePasswordFromAccount() {
       renderModule.setMessage(message, 'Log in again before changing your password.', 'error');
       return;
     }
-    renderModule.setMessage(message, 'Sending reset link...', 'info');
     const { error } = await sendPasswordResetToEmail(email);
     if (error) {
       renderModule.setMessage(message, friendlyAuthError(error.message), 'error');
-      return;
     }
-    renderModule.setMessage(message, 'Password reset link sent. Check your email.', 'success');
   });
 }
 
@@ -2263,40 +2277,42 @@ function resetSupportForm() {
 }
 
 async function sendSupportMessage() {
-  return withButtonLoading('sendSupportBtn', 'Submitting...', async () => {
-    const subjectInput = document.getElementById('supportSubjectInput');
-    const messageInput = document.getElementById('supportMessageInput');
-    const message = document.getElementById('supportMessage');
-    const subject = subjectInput?.value.trim() || '';
-    const body = messageInput?.value.trim() || '';
+  const button = document.getElementById('sendSupportBtn');
+  const subjectInput = document.getElementById('supportSubjectInput');
+  const messageInput = document.getElementById('supportMessageInput');
+  const message = document.getElementById('supportMessage');
+  const subject = subjectInput?.value.trim() || '';
+  const body = messageInput?.value.trim() || '';
 
-    if (!subject || !body) {
-      renderModule.setMessage(message, 'Add a subject and message first.', 'error');
-      return;
+  renderModule.setMessage(message, '', 'info');
+  if (!subject || !body) {
+    renderModule.setMessage(message, 'Add a subject and message first.', 'error');
+    return;
+  }
+  if (!supabaseClient || !currentUser) {
+    renderModule.setMessage(message, 'Log in again before sending support.', 'error');
+    return;
+  }
+
+  renderModule.setButtonLoading(button, true, 'Sending');
+  const { error } = await supabaseClient.functions.invoke('support-email', {
+    body: {
+      subject,
+      message: body,
+      email: currentUser.email || ''
     }
-    if (!supabaseClient || !currentUser) {
-      renderModule.setMessage(message, 'Log in again before sending support.', 'error');
-      return;
-    }
-
-    renderModule.setMessage(message, 'Sending...', 'info');
-    const { error } = await supabaseClient.functions.invoke('support-email', {
-      body: {
-        subject,
-        message: body,
-        email: currentUser.email || ''
-      }
-    });
-
-    if (error) {
-      renderModule.setMessage(message, 'Could not send it yet. Try again in a moment.', 'error');
-      return;
-    }
-
-    if (subjectInput) subjectInput.value = '';
-    if (messageInput) messageInput.value = '';
-    renderModule.setMessage(message, 'Message sent. We’ll get back to you soon.', 'success');
   });
+
+  if (error) {
+    renderModule.setButtonLoading(button, false);
+    renderModule.setMessage(message, 'Could not send it yet. Try again in a moment.', 'error');
+    return;
+  }
+
+  if (subjectInput) subjectInput.value = '';
+  if (messageInput) messageInput.value = '';
+  renderModule.setButtonLoading(button, true, 'Sent');
+  setTimeout(() => renderModule.setButtonLoading(button, false), 1600);
 }
 function renderActivity() {
   const yearSummary = document.getElementById('historyYearSummary');
@@ -2566,7 +2582,7 @@ async function loginWithGoogle() {
   clearRecoveryBootFlag();
   if (!supabaseClient) return setAuthMessage('Google connection is not configured yet.', 'error');
 
-  setAuthMessage('Opening Google...', 'info');
+  setAuthMessage('');
   const redirectTo = `${window.location.origin}${window.location.pathname}`;
   const { error } = await supabaseClient.auth.signInWithOAuth({
     provider: 'google',
@@ -2581,10 +2597,9 @@ async function sendPasswordReset() {
     const email = document.getElementById('loginEmailInput')?.value.trim();
     if (!email) return setAuthMessage('Enter your email first, then tap Forgot password.', 'error');
 
-    setAuthMessage('Sending reset link...', 'info');
+    setAuthMessage('');
     const { error } = await sendPasswordResetToEmail(email);
     if (error) return setAuthMessage(friendlyAuthError(error.message), 'error');
-    setAuthMessage('Password reset link sent. Check your email.', 'success');
   });
 }
 
