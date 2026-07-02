@@ -1,23 +1,23 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-70-screen-chrome-fix';
+const CACHE_NAME = 'somthingreat-v8-71-screen-chrome-fix';
 const APP_SHELL = [
   './',
   './index.html',
   './privacy/',
   './privacy/index.html',
-  './style.css?v=v8-70-screen-chrome-fix',
-  './welcome.css?v=v8-70-screen-chrome-fix',
-  './auth.css?v=v8-70-screen-chrome-fix',
-  './workout.css?v=v8-70-screen-chrome-fix',
-  './account.css?v=v8-70-screen-chrome-fix',
+  './style.css?v=v8-71-screen-chrome-fix',
+  './welcome.css?v=v8-71-screen-chrome-fix',
+  './auth.css?v=v8-71-screen-chrome-fix',
+  './workout.css?v=v8-71-screen-chrome-fix',
+  './account.css?v=v8-71-screen-chrome-fix',
   './auth.js?v=v8-65-recovery-spacing',
   './workouts.js?v=v8-66-workout-polish',
   './state.js?v=v8-65-recovery-spacing',
   './account.js?v=v8-65-recovery-spacing',
   './admin.js?v=v8-65-recovery-spacing',
   './render.js?v=v8-65-recovery-spacing',
-  './app.js?v=v8-70-screen-chrome-fix',
+  './app.js?v=v8-71-screen-chrome-fix',
   './version.json',
   './manifest.json',
   './supabase-config.js',
