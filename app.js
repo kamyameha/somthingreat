@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-72-safe-recovery';
+const APP_VERSION = 'v8-73-update-banner-fix';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -1877,12 +1877,16 @@ function updateConditionalQuestions() {
 
 function isSafeToShowUpdateBanner() {
   const accountPanel = document.getElementById('accountPanel');
+  const loggedOut = document.getElementById('loggedOutAccount');
   const onboarding = document.getElementById('onboarding');
   return Boolean(
     updateBannerReady &&
+    currentUser &&
     !passwordRecoveryMode &&
     !state.current &&
-    !accountPanel?.classList.contains('account-open')
+    !accountPanel?.classList.contains('account-open') &&
+    loggedOut?.classList.contains('hidden') &&
+    onboarding?.classList.contains('hidden')
   );
 }
 
@@ -1911,14 +1915,34 @@ function applyWaitingUpdate() {
   updateBannerReady = false;
   const banner = document.getElementById('updateBanner');
   if (banner) banner.classList.add('hidden');
-  if (waitingServiceWorker) {
-    waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+
+  const reloadSoon = () => {
     window.setTimeout(() => {
       window.location.reload();
-    }, 1200);
+    }, 600);
+  };
+
+  const activateWorker = worker => {
+    if (!worker) {
+      reloadSoon();
+      return;
+    }
+    try {
+      worker.postMessage({ type: 'SKIP_WAITING' });
+    } catch (error) {
+      console.warn('Service worker activation failed:', error);
+    }
+    reloadSoon();
+  };
+
+  if (waitingServiceWorker) {
+    activateWorker(waitingServiceWorker);
     return;
   }
-  window.location.reload();
+
+  navigator.serviceWorker?.getRegistration?.()
+    .then(registration => activateWorker(registration?.waiting))
+    .catch(() => reloadSoon());
 }
 
 async function checkLiveVersion() {
