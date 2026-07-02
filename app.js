@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-71-screen-chrome-fix';
+const APP_VERSION = 'v8-72-update-banner-fix';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -1911,9 +1911,19 @@ function markVersionUpdateReady() {
   updateUpdateBanner();
 }
 
+function clearVersionUpdateReady() {
+  versionUpdateReady = false;
+  updateBannerReady = Boolean(waitingServiceWorker);
+  updateUpdateBanner();
+}
+
 function applyWaitingUpdate() {
   if (applyingUpdate) return;
   applyingUpdate = true;
+  updateBannerReady = false;
+  versionUpdateReady = false;
+  updateUpdateBanner();
+
   if (waitingServiceWorker) {
     waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
     window.setTimeout(() => {
@@ -1921,7 +1931,12 @@ function applyWaitingUpdate() {
     }, 1200);
     return;
   }
-  window.location.reload();
+
+  // Version-only updates can happen before a waiting service worker exists.
+  // Use a cache-busting reload so the page cannot keep re-opening the old app shell.
+  const url = new URL(window.location.href);
+  url.searchParams.set('refresh', Date.now().toString());
+  window.location.replace(url.toString());
 }
 
 async function checkLiveVersion() {
@@ -1931,8 +1946,12 @@ async function checkLiveVersion() {
     const response = await fetch(`./version.json?ts=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) return;
     const data = await response.json();
-    if (data?.version && data.version !== APP_VERSION) {
+    if (!data?.version) return;
+
+    if (data.version !== APP_VERSION) {
       markVersionUpdateReady();
+    } else if (versionUpdateReady) {
+      clearVersionUpdateReady();
     }
   } catch (error) {
     // Version polling is only a helper; service-worker update checks still run.
