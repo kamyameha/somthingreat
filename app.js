@@ -225,7 +225,11 @@ function setWelcomeVisible(visible) {
 
   document.documentElement.classList.toggle('welcome-active', visible);
   document.body.classList.toggle('welcome-active', visible);
-  if (visible) setThemeColor('#ffffff');
+  if (visible) {
+    document.documentElement.classList.remove('onboarding-active', 'account-submenu-active');
+    document.body.classList.remove('onboarding-active', 'account-main-active', 'account-submenu-active');
+    setThemeColor('#ffffff');
+  }
   if (welcome) welcome.classList.toggle('hidden', !visible);
   if (app) app.classList.toggle('hidden', visible);
   // Only force-hide the bottom nav while the welcome screen is open.
@@ -400,6 +404,11 @@ function setThemeColor(color = '#ffffff') {
   if (meta) meta.setAttribute('content', color);
   document.documentElement.style.setProperty('background-color', color, 'important');
   document.body.style.setProperty('background-color', color, 'important');
+}
+
+function resetScreenModeClasses() {
+  document.documentElement.classList.remove('welcome-active', 'onboarding-active', 'account-submenu-active');
+  document.body.classList.remove('welcome-active', 'onboarding-active', 'account-main-active', 'account-submenu-active');
 }
 
 function isAdminUser() {
@@ -660,6 +669,8 @@ async function loadCloudStateInBackground() {
 
 function setAuthMode(mode = 'welcome') {
   blurActiveAuthField();
+  document.documentElement.classList.remove('onboarding-active', 'account-submenu-active');
+  document.body.classList.remove('onboarding-active', 'account-main-active', 'account-submenu-active');
   setThemeColor('#ffffff');
   const welcome = document.getElementById('authWelcome');
   const login = document.getElementById('authLoginForm');
@@ -1763,12 +1774,16 @@ function renderOnboarding() {
     onboarding.classList.add('hidden');
     document.documentElement.classList.remove('onboarding-active');
     document.body.classList.remove('onboarding-active');
+    setThemeColor('#ffffff');
     return;
   }
 
   onboarding.classList.remove('hidden');
+  document.documentElement.classList.remove('welcome-active', 'account-submenu-active');
+  document.body.classList.remove('welcome-active', 'account-main-active', 'account-submenu-active');
   document.documentElement.classList.add('onboarding-active');
   document.body.classList.add('onboarding-active');
+  setThemeColor('#012ded');
   renderOnboardingStep();
 }
 
