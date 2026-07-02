@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-69-auth-support-polish';
+const APP_VERSION = 'v8-72-safe-recovery';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -225,7 +225,11 @@ function setWelcomeVisible(visible) {
 
   document.documentElement.classList.toggle('welcome-active', visible);
   document.body.classList.toggle('welcome-active', visible);
-  if (visible) setThemeColor('#ffffff');
+  if (visible) {
+    document.documentElement.classList.remove('onboarding-active', 'account-submenu-active');
+    document.body.classList.remove('onboarding-active', 'account-submenu-active');
+    setThemeColor('#ffffff');
+  }
   if (welcome) welcome.classList.toggle('hidden', !visible);
   if (app) app.classList.toggle('hidden', visible);
   // Only force-hide the bottom nav while the welcome screen is open.
@@ -1763,12 +1767,16 @@ function renderOnboarding() {
     onboarding.classList.add('hidden');
     document.documentElement.classList.remove('onboarding-active');
     document.body.classList.remove('onboarding-active');
+    setThemeColor('#ffffff');
     return;
   }
 
   onboarding.classList.remove('hidden');
+  document.documentElement.classList.remove('welcome-active', 'account-submenu-active');
+  document.body.classList.remove('welcome-active', 'account-submenu-active');
   document.documentElement.classList.add('onboarding-active');
   document.body.classList.add('onboarding-active');
+  setThemeColor('#012ded');
   renderOnboardingStep();
 }
 
@@ -1899,6 +1907,10 @@ function markVersionUpdateReady() {
 function applyWaitingUpdate() {
   if (applyingUpdate) return;
   applyingUpdate = true;
+  versionUpdateReady = false;
+  updateBannerReady = false;
+  const banner = document.getElementById('updateBanner');
+  if (banner) banner.classList.add('hidden');
   if (waitingServiceWorker) {
     waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
     window.setTimeout(() => {
@@ -1910,20 +1922,10 @@ function applyWaitingUpdate() {
 }
 
 async function checkLiveVersion() {
-  if (versionCheckInProgress || document.hidden) return;
-  versionCheckInProgress = true;
-  try {
-    const response = await fetch(`./version.json?ts=${Date.now()}`, { cache: 'no-store' });
-    if (!response.ok) return;
-    const data = await response.json();
-    if (data?.version && data.version !== APP_VERSION) {
-      markVersionUpdateReady();
-    }
-  } catch (error) {
-    // Version polling is only a helper; service-worker update checks still run.
-  } finally {
-    versionCheckInProgress = false;
-  }
+  // Recovery note: the update banner is driven by the service worker only.
+  // Avoid using version.json as a second trigger, because a cached app.js with
+  // a newer version.json can keep the banner visible forever after a rollback.
+  versionCheckInProgress = false;
 }
 
 

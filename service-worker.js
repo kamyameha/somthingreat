@@ -1,23 +1,23 @@
 // Release rule: when deploying, keep this cache name aligned with the
 // CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-69-auth-support-polish';
+const CACHE_NAME = 'somthingreat-v8-72-safe-recovery';
 const APP_SHELL = [
   './',
   './index.html',
   './privacy/',
   './privacy/index.html',
-  './style.css?v=v8-69-auth-support-polish',
-  './welcome.css?v=v8-69-auth-support-polish',
-  './auth.css?v=v8-69-auth-support-polish',
-  './workout.css?v=v8-69-auth-support-polish',
-  './account.css?v=v8-69-auth-support-polish',
+  './style.css?v=v8-72-safe-recovery',
+  './welcome.css?v=v8-72-safe-recovery',
+  './auth.css?v=v8-72-safe-recovery',
+  './workout.css?v=v8-72-safe-recovery',
+  './account.css?v=v8-72-safe-recovery',
   './auth.js?v=v8-65-recovery-spacing',
   './workouts.js?v=v8-66-workout-polish',
   './state.js?v=v8-65-recovery-spacing',
   './account.js?v=v8-65-recovery-spacing',
   './admin.js?v=v8-65-recovery-spacing',
   './render.js?v=v8-65-recovery-spacing',
-  './app.js?v=v8-69-auth-support-polish',
+  './app.js?v=v8-72-safe-recovery',
   './version.json',
   './manifest.json',
   './supabase-config.js',
