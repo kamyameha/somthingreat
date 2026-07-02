@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-72-update-banner-fix';
+const APP_VERSION = 'v8-69-auth-support-polish';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -225,11 +225,7 @@ function setWelcomeVisible(visible) {
 
   document.documentElement.classList.toggle('welcome-active', visible);
   document.body.classList.toggle('welcome-active', visible);
-  if (visible) {
-    document.documentElement.classList.remove('onboarding-active', 'account-submenu-active');
-    document.body.classList.remove('onboarding-active', 'account-main-active', 'account-submenu-active');
-    setThemeColor('#ffffff');
-  }
+  if (visible) setThemeColor('#ffffff');
   if (welcome) welcome.classList.toggle('hidden', !visible);
   if (app) app.classList.toggle('hidden', visible);
   // Only force-hide the bottom nav while the welcome screen is open.
@@ -404,11 +400,6 @@ function setThemeColor(color = '#ffffff') {
   if (meta) meta.setAttribute('content', color);
   document.documentElement.style.setProperty('background-color', color, 'important');
   document.body.style.setProperty('background-color', color, 'important');
-}
-
-function resetScreenModeClasses() {
-  document.documentElement.classList.remove('welcome-active', 'onboarding-active', 'account-submenu-active');
-  document.body.classList.remove('welcome-active', 'onboarding-active', 'account-main-active', 'account-submenu-active');
 }
 
 function isAdminUser() {
@@ -669,8 +660,6 @@ async function loadCloudStateInBackground() {
 
 function setAuthMode(mode = 'welcome') {
   blurActiveAuthField();
-  document.documentElement.classList.remove('onboarding-active', 'account-submenu-active');
-  document.body.classList.remove('onboarding-active', 'account-main-active', 'account-submenu-active');
   setThemeColor('#ffffff');
   const welcome = document.getElementById('authWelcome');
   const login = document.getElementById('authLoginForm');
@@ -1774,16 +1763,12 @@ function renderOnboarding() {
     onboarding.classList.add('hidden');
     document.documentElement.classList.remove('onboarding-active');
     document.body.classList.remove('onboarding-active');
-    setThemeColor('#ffffff');
     return;
   }
 
   onboarding.classList.remove('hidden');
-  document.documentElement.classList.remove('welcome-active', 'account-submenu-active');
-  document.body.classList.remove('welcome-active', 'account-main-active', 'account-submenu-active');
   document.documentElement.classList.add('onboarding-active');
   document.body.classList.add('onboarding-active');
-  setThemeColor('#012ded');
   renderOnboardingStep();
 }
 
@@ -1911,19 +1896,9 @@ function markVersionUpdateReady() {
   updateUpdateBanner();
 }
 
-function clearVersionUpdateReady() {
-  versionUpdateReady = false;
-  updateBannerReady = Boolean(waitingServiceWorker);
-  updateUpdateBanner();
-}
-
 function applyWaitingUpdate() {
   if (applyingUpdate) return;
   applyingUpdate = true;
-  updateBannerReady = false;
-  versionUpdateReady = false;
-  updateUpdateBanner();
-
   if (waitingServiceWorker) {
     waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
     window.setTimeout(() => {
@@ -1931,12 +1906,7 @@ function applyWaitingUpdate() {
     }, 1200);
     return;
   }
-
-  // Version-only updates can happen before a waiting service worker exists.
-  // Use a cache-busting reload so the page cannot keep re-opening the old app shell.
-  const url = new URL(window.location.href);
-  url.searchParams.set('refresh', Date.now().toString());
-  window.location.replace(url.toString());
+  window.location.reload();
 }
 
 async function checkLiveVersion() {
@@ -1946,12 +1916,8 @@ async function checkLiveVersion() {
     const response = await fetch(`./version.json?ts=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) return;
     const data = await response.json();
-    if (!data?.version) return;
-
-    if (data.version !== APP_VERSION) {
+    if (data?.version && data.version !== APP_VERSION) {
       markVersionUpdateReady();
-    } else if (versionUpdateReady) {
-      clearVersionUpdateReady();
     }
   } catch (error) {
     // Version polling is only a helper; service-worker update checks still run.
