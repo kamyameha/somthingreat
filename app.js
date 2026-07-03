@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-76-clean-screen-colors';
+const APP_VERSION = 'v8-77-screen-top-activity-focus';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -227,8 +227,8 @@ function setWelcomeVisible(visible) {
   document.documentElement.classList.toggle('welcome-active', visible);
   document.body.classList.toggle('welcome-active', visible);
   if (visible) {
-    document.documentElement.classList.remove('onboarding-active', 'account-main-active', 'account-submenu-active', 'workout-active');
-    document.body.classList.remove('onboarding-active', 'account-main-active', 'account-submenu-active', 'workout-active');
+    document.documentElement.classList.remove('onboarding-active', 'confirmation-active', 'account-main-active', 'account-submenu-active', 'workout-active');
+    document.body.classList.remove('onboarding-active', 'confirmation-active', 'account-main-active', 'account-submenu-active', 'workout-active');
     document.getElementById('accountPanel')?.classList.remove('account-main-mode', 'account-submenu-mode');
     syncScreenThemeColor();
   }
@@ -277,10 +277,10 @@ const modeLabel = workoutModule.modeLabel;
 const sessionTotalLabel = workoutModule.sessionTotalLabel;
 
 const goalLabels = {
-  pullup: 'First pull-up',
-  handstand: 'First handstand',
-  lsit: 'First L-sit',
-  muscleup: 'First muscle-up',
+  pullup: 'Pull-up',
+  handstand: 'Handstand',
+  lsit: 'L-Sit',
+  muscleup: 'Muscle-up',
   general: 'General fitness'
 };
 
@@ -404,6 +404,10 @@ function normaliseEmail(email = '') {
 function setThemeColor(color = '#ffffff') {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', color);
+  const statusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (statusMeta) {
+    statusMeta.setAttribute('content', color.toLowerCase() === '#012ded' ? 'black-translucent' : 'default');
+  }
 }
 
 function syncScreenThemeColor() {
@@ -1331,14 +1335,20 @@ function showConfirmPanel({ title, message, actionLabel, onConfirm }) {
   const titleEl = document.getElementById('confirmTitle');
   const messageEl = document.getElementById('confirmMessage');
   const actionBtn = document.getElementById('confirmActionBtn');
-  if (!panel || !titleEl || !messageEl || !actionBtn) return;
+  const cancelBtn = document.getElementById('confirmCancelBtn');
+  if (!panel || !titleEl || !messageEl || !actionBtn || !cancelBtn) return;
 
   lastFocusedElement = document.activeElement;
   pendingConfirmAction = onConfirm;
   titleEl.textContent = title;
   messageEl.textContent = message;
   actionBtn.textContent = actionLabel;
+  cancelBtn.textContent = 'Go back';
+  panel.classList.remove('workout-completion-panel', 'auto-complete');
+  document.getElementById('confirmActionBtn')?.classList.remove('hidden');
+  document.getElementById('confirmCancelBtn')?.classList.remove('hidden');
   panel.classList.remove('hidden');
+  syncScreenThemeColor();
   renderModule.focusFirstInteractive(panel);
 }
 
@@ -1696,6 +1706,44 @@ function countableHistory() {
   return state.history.filter(hasCountableWorkoutProgress);
 }
 
+function historyEntryId(item = {}) {
+  const source = [
+    item.date || '',
+    item.workout || '',
+    item.mode || '',
+    item.type || '',
+    item.customType || ''
+  ].join('|');
+  let hash = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = ((hash << 5) - hash) + source.charCodeAt(index);
+    hash |= 0;
+  }
+  return `${Date.parse(item.date) || 0}-${Math.abs(hash)}`;
+}
+
+function removeHistoryEntry(entryId) {
+  const index = state.history.findIndex(item => historyEntryId(item) === entryId);
+  if (index === -1) return;
+  state.history.splice(index, 1);
+  saveState();
+  renderToday();
+  renderProgress();
+  renderActivity();
+  renderAccount();
+}
+
+function requestRemoveHistoryEntry(entryId) {
+  const item = state.history.find(historyItem => historyEntryId(historyItem) === entryId);
+  if (!item) return;
+  showConfirmPanel({
+    title: 'Delete workout?',
+    message: 'This removes it from Activity and Progress.',
+    actionLabel: 'Delete',
+    onConfirm: () => removeHistoryEntry(entryId)
+  });
+}
+
 function renderGeneralGoalProgress() {
   const total = countableHistory().length;
   const percent = Math.min(100, Math.round((Math.min(total, 12) / 12) * 100));
@@ -1714,7 +1762,7 @@ function renderProgress() {
   const percent = Math.round(((level + 1) / track.length) * 100);
 
   const heroTitle = document.getElementById('goalHeroTitle');
-  if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'First pull-up';
+  if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'Pull-up';
   const progress = document.getElementById('pullupProgressBar');
   if (progress) progress.style.width = `${percent}%`;
   if (goal === 'general') renderGeneralGoalProgress();
@@ -2501,7 +2549,16 @@ function renderActivity() {
       const label = item.type === 'custom'
         ? `${item.workout || 'Custom checklist'} - Custom`
         : `${item.workout || 'Workout'} - ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
-      return `<div class="history-item"><strong>${escapeHTML(dateLabel)}</strong><span>${escapeHTML(label)}</span></div>`;
+      const entryId = escapeHTML(historyEntryId(item));
+      return `
+        <div class="history-item">
+          <div class="history-item-copy">
+            <strong>${escapeHTML(dateLabel)}</strong>
+            <span>${escapeHTML(label)}</span>
+          </div>
+          <button class="history-delete-btn" type="button" data-history-delete="${entryId}" aria-label="Delete ${escapeHTML(label)}">Delete</button>
+        </div>
+      `;
     }).join('')
     : '';
 }
@@ -2999,6 +3056,11 @@ document.addEventListener('click', event => {
     list?.classList.toggle('hidden', isOpen);
     event.target.classList.toggle('is-open', !isOpen);
     event.target.setAttribute('aria-expanded', String(!isOpen));
+  }
+  const historyDeleteButton = event.target.closest('[data-history-delete]');
+  if (historyDeleteButton) {
+    requestRemoveHistoryEntry(historyDeleteButton.dataset.historyDelete);
+    return;
   }
   const historyDayButton = event.target.closest('[data-history-day]');
   if (historyDayButton && !historyDayButton.disabled) {

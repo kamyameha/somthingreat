@@ -678,6 +678,25 @@ body.account-main-active:not(.logged-out)::before {
   font-weight: 700;
 }
 
+.history-item-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.history-delete-btn {
+  justify-self: start;
+  min-height: 34px;
+  padding: 0 16px;
+  border: 1px solid currentColor;
+  border-radius: 18px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+}
+
 .history-list .muted {
   margin: 0;
 }
@@ -892,6 +911,8 @@ body.account-main-active:not(.logged-out)::before {
 
 .account-panel.account-modal.account-submenu-mode .history-item {
   display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   gap: 12px;
   padding: 20px;
   border: 0;
@@ -917,6 +938,10 @@ body.account-main-active:not(.logged-out)::before {
   font-size: 18px;
   line-height: 1.1;
   font-weight: 400;
+}
+
+.account-panel.account-modal.account-submenu-mode .history-delete-btn {
+  color: #ffffff;
 }
 
 .activity-screen .activity-summary-card,
@@ -1069,6 +1094,8 @@ body.account-main-active:not(.logged-out)::before {
 
 .activity-screen .history-item {
   display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   gap: 15px;
   min-height: auto;
   align-content: start;
@@ -1103,6 +1130,17 @@ body.account-main-active:not(.logged-out)::before {
   font-size: 18px;
   line-height: 1.2;
   font-weight: 400;
+}
+
+.activity-screen .history-delete-btn {
+  color: #ffffff;
+}
+
+@media (max-width: 380px) {
+  .activity-screen .history-item,
+  .account-panel.account-modal.account-submenu-mode .history-item {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Admin dashboard */
