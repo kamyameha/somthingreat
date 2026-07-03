@@ -2320,7 +2320,7 @@ async function sendSupportMessage() {
     return;
   }
 
-  renderModule.setButtonLoading(button, true, 'Sending');
+ renderModule.setButtonLoading(button, true, 'Sending');
 
 const { error } = await supabaseClient.functions.invoke('support-email', {
   body: {
