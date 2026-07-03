@@ -60,38 +60,9 @@ body {
   line-height: 1.35;
 }
 
-html,
-body {
-  background-color: #ffffff !important;
-}
-
-html.logged-out,
-html.logged-out body,
-html.welcome-active,
-html.welcome-active body {
-  background: #ffffff !important;
-}
-
 body.logged-out {
   min-height: 100dvh;
   overflow: hidden;
-}
-
-body.logged-out::before,
-html.logged-out::before,
-body.welcome-active::before,
-html.welcome-active::before,
-html.account-submenu-active::before,
-body.account-submenu-active::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top);
-  background: #ffffff;
-  pointer-events: none;
-  z-index: 10000;
 }
 
 h1,
@@ -610,12 +581,20 @@ button:disabled {
 html.onboarding-active,
 html.onboarding-active body,
 body.onboarding-active {
-  background: var(--main) !important;
+  background: var(--main);
   overflow: hidden;
 }
 
+html.confirmation-active,
+html.confirmation-active body,
+body.confirmation-active {
+  background: var(--main);
+}
+
 html.onboarding-active::before,
-body.onboarding-active::before {
+body.onboarding-active::before,
+html.confirmation-active::before,
+body.confirmation-active::before {
   content: "";
   position: fixed;
   top: 0;

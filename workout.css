@@ -548,24 +548,6 @@ body.workout-active {
   background: #ffffff;
 }
 
-html.workout-active,
-html.workout-active body {
-  background: #ffffff !important;
-}
-
-html.workout-active::before,
-body.workout-active::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top);
-  background: #ffffff;
-  pointer-events: none;
-  z-index: 10000;
-}
-
 body.workout-active .app {
   width: min(393px, 100%);
   padding: 0 20px 44px;
@@ -1372,23 +1354,28 @@ body.workout-active .bottom-nav {
 .custom-checklist-actions {
   display: flex;
   align-items: center;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 19px;
   margin-top: 44px;
 }
 
 .custom-checklist-actions .primary-btn,
 .custom-checklist-actions .secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 1 1 0;
   width: auto;
   min-width: 0;
   height: 46px;
   min-height: 46px;
+  margin: 0;
   padding: 0;
   border: 0;
   border-radius: 20px;
   font-size: 16px;
   font-weight: 500;
+  line-height: 1;
+  vertical-align: top;
 }
 
 .custom-checklist-actions .primary-btn {

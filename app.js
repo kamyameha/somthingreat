@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-74-ui-flow-fixes';
+const APP_VERSION = 'v8-76-clean-screen-colors';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -227,9 +227,10 @@ function setWelcomeVisible(visible) {
   document.documentElement.classList.toggle('welcome-active', visible);
   document.body.classList.toggle('welcome-active', visible);
   if (visible) {
-    document.documentElement.classList.remove('onboarding-active', 'account-submenu-active');
-    document.body.classList.remove('onboarding-active', 'account-submenu-active');
-    setThemeColor('#ffffff');
+    document.documentElement.classList.remove('onboarding-active', 'account-main-active', 'account-submenu-active', 'workout-active');
+    document.body.classList.remove('onboarding-active', 'account-main-active', 'account-submenu-active', 'workout-active');
+    document.getElementById('accountPanel')?.classList.remove('account-main-mode', 'account-submenu-mode');
+    syncScreenThemeColor();
   }
   if (welcome) welcome.classList.toggle('hidden', !visible);
   if (app) app.classList.toggle('hidden', visible);
@@ -403,8 +404,15 @@ function normaliseEmail(email = '') {
 function setThemeColor(color = '#ffffff') {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', color);
-  document.documentElement.style.setProperty('background-color', color, 'important');
-  document.body.style.setProperty('background-color', color, 'important');
+}
+
+function syncScreenThemeColor() {
+  const root = document.documentElement;
+  const isLoggedOut = root.classList.contains('logged-out');
+  const isBlueScreen = root.classList.contains('onboarding-active') ||
+    root.classList.contains('confirmation-active') ||
+    (root.classList.contains('account-main-active') && !isLoggedOut);
+  setThemeColor(isBlueScreen ? '#012ded' : '#ffffff');
 }
 
 function isAdminUser() {
@@ -665,7 +673,10 @@ async function loadCloudStateInBackground() {
 
 function setAuthMode(mode = 'welcome') {
   blurActiveAuthField();
-  setThemeColor('#ffffff');
+  document.documentElement.classList.remove('account-main-active', 'account-submenu-active', 'workout-active');
+  document.body.classList.remove('account-main-active', 'account-submenu-active', 'workout-active');
+  document.getElementById('accountPanel')?.classList.remove('account-main-mode', 'account-submenu-mode');
+  syncScreenThemeColor();
   const welcome = document.getElementById('authWelcome');
   const login = document.getElementById('authLoginForm');
   const reset = document.getElementById('authResetForm');
@@ -1337,6 +1348,8 @@ function closeConfirmPanel() {
     panel.classList.add('hidden');
     panel.classList.remove('workout-completion-panel', 'auto-complete');
   }
+  document.documentElement.classList.remove('confirmation-active');
+  document.body.classList.remove('confirmation-active');
   document.getElementById('confirmActionBtn')?.classList.remove('hidden');
   document.getElementById('confirmCancelBtn')?.classList.remove('hidden');
   pendingConfirmAction = null;
@@ -1344,6 +1357,7 @@ function closeConfirmPanel() {
     lastFocusedElement.focus();
   }
   lastFocusedElement = null;
+  syncScreenThemeColor();
 }
 
 function showExerciseHelp(exerciseName) {
@@ -1574,10 +1588,13 @@ function showCompletionScreen({ title, message, actionLabel = '', cancelLabel = 
   actionBtn.textContent = actionLabel;
   cancelBtn.textContent = cancelLabel;
   panel.classList.add('workout-completion-panel');
+  document.documentElement.classList.add('confirmation-active');
+  document.body.classList.add('confirmation-active');
   panel.classList.toggle('auto-complete', Boolean(autoClose));
   actionBtn.classList.toggle('hidden', autoClose || !actionLabel);
   cancelBtn.classList.toggle('hidden', autoClose || !cancelLabel);
   panel.classList.remove('hidden');
+  syncScreenThemeColor();
 
   if (autoClose) {
     window.setTimeout(() => {
@@ -1811,7 +1828,7 @@ function renderOnboarding() {
     onboarding.classList.add('hidden');
     document.documentElement.classList.remove('onboarding-active');
     document.body.classList.remove('onboarding-active');
-    setThemeColor('#ffffff');
+    syncScreenThemeColor();
     return;
   }
 
@@ -1820,7 +1837,7 @@ function renderOnboarding() {
   document.body.classList.remove('welcome-active', 'account-submenu-active');
   document.documentElement.classList.add('onboarding-active');
   document.body.classList.add('onboarding-active');
-  setThemeColor('#012ded');
+  syncScreenThemeColor();
   renderOnboardingStep();
 }
 
@@ -2069,6 +2086,13 @@ function renderAccount() {
 
   panel.classList.toggle('account-modal', Boolean(currentUser));
 
+  if (!currentUser) {
+    panel.classList.remove('account-main-mode', 'account-submenu-mode');
+    document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
+    document.body.classList.remove('account-main-active', 'account-submenu-active');
+    syncScreenThemeColor();
+  }
+
   if (!SUPABASE_READY) {
     panel.classList.remove('hidden');
     panel.classList.remove('account-modal');
@@ -2136,7 +2160,7 @@ function closeAccountModal() {
   showAccountView('main');
   document.body.classList.remove('account-main-active', 'account-submenu-active');
   document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
-  setThemeColor('#ffffff');
+  syncScreenThemeColor();
   updateUpdateBanner();
 }
 
@@ -2161,7 +2185,7 @@ function showAccountView(view) {
   document.documentElement.classList.toggle('account-main-active', isMainView);
   document.body.classList.toggle('account-submenu-active', isSubmenuView);
   document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
-  setThemeColor(isMainView ? '#012ded' : '#ffffff');
+  syncScreenThemeColor();
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
   if (view === 'goal') populateAccountGoal();

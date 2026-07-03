@@ -132,16 +132,16 @@
   border-color: var(--main);
 }
 
-html.account-main-active,
-html.account-main-active body,
-body.account-main-active,
-body.account-main-active .app,
-body.account-main-active #accountPanel {
-  background: var(--main) !important;
+html.account-main-active:not(.logged-out),
+html.account-main-active:not(.logged-out) body,
+body.account-main-active:not(.logged-out),
+body.account-main-active:not(.logged-out) .app,
+body.account-main-active:not(.logged-out) #accountPanel {
+  background: var(--main);
 }
 
-html.account-main-active::before,
-body.account-main-active::before {
+html.account-main-active:not(.logged-out)::before,
+body.account-main-active:not(.logged-out)::before {
   content: "";
   position: fixed;
   top: 0;
@@ -304,29 +304,8 @@ body.account-main-active::before {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 0;
-  background: #ffffff !important;
-  overflow: hidden;
-  box-shadow: 0 -160px 0 #ffffff;
-}
-
-html.account-submenu-active,
-html.account-submenu-active body,
-body.account-submenu-active,
-body.account-submenu-active .app,
-body.account-submenu-active #accountPanel {
-  background: #ffffff !important;
-}
-
-.account-panel.account-modal.account-submenu-mode::before {
-  content: "";
-  position: fixed;
-  top: -160px;
-  left: 0;
-  right: 0;
-  height: 180px;
   background: #ffffff;
-  pointer-events: none;
-  z-index: 0;
+  overflow: hidden;
 }
 
 .account-panel.account-modal.account-submenu-mode .account-modal-content {

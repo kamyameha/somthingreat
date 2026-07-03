@@ -10,17 +10,10 @@ body.logged-out {
   overflow: auto;
 }
 
-html.logged-out,
-html.logged-out body,
-body.logged-out {
-  background: #ffffff !important;
-}
-
 .logged-out .app {
   min-height: 100dvh;
   padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) 0;
   background: #ffffff;
-  box-shadow: 0 -160px 0 #ffffff;
 }
 
 .logged-out .topbar {
