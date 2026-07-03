@@ -132,6 +132,27 @@
   border-color: var(--main);
 }
 
+html.account-main-active,
+html.account-main-active body,
+body.account-main-active,
+body.account-main-active .app,
+body.account-main-active #accountPanel {
+  background: var(--main) !important;
+}
+
+html.account-main-active::before,
+body.account-main-active::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: var(--main);
+  pointer-events: none;
+  z-index: 10000;
+}
+
 .account-panel.account-modal.account-main-mode {
   align-items: stretch;
   padding: 0;
@@ -390,7 +411,7 @@ body.account-submenu-active #accountPanel {
   width: 26px;
   height: 26px;
   min-width: 26px;
-  margin: 10px 0 20px;
+  margin: 0 0 12px;
   align-self: center;
   padding: 0;
   border: 0;
@@ -405,7 +426,7 @@ body.account-submenu-active #accountPanel {
 .account-panel.account-modal.account-submenu-mode .account-view h2 {
   flex: 1 1 calc(100% - 46px);
   width: auto;
-  margin: 0 0 20px;
+  margin: 0 0 12px;
   align-self: center;
   color: var(--main);
   font-size: 32px;
@@ -416,7 +437,7 @@ body.account-submenu-active #accountPanel {
 .account-panel.account-modal.account-submenu-mode .account-view > .muted {
   flex: 0 0 100%;
   width: 100%;
-  margin: 0 0 20px;
+  margin: 0 0 8px;
   color: var(--main);
   font-size: 18px;
   line-height: 1.2;
@@ -472,7 +493,11 @@ body.account-submenu-active #accountPanel {
 }
 
 .account-panel.account-modal.account-submenu-mode #accountRecoveryView .muted {
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+}
+
+.account-panel.account-modal.account-submenu-mode #accountRecoveryView {
+  row-gap: 20px;
 }
 
 .account-panel.account-modal.account-submenu-mode .recovery-select {
@@ -507,7 +532,7 @@ body.account-submenu-active #accountPanel {
   width: 100%;
   display: grid;
   gap: 15px;
-  margin-top: 33px;
+  margin-top: 0;
   padding: 20px;
   border-radius: 20px;
   background: var(--main);
@@ -584,6 +609,10 @@ body.account-submenu-active #accountPanel {
 .account-panel.account-modal.account-submenu-mode .auth-message {
   width: 100%;
   margin: 0;
+}
+
+.account-panel.account-modal.account-submenu-mode .auth-message:empty {
+  display: none;
 }
 
 .account-view > .text-btn {

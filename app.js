@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-73-update-banner-fix';
+const APP_VERSION = 'v8-74-ui-flow-fixes';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -46,6 +46,7 @@ let workoutWakeLock = null;
 let onboardingStep = 1;
 let onboardingConfirmationReady = false;
 let accountHistoryDismissedDayKey = null;
+let recoveryFormEditing = false;
 
 function clearLegacyPasswordSession() {
   try {
@@ -734,6 +735,7 @@ function togglePasswordVisibility(button) {
 }
 
 function renderToday() {
+  document.documentElement.classList.remove('workout-active');
   document.body.classList.remove('workout-active');
   document.querySelector('.topbar')?.classList.remove('hidden');
   document.getElementById('exerciseList').innerHTML = '';
@@ -783,7 +785,7 @@ function renderToday() {
 
   const emptyState = document.getElementById('todayEmptyState');
   if (emptyState) {
-    const shouldShowEmptyState = state.history.length === 0 && !state.todayEmptyStateDismissed;
+    const shouldShowEmptyState = countableHistory().length === 0 && !state.todayEmptyStateDismissed;
     emptyState.classList.toggle('hidden', !shouldShowEmptyState);
   }
 }
@@ -1244,6 +1246,7 @@ function renderExercises() {
   document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
+  document.documentElement.classList.add('workout-active');
   document.body.classList.add('workout-active');
   document.querySelector('.topbar')?.classList.add('hidden');
   document.querySelector('.bottom-nav')?.classList.add('hidden');
@@ -1477,8 +1480,8 @@ function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0, trackKey 
     setIndex,
     completeOnFinish
   };
-  panel.classList.remove('hidden');
   renderWorkoutTimer();
+  panel.classList.remove('hidden');
   renderModule.focusFirstInteractive(panel);
   timerInterval = setInterval(tickWorkoutTimer, 1000);
 }
@@ -1521,15 +1524,27 @@ function findCurrentExercise(trackKey) {
 
 function isWorkoutFullyComplete() {
   if (!state.current) return false;
-  const exercises = state.current.exercises || [];
-  const allSetsDone = exercises.every(exercise => areExerciseSetsComplete(exercise));
-  const rateableExercises = exercises.filter(exercise => !exercise.isAddOn);
+  const rateableExercises = (state.current.exercises || []).filter(exercise => !exercise.isAddOn);
+  if (!rateableExercises.length) return false;
+  const allSetsDone = rateableExercises.every(exercise => areExerciseSetsComplete(exercise));
   const allRated = rateableExercises.every(exercise => state.current.ratings?.[exerciseSessionKey(exercise)]);
   return allSetsDone && allRated;
 }
 
 function completeWorkout(skipMissingRatingConfirm = false) {
   if (!state.current) return;
+  const completedMainExercises = (state.current.exercises || []).filter(exercise => {
+    return !exercise.isAddOn && areExerciseSetsComplete(exercise);
+  });
+  if (!completedMainExercises.length) {
+    showCompletionScreen({
+      title: 'No progress saved',
+      message: 'Mark at least one exercise as done before saving progress.',
+      cancelLabel: 'Go back',
+      onConfirm: null
+    });
+    return;
+  }
   if (!skipMissingRatingConfirm && !isWorkoutFullyComplete()) {
     showCompletionScreen({
       title: 'Almost there!',
@@ -1576,12 +1591,30 @@ function showCompletionScreen({ title, message, actionLabel = '', cancelLabel = 
 
 function completeWorkoutNow(showFullConfirmation = true) {
   if (!state.current) return;
-  (state.current.exercises || []).forEach((exercise, index) => {
+  const completedExercises = (state.current.exercises || []).filter((exercise, index) => {
+    return areExerciseSetsComplete(exercise) && (!exercise.isAddOn || state.current.sets?.[exerciseSessionKey(exercise, index)]?.some(Boolean));
+  });
+  const completedMainExercises = completedExercises.filter(exercise => !exercise.isAddOn);
+  if (!completedMainExercises.length) return;
+
+  completedExercises.forEach((exercise, index) => {
     const rating = state.current.ratings?.[exerciseSessionKey(exercise, index)];
     const progressionTrackKey = exercise.progressionTrackKey || exercise.trackKey;
     if (rating && state.levels[progressionTrackKey]) applyRating(progressionTrackKey, rating);
   });
-  state.history.push({ date: new Date().toISOString(), workout: state.current.workoutName, mode: state.current.mode, exercises: state.current.exercises.map(ex => ({ name: ex.name, prescription: ex.prescription, trackKey: ex.trackKey, progressionTrackKey: ex.progressionTrackKey || null, isAddOn: Boolean(ex.isAddOn) })) });
+  state.history.push({
+    date: new Date().toISOString(),
+    workout: state.current.workoutName,
+    mode: state.current.mode,
+    completedCount: completedMainExercises.length,
+    exercises: completedExercises.map(ex => ({
+      name: ex.name,
+      prescription: ex.prescription,
+      trackKey: ex.trackKey,
+      progressionTrackKey: ex.progressionTrackKey || null,
+      isAddOn: Boolean(ex.isAddOn)
+    }))
+  });
   state.rotationIndex = (state.rotationIndex + 1) % getRotation().length;
   state.current = null;
   state.selectedEnergy = null;
@@ -1635,8 +1668,19 @@ function getGoalJourneyTitle(goal) {
   }[goal] || 'Goal journey';
 }
 
+function hasCountableWorkoutProgress(item) {
+  if (!item || item.customType) return true;
+  if (Number.isFinite(item.completedCount)) return item.completedCount > 0;
+  const exercises = Array.isArray(item.exercises) ? item.exercises : [];
+  return exercises.some(exercise => !exercise.isAddOn);
+}
+
+function countableHistory() {
+  return state.history.filter(hasCountableWorkoutProgress);
+}
+
 function renderGeneralGoalProgress() {
-  const total = state.history.length;
+  const total = countableHistory().length;
   const percent = Math.min(100, Math.round((Math.min(total, 12) / 12) * 100));
   const progress = document.getElementById('pullupProgressBar');
   if (progress) progress.style.width = `${percent}%`;
@@ -1695,16 +1739,16 @@ function monthWeekKey(date) {
 }
 
 function workoutItemsForMonth(date = new Date()) {
-  return accountModule.workoutItemsForMonth(state.history, date);
+  return accountModule.workoutItemsForMonth(countableHistory(), date);
 }
 
 function workoutCountForMonth(date = new Date()) {
-  return accountModule.workoutCountForMonth(state.history, date);
+  return accountModule.workoutCountForMonth(countableHistory(), date);
 }
 
 function workoutItemsForYear(date = new Date()) {
   const year = date.getFullYear();
-  return state.history
+  return countableHistory()
     .map(item => ({ ...item, parsedDate: new Date(item.date) }))
     .filter(item => item.parsedDate.getFullYear() === year);
 }
@@ -1723,7 +1767,7 @@ function renderConsistency(monthlyCount, now = new Date()) {
   if (!title || !message) return;
 
   const activeWeeks = new Set(
-    state.history
+    countableHistory()
       .map(item => new Date(item.date))
       .filter(date => date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear())
       .map(date => monthWeekKey(date))
@@ -1732,7 +1776,7 @@ function renderConsistency(monthlyCount, now = new Date()) {
 
   if (!monthlyCount) {
     title.textContent = 'Your rhythm starts here.';
-    message.textContent = state.history.length ? 'A quiet month is not a reset. Come back with one easy session.' : 'Start light. The first win is simply showing up.';
+    message.textContent = countableHistory().length ? 'A quiet month is not a reset. Come back with one easy session.' : 'Start light. The first win is simply showing up.';
     return;
   }
 
@@ -1743,7 +1787,7 @@ function renderConsistency(monthlyCount, now = new Date()) {
   }
 
   if (monthlyCount === 1) {
-    if (state.history.length <= 1) {
+    if (countableHistory().length <= 1) {
       title.textContent = 'First workout logged.';
       message.textContent = 'This is the start: one honest session, saved and ready to build on.';
     } else {
@@ -2091,7 +2135,7 @@ function closeAccountModal() {
   panel.classList.add('hidden');
   showAccountView('main');
   document.body.classList.remove('account-main-active', 'account-submenu-active');
-  document.documentElement.classList.remove('account-submenu-active');
+  document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
   setThemeColor('#ffffff');
   updateUpdateBanner();
 }
@@ -2114,14 +2158,19 @@ function showAccountView(view) {
   if (panel) panel.classList.toggle('account-main-mode', isMainView);
   if (panel) panel.classList.toggle('account-submenu-mode', isSubmenuView);
   document.body.classList.toggle('account-main-active', isMainView);
+  document.documentElement.classList.toggle('account-main-active', isMainView);
   document.body.classList.toggle('account-submenu-active', isSubmenuView);
   document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
-  setThemeColor('#ffffff');
+  setThemeColor(isMainView ? '#012ded' : '#ffffff');
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
   if (view === 'goal') populateAccountGoal();
   if (view === 'equipment') populateAccountEquipment();
-  if (view === 'recovery') populateAccountRecovery();
+  if (view !== 'recovery') recoveryFormEditing = false;
+  if (view === 'recovery') {
+    recoveryFormEditing = false;
+    populateAccountRecovery();
+  }
   if (view === 'support') resetSupportForm();
   if (view === 'admin') renderAdminDashboard();
   setPanelMessage('accountGoalMessage', '');
@@ -2195,6 +2244,7 @@ function recoveryStatusText(recovery) {
 
 function populateAccountRecovery() {
   const recovery = getActiveRecovery();
+  const formRecovery = recoveryFormEditing ? recovery : null;
   const areaInput = document.getElementById('recoveryAreaInput');
   const durationInput = document.getElementById('recoveryDurationInput');
   const saveBtn = document.getElementById('saveAccountRecoveryBtn');
@@ -2202,12 +2252,12 @@ function populateAccountRecovery() {
   const cardArea = document.getElementById('activeRecoveryArea');
   const cardUntil = document.getElementById('activeRecoveryUntil');
 
-  if (areaInput) areaInput.value = recovery?.area || '';
-  if (durationInput) durationInput.value = recovery?.duration || '';
+  if (areaInput) areaInput.value = formRecovery?.area || '';
+  if (durationInput) durationInput.value = formRecovery?.duration || '';
   document.querySelectorAll('input[name="accountRecoveryMode"]').forEach(input => {
-    input.checked = (recovery?.mode || 'reduce') === input.value;
+    input.checked = (formRecovery?.mode || 'reduce') === input.value;
   });
-  if (saveBtn) saveBtn.textContent = recovery ? 'Update recovery' : 'Add recovery';
+  if (saveBtn) saveBtn.textContent = recoveryFormEditing && recovery ? 'Update recovery' : 'Add recovery';
 
   if (card) card.classList.toggle('hidden', !recovery);
   if (cardArea) cardArea.textContent = recovery ? recoveryAreaLabels[recovery.area] || '' : '';
@@ -2232,17 +2282,20 @@ async function saveAccountRecovery() {
   state.generated = null;
   state.selectedEnergy = null;
   saveState();
+  recoveryFormEditing = false;
   populateAccountRecovery();
   renderAccountMainSummary();
   setPanelMessage('accountRecoveryMessage', 'Recovery saved.', 'success');
 }
 
 function editAccountRecovery() {
+  recoveryFormEditing = true;
   populateAccountRecovery();
   document.getElementById('recoveryAreaInput')?.focus();
 }
 
 function removeAccountRecovery() {
+  recoveryFormEditing = false;
   state.recovery = null;
   state.current = null;
   state.generated = null;
@@ -2320,32 +2373,31 @@ async function sendSupportMessage() {
     return;
   }
 
- renderModule.setButtonLoading(button, true, 'Sending');
+  renderModule.setButtonLoading(button, true, 'Sending');
+  const { error } = await supabaseClient.functions.invoke('support-email', {
+    body: {
+      subject,
+      message: body,
+      email: currentUser?.email || '',
+      userId: currentUser?.id || '',
+      appVersion: '1.0.0',
+      device: navigator.userAgent,
+      language: navigator.language,
+      sentAt: new Date().toISOString()
+    }
+  });
 
-const { error } = await supabaseClient.functions.invoke('support-email', {
-  body: {
-    subject,
-    message: body,
-    email: currentUser?.email || '',
-    userId: currentUser?.id || '',
-    appVersion: '1.0.0',
-    device: navigator.userAgent,
-    language: navigator.language,
-    sentAt: new Date().toISOString()
+  if (error) {
+    renderModule.setButtonLoading(button, false);
+    renderModule.setMessage(message, 'Could not send it yet. Try again in a moment.', 'error');
+    return;
   }
-});
 
-if (error) {
-  renderModule.setButtonLoading(button, false);
-  renderModule.setMessage(message, 'Could not send it yet. Try again in a moment.', 'error');
-  return;
+  if (subjectInput) subjectInput.value = '';
+  if (messageInput) messageInput.value = '';
+  renderModule.setButtonLoading(button, true, 'Sent');
+  setTimeout(() => renderModule.setButtonLoading(button, false), 1600);
 }
-
-if (subjectInput) subjectInput.value = '';
-if (messageInput) messageInput.value = '';
-renderModule.setButtonLoading(button, true, 'Sent');
-setTimeout(() => renderModule.setButtonLoading(button, false), 1600);
-  
 function renderActivity() {
   const yearSummary = document.getElementById('historyYearSummary');
   const monthSummary = document.getElementById('historyMonthSummary');
@@ -2969,6 +3021,7 @@ document.addEventListener('click', event => {
       renderToday();
     } else {
       document.body.classList.remove('workout-active');
+      document.documentElement.classList.remove('workout-active');
       document.querySelector('.topbar')?.classList.remove('hidden');
       document.querySelector('.bottom-nav')?.classList.remove('hidden');
     }

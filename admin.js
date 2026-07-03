@@ -8,16 +8,24 @@
   }
 
   function getCompletedWorkoutCount(savedState) {
-    return Array.isArray(savedState?.history) ? savedState.history.length : 0;
+    if (!Array.isArray(savedState?.history)) return 0;
+    return savedState.history.filter(hasCountableWorkoutProgress).length;
   }
 
   function getLastWorkoutDate(savedState) {
     if (!Array.isArray(savedState?.history)) return null;
-    return savedState.history.reduce((latest, item) => {
+    return savedState.history.filter(hasCountableWorkoutProgress).reduce((latest, item) => {
       const date = new Date(item?.date);
       if (Number.isNaN(date.getTime())) return latest;
       return !latest || date > latest ? date : latest;
     }, null);
+  }
+
+  function hasCountableWorkoutProgress(item) {
+    if (!item || item.customType) return true;
+    if (Number.isFinite(item.completedCount)) return item.completedCount > 0;
+    const exercises = Array.isArray(item.exercises) ? item.exercises : [];
+    return exercises.some(exercise => !exercise.isAddOn);
   }
 
   function isRecentlyActive(savedState, now = new Date(), activeWindowDays = 14) {
