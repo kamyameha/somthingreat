@@ -2321,25 +2321,31 @@ async function sendSupportMessage() {
   }
 
   renderModule.setButtonLoading(button, true, 'Sending');
-  const { error } = await supabaseClient.functions.invoke('support-email', {
-    body: {
-      subject,
-      message: body,
-      email: currentUser.email || ''
-    }
-  });
 
-  if (error) {
-    renderModule.setButtonLoading(button, false);
-    renderModule.setMessage(message, 'Could not send it yet. Try again in a moment.', 'error');
-    return;
+const { error } = await supabaseClient.functions.invoke('support-email', {
+  body: {
+    subject,
+    message: body,
+    email: currentUser?.email || '',
+    userId: currentUser?.id || '',
+    appVersion: '1.0.0',
+    device: navigator.userAgent,
+    language: navigator.language,
+    sentAt: new Date().toISOString()
   }
+});
 
-  if (subjectInput) subjectInput.value = '';
-  if (messageInput) messageInput.value = '';
-  renderModule.setButtonLoading(button, true, 'Sent');
-  setTimeout(() => renderModule.setButtonLoading(button, false), 1600);
+if (error) {
+  renderModule.setButtonLoading(button, false);
+  renderModule.setMessage(message, 'Could not send it yet. Try again in a moment.', 'error');
+  return;
 }
+
+if (subjectInput) subjectInput.value = '';
+if (messageInput) messageInput.value = '';
+renderModule.setButtonLoading(button, true, 'Sent');
+setTimeout(() => renderModule.setButtonLoading(button, false), 1600);
+  
 function renderActivity() {
   const yearSummary = document.getElementById('historyYearSummary');
   const monthSummary = document.getElementById('historyMonthSummary');
