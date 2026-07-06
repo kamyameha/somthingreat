@@ -132,11 +132,11 @@
   border-color: var(--main);
 }
 
-html.account-main-active:not(.logged-out),
-html.account-main-active:not(.logged-out) body,
-body.account-main-active:not(.logged-out),
-body.account-main-active:not(.logged-out) .app,
-body.account-main-active:not(.logged-out) #accountPanel {
+html.account-main-active:not(.logged-out):not(.account-submenu-active),
+html.account-main-active:not(.logged-out):not(.account-submenu-active) body,
+body.account-main-active:not(.logged-out):not(.account-submenu-active),
+body.account-main-active:not(.logged-out):not(.account-submenu-active) .app,
+body.account-main-active:not(.logged-out):not(.account-submenu-active) #accountPanel {
   background: var(--main);
 }
 
@@ -148,8 +148,8 @@ body.account-submenu-active #accountPanel {
   background: #ffffff;
 }
 
-html.account-main-active:not(.logged-out)::before,
-body.account-main-active:not(.logged-out)::before,
+html.account-main-active:not(.logged-out):not(.account-submenu-active)::before,
+body.account-main-active:not(.logged-out):not(.account-submenu-active)::before,
 html.account-submenu-active::before,
 body.account-submenu-active::before {
   content: "";
@@ -162,8 +162,8 @@ body.account-submenu-active::before {
   z-index: 10000;
 }
 
-html.account-main-active:not(.logged-out)::before,
-body.account-main-active:not(.logged-out)::before {
+html.account-main-active:not(.logged-out):not(.account-submenu-active)::before,
+body.account-main-active:not(.logged-out):not(.account-submenu-active)::before {
   background: var(--main);
 }
 
@@ -1194,6 +1194,7 @@ body.account-submenu-active::before {
 .account-panel.account-modal.account-submenu-mode .admin-dashboard-list {
   flex: 0 0 100%;
   width: 100%;
+  margin-top: -19px;
 }
 
 .admin-user-stats {
