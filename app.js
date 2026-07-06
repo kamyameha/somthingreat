@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-89-submenu-shell-white';
+const APP_VERSION = 'v8-90-submenu-same-shell';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -2241,7 +2241,7 @@ function showAccountView(view) {
   if (panel) panel.classList.remove('account-main-mode', 'account-submenu-mode');
   document.body.classList.remove('account-main-active', 'account-submenu-active');
   document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
-  if (panel) panel.classList.toggle('account-main-mode', isMainView);
+  if (panel) panel.classList.toggle('account-main-mode', isAccountScreenView);
   if (panel) panel.classList.toggle('account-submenu-mode', isSubmenuView);
   document.body.classList.toggle('account-submenu-active', isSubmenuView);
   document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
