@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-88-submenu-white-refresh';
+const APP_VERSION = 'v8-89-submenu-shell-white';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -2226,6 +2226,8 @@ function showAccountView(view) {
   const submenuViews = ['goal', 'equipment', 'recovery', 'password', 'support', 'admin'];
   const isMainView = view === 'main';
   const isSubmenuView = submenuViews.includes(view);
+  const isAccountScreenView = isMainView || isSubmenuView;
+  if (isSubmenuView) setThemeColor('#ffffff', true);
 
   document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
   const target = document.getElementById(`account${view[0].toUpperCase()}${view.slice(1)}View`);
@@ -2241,10 +2243,10 @@ function showAccountView(view) {
   document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
   if (panel) panel.classList.toggle('account-main-mode', isMainView);
   if (panel) panel.classList.toggle('account-submenu-mode', isSubmenuView);
-  document.body.classList.toggle('account-main-active', isMainView);
-  document.documentElement.classList.toggle('account-main-active', isMainView);
   document.body.classList.toggle('account-submenu-active', isSubmenuView);
   document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
+  document.body.classList.toggle('account-main-active', isAccountScreenView);
+  document.documentElement.classList.toggle('account-main-active', isAccountScreenView);
   syncScreenThemeColor(isSubmenuView);
   if (isSubmenuView) {
     window.requestAnimationFrame(() => setThemeColor('#ffffff', true));
