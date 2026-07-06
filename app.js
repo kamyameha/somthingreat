@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-85-submenu-menu-shape';
+const APP_VERSION = 'v8-86-submenu-white-theme';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -2232,6 +2232,11 @@ function showAccountView(view) {
   document.body.classList.toggle('account-submenu-active', isSubmenuView);
   document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
   syncScreenThemeColor();
+  if (isSubmenuView) {
+    setThemeColor('#ffffff');
+    window.requestAnimationFrame(() => setThemeColor('#ffffff'));
+    window.setTimeout(() => setThemeColor('#ffffff'), 100);
+  }
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
   if (view === 'goal') populateAccountGoal();
