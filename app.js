@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-79-default-status-bar';
+const APP_VERSION = 'v8-80-home-screen-top-cta';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -411,12 +411,7 @@ function setThemeColor(color = '#ffffff') {
 }
 
 function syncScreenThemeColor() {
-  const root = document.documentElement;
-  const isLoggedOut = root.classList.contains('logged-out');
-  const isBlueScreen = root.classList.contains('onboarding-active') ||
-    root.classList.contains('confirmation-active') ||
-    (root.classList.contains('account-main-active') && !isLoggedOut);
-  setThemeColor(isBlueScreen ? '#012ded' : '#ffffff');
+  setThemeColor('#ffffff');
 }
 
 function isAdminUser() {
