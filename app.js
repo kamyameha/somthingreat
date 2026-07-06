@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-84-submenu-normal-flow';
+const APP_VERSION = 'v8-85-submenu-menu-shape';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&

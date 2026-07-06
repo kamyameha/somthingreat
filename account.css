@@ -148,26 +148,6 @@ body.account-submenu-active #accountPanel {
   background: #ffffff;
 }
 
-body.account-submenu-active {
-  overflow: hidden;
-}
-
-body.account-submenu-active .topbar,
-body.account-submenu-active .bottom-nav,
-body.account-submenu-active #accountBtn {
-  display: none !important;
-}
-
-body.account-submenu-active .app {
-  width: min(var(--app-width), 100%);
-  max-width: var(--app-width);
-  height: 100dvh;
-  min-height: 100dvh;
-  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(80px + env(safe-area-inset-bottom));
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
 html.account-main-active:not(.logged-out)::before,
 body.account-main-active:not(.logged-out)::before,
 html.account-submenu-active::before,
@@ -335,28 +315,42 @@ body.account-submenu-active::before {
 }
 
 .account-panel.account-modal.account-submenu-mode {
-  position: static;
-  inset: auto;
-  width: 100%;
-  height: auto;
-  min-height: 0;
-  display: block;
+  align-items: stretch;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: 0;
-  margin: 0;
   background: #ffffff;
-  overflow: visible;
+  overflow: hidden;
+}
+
+.account-panel.account-modal.account-submenu-mode::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: #ffffff;
+  pointer-events: none;
+  z-index: 10000;
 }
 
 .account-panel.account-modal.account-submenu-mode .account-modal-content {
   position: relative;
   z-index: 1;
-  width: 100%;
-  height: auto;
+  width: min(100vw, var(--app-width));
+  height: 100vh;
+  height: 100dvh;
   max-height: none;
-  min-height: 0;
-  margin: 0;
-  overflow: visible;
-  padding: 0;
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(80px + env(safe-area-inset-bottom));
   border: 0;
   border-radius: 0;
   background: #ffffff;
