@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-77-screen-top-activity-focus';
+const APP_VERSION = 'v8-79-default-status-bar';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -406,7 +406,7 @@ function setThemeColor(color = '#ffffff') {
   if (meta) meta.setAttribute('content', color);
   const statusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
   if (statusMeta) {
-    statusMeta.setAttribute('content', color.toLowerCase() === '#012ded' ? 'black-translucent' : 'default');
+    statusMeta.setAttribute('content', 'default');
   }
 }
 
@@ -1562,10 +1562,11 @@ function completeWorkout(skipMissingRatingConfirm = false) {
   });
   if (!completedMainExercises.length) {
     showCompletionScreen({
-      title: 'No progress saved',
-      message: 'Mark at least one exercise as done before saving progress.',
+      title: 'Workout not completed',
+      message: 'If you complete this workout, as no exercise was marked as done, it will not count in your progress.',
+      actionLabel: 'Complete',
       cancelLabel: 'Go back',
-      onConfirm: null
+      onConfirm: completeWorkoutWithoutProgress
     });
     return;
   }
@@ -1581,6 +1582,21 @@ function completeWorkout(skipMissingRatingConfirm = false) {
   }
 
   completeWorkoutNow();
+}
+
+function completeWorkoutWithoutProgress() {
+  if (!state.current) return;
+  state.current = null;
+  state.selectedEnergy = null;
+  state.generated = null;
+  openExerciseTrackKey = null;
+  releaseWorkoutWakeLock();
+  saveState();
+  renderToday();
+  renderProgress();
+  renderActivity();
+  renderAccount();
+  updateUpdateBanner();
 }
 
 function showCompletionScreen({ title, message, actionLabel = '', cancelLabel = '', onConfirm = null, autoClose = false }) {
