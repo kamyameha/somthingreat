@@ -327,6 +327,18 @@ body.account-submenu-active::before {
   overflow: hidden;
 }
 
+.account-panel.account-modal.account-submenu-mode::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(env(safe-area-inset-top) + 1px);
+  background: #ffffff;
+  pointer-events: none;
+  z-index: 10001;
+}
+
 .account-panel.account-modal.account-submenu-mode .account-modal-content {
   position: relative;
   z-index: 1;
@@ -702,20 +714,6 @@ body.account-submenu-active::before {
   gap: 6px;
 }
 
-.history-delete-btn {
-  justify-self: start;
-  min-height: 34px;
-  padding: 0 16px;
-  border: 1px solid currentColor;
-  border-radius: 18px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: 14px;
-  line-height: 1;
-  font-weight: 700;
-}
-
 .history-list .muted {
   margin: 0;
 }
@@ -959,10 +957,6 @@ body.account-submenu-active::before {
   font-weight: 400;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-delete-btn {
-  color: #ffffff;
-}
-
 .activity-screen .activity-summary-card,
 .activity-screen .activity-calendar-card {
   margin: 0;
@@ -1149,10 +1143,6 @@ body.account-submenu-active::before {
   font-size: 18px;
   line-height: 1.2;
   font-weight: 400;
-}
-
-.activity-screen .history-delete-btn {
-  color: #ffffff;
 }
 
 @media (max-width: 380px) {

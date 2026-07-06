@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-81-screen-top-stack';
+const APP_VERSION = 'v8-82-submenu-top-history';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -1738,28 +1738,6 @@ function historyEntryId(item = {}) {
   return `${Date.parse(item.date) || 0}-${Math.abs(hash)}`;
 }
 
-function removeHistoryEntry(entryId) {
-  const index = state.history.findIndex(item => historyEntryId(item) === entryId);
-  if (index === -1) return;
-  state.history.splice(index, 1);
-  saveState();
-  renderToday();
-  renderProgress();
-  renderActivity();
-  renderAccount();
-}
-
-function requestRemoveHistoryEntry(entryId) {
-  const item = state.history.find(historyItem => historyEntryId(historyItem) === entryId);
-  if (!item) return;
-  showConfirmPanel({
-    title: 'Delete workout?',
-    message: 'This removes it from Activity and Progress.',
-    actionLabel: 'Delete',
-    onConfirm: () => removeHistoryEntry(entryId)
-  });
-}
-
 function renderGeneralGoalProgress() {
   const total = countableHistory().length;
   const percent = Math.min(100, Math.round((Math.min(total, 12) / 12) * 100));
@@ -2243,6 +2221,9 @@ function showAccountView(view) {
   if (panel) panel.classList.remove('account-password-mode');
   const isMainView = view === 'main';
   const isSubmenuView = submenuViews.includes(view);
+  if (panel) panel.classList.remove('account-main-mode', 'account-submenu-mode');
+  document.body.classList.remove('account-main-active', 'account-submenu-active');
+  document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
   if (panel) panel.classList.toggle('account-main-mode', isMainView);
   if (panel) panel.classList.toggle('account-submenu-mode', isSubmenuView);
   document.body.classList.toggle('account-main-active', isMainView);
@@ -2565,14 +2546,12 @@ function renderActivity() {
       const label = item.type === 'custom'
         ? `${item.workout || 'Custom checklist'} - Custom`
         : `${item.workout || 'Workout'} - ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
-      const entryId = escapeHTML(historyEntryId(item));
       return `
         <div class="history-item">
           <div class="history-item-copy">
             <strong>${escapeHTML(dateLabel)}</strong>
             <span>${escapeHTML(label)}</span>
           </div>
-          <button class="history-delete-btn" type="button" data-history-delete="${entryId}" aria-label="Delete ${escapeHTML(label)}">Delete</button>
         </div>
       `;
     }).join('')
@@ -3072,11 +3051,6 @@ document.addEventListener('click', event => {
     list?.classList.toggle('hidden', isOpen);
     event.target.classList.toggle('is-open', !isOpen);
     event.target.setAttribute('aria-expanded', String(!isOpen));
-  }
-  const historyDeleteButton = event.target.closest('[data-history-delete]');
-  if (historyDeleteButton) {
-    requestRemoveHistoryEntry(historyDeleteButton.dataset.historyDelete);
-    return;
   }
   const historyDayButton = event.target.closest('[data-history-day]');
   if (historyDayButton && !historyDayButton.disabled) {
