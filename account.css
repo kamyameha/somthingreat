@@ -811,6 +811,10 @@ body.account-submenu-active::before {
   display: none;
 }
 
+.account-panel.account-modal.account-submenu-mode #accountAdminView.admin-users-open #adminDashboardMessage {
+  display: none;
+}
+
 .account-panel.account-modal.account-submenu-mode .history-header {
   display: grid;
   grid-template-columns: 1fr auto;

@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-87-submenu-priority';
+const APP_VERSION = 'v8-88-submenu-white-refresh';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -401,23 +401,36 @@ function normaliseEmail(email = '') {
   return adminModule.normaliseEmail(email);
 }
 
-function setThemeColor(color = '#ffffff') {
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', color);
-  const statusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-  if (statusMeta) {
-    statusMeta.setAttribute('content', 'default');
+function setMetaContent(name, content, forceReplace = false) {
+  let meta = document.querySelector(`meta[name="${name}"]`);
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.setAttribute('name', name);
+    document.head.appendChild(meta);
+  }
+  if (!forceReplace && meta.getAttribute('content') === content) return;
+  meta.setAttribute('content', content);
+  if (forceReplace && meta.parentNode) {
+    const replacement = meta.cloneNode(false);
+    meta.replaceWith(replacement);
   }
 }
 
-function syncScreenThemeColor() {
+function setThemeColor(color = '#ffffff', forceReplace = false) {
+  document.documentElement.style.backgroundColor = color;
+  document.body.style.backgroundColor = color;
+  setMetaContent('theme-color', color, forceReplace);
+  setMetaContent('apple-mobile-web-app-status-bar-style', 'default', forceReplace);
+}
+
+function syncScreenThemeColor(forceReplace = false) {
   const root = document.documentElement;
   const isLoggedOut = root.classList.contains('logged-out');
   const isSubmenu = root.classList.contains('account-submenu-active');
   const isBlueScreen = root.classList.contains('onboarding-active') ||
     root.classList.contains('confirmation-active') ||
     (root.classList.contains('account-main-active') && !isLoggedOut && !isSubmenu);
-  setThemeColor(isBlueScreen ? '#012ded' : '#ffffff');
+  setThemeColor(isBlueScreen ? '#012ded' : '#ffffff', forceReplace);
 }
 
 function isAdminUser() {
@@ -2232,11 +2245,9 @@ function showAccountView(view) {
   document.documentElement.classList.toggle('account-main-active', isMainView);
   document.body.classList.toggle('account-submenu-active', isSubmenuView);
   document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
-  syncScreenThemeColor();
+  syncScreenThemeColor(isSubmenuView);
   if (isSubmenuView) {
-    setThemeColor('#ffffff');
-    window.requestAnimationFrame(() => setThemeColor('#ffffff'));
-    window.setTimeout(() => setThemeColor('#ffffff'), 100);
+    window.requestAnimationFrame(() => setThemeColor('#ffffff', true));
   }
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
@@ -2570,6 +2581,7 @@ async function renderAdminDashboard() {
   const message = document.getElementById('adminDashboardMessage');
   const list = document.getElementById('adminDashboardList');
   const toggle = document.getElementById('toggleAdminUsersBtn');
+  const adminView = document.getElementById('accountAdminView');
   if (!summary || !message || !list) return;
 
   if (!isAdminUser()) {
@@ -2589,6 +2601,7 @@ async function renderAdminDashboard() {
   summary.textContent = 'Loading dashboard...';
   message.textContent = 'Loading users...';
   list.innerHTML = '';
+  if (adminView) adminView.classList.remove('admin-users-open');
   if (toggle) toggle.classList.remove('is-open');
   if (toggle) toggle.setAttribute('aria-expanded', 'false');
   list.classList.add('hidden');
@@ -3055,9 +3068,11 @@ document.addEventListener('click', event => {
   if (event.target.id === 'toggleAdminUsersBtn') {
     const list = document.getElementById('adminDashboardList');
     const isOpen = !list?.classList.contains('hidden');
+    const adminView = document.getElementById('accountAdminView');
     list?.classList.toggle('hidden', isOpen);
     event.target.classList.toggle('is-open', !isOpen);
     event.target.setAttribute('aria-expanded', String(!isOpen));
+    adminView?.classList.toggle('admin-users-open', !isOpen);
   }
   const historyDayButton = event.target.closest('[data-history-day]');
   if (historyDayButton && !historyDayButton.disabled) {
