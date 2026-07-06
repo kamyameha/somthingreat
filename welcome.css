@@ -1,8 +1,16 @@
 /* Welcome screen */
+html.welcome-active,
+html.welcome-active body,
+body.welcome-active {
+  min-height: 100dvh;
+  background: #ffffff;
+  overflow: hidden;
+}
+
 .welcome-screen {
-  position: fixed;
-  inset: 0;
+  position: relative;
   z-index: 9999;
+  width: 100%;
   min-height: 100dvh;
   overflow: auto;
   display: flex;

@@ -140,17 +140,36 @@ body.account-main-active:not(.logged-out) #accountPanel {
   background: var(--main);
 }
 
+html.account-submenu-active,
+html.account-submenu-active body,
+body.account-submenu-active,
+body.account-submenu-active .app,
+body.account-submenu-active #accountPanel {
+  background: #ffffff;
+}
+
 html.account-main-active:not(.logged-out)::before,
-body.account-main-active:not(.logged-out)::before {
+body.account-main-active:not(.logged-out)::before,
+html.account-submenu-active::before,
+body.account-submenu-active::before {
   content: "";
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: env(safe-area-inset-top);
-  background: var(--main);
   pointer-events: none;
   z-index: 10000;
+}
+
+html.account-main-active:not(.logged-out)::before,
+body.account-main-active:not(.logged-out)::before {
+  background: var(--main);
+}
+
+html.account-submenu-active::before,
+body.account-submenu-active::before {
+  background: #ffffff;
 }
 
 .account-panel.account-modal.account-main-mode {
