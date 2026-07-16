@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-96-account-submenu-painted';
+const APP_VERSION = 'v8-97-account-split-surfaces';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -229,7 +229,8 @@ function setWelcomeVisible(visible) {
   if (visible) {
     document.documentElement.classList.remove('onboarding-active', 'confirmation-active', 'account-main-active', 'account-submenu-active', 'workout-active');
     document.body.classList.remove('onboarding-active', 'confirmation-active', 'account-main-active', 'account-submenu-active', 'workout-active');
-    document.getElementById('accountPanel')?.classList.remove('account-main-mode', 'account-submenu-mode');
+    document.getElementById('accountPanel')?.classList.remove('account-main-mode');
+    hideAccountSubmenuPanel();
     syncScreenThemeColor();
   }
   if (welcome) welcome.classList.toggle('hidden', !visible);
@@ -686,7 +687,8 @@ function setAuthMode(mode = 'welcome') {
   blurActiveAuthField();
   document.documentElement.classList.remove('account-main-active', 'account-submenu-active', 'workout-active');
   document.body.classList.remove('account-main-active', 'account-submenu-active', 'workout-active');
-  document.getElementById('accountPanel')?.classList.remove('account-main-mode', 'account-submenu-mode');
+  document.getElementById('accountPanel')?.classList.remove('account-main-mode');
+  hideAccountSubmenuPanel();
   syncScreenThemeColor();
   const welcome = document.getElementById('authWelcome');
   const login = document.getElementById('authLoginForm');
@@ -1888,6 +1890,7 @@ function renderOnboarding() {
   }
 
   onboarding.classList.remove('hidden');
+  hideAccountSubmenuPanel();
   document.documentElement.classList.remove('welcome-active', 'account-submenu-active');
   document.body.classList.remove('welcome-active', 'account-submenu-active');
   document.documentElement.classList.add('onboarding-active');
@@ -2003,6 +2006,7 @@ function updateConditionalQuestions() {
 
 function isSafeToShowUpdateBanner() {
   const accountPanel = document.getElementById('accountPanel');
+  const accountSubmenuPanel = document.getElementById('accountSubmenuPanel');
   const loggedOut = document.getElementById('loggedOutAccount');
   const onboarding = document.getElementById('onboarding');
   return Boolean(
@@ -2011,6 +2015,7 @@ function isSafeToShowUpdateBanner() {
     !passwordRecoveryMode &&
     !state.current &&
     !accountPanel?.classList.contains('account-open') &&
+    accountSubmenuPanel?.classList.contains('hidden') &&
     loggedOut?.classList.contains('hidden') &&
     onboarding?.classList.contains('hidden')
   );
@@ -2081,6 +2086,7 @@ async function checkLiveVersion() {
 
 function enforceScreenSeparation() {
   const panel = document.getElementById('accountPanel');
+  const submenuPanel = document.getElementById('accountSubmenuPanel');
   const loggedOut = document.getElementById('loggedOutAccount');
   const loggedIn = document.getElementById('loggedInAccount');
   const onboarding = document.getElementById('onboarding');
@@ -2094,6 +2100,8 @@ function enforceScreenSeparation() {
     document.documentElement.classList.add('recovery-boot');
     setWelcomeVisible(false);
     panel?.classList.remove('hidden', 'account-modal', 'account-open');
+    submenuPanel?.classList.add('hidden');
+    submenuPanel?.setAttribute('aria-hidden', 'true');
     loggedOut?.classList.remove('hidden');
     loggedIn?.classList.add('hidden');
     setAuthMode('reset');
@@ -2108,6 +2116,8 @@ function enforceScreenSeparation() {
 
   if (!currentUser) {
     panel?.classList.remove('hidden', 'account-modal', 'account-open');
+    submenuPanel?.classList.add('hidden');
+    submenuPanel?.setAttribute('aria-hidden', 'true');
     loggedOut?.classList.remove('hidden');
     loggedIn?.classList.add('hidden');
     onboarding?.classList.add('hidden');
@@ -2137,6 +2147,7 @@ function renderAll() {
 
 function renderAccount() {
   const panel = document.getElementById('accountPanel');
+  const submenuPanel = document.getElementById('accountSubmenuPanel');
   const loggedOut = document.getElementById('loggedOutAccount');
   const loggedIn = document.getElementById('loggedInAccount');
   const email = document.getElementById('accountEmail');
@@ -2152,7 +2163,8 @@ function renderAccount() {
   panel.classList.toggle('account-modal', Boolean(currentUser));
 
   if (!currentUser) {
-    panel.classList.remove('account-main-mode', 'account-submenu-mode');
+    panel.classList.remove('account-main-mode');
+    hideAccountSubmenuPanel();
     document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
     document.body.classList.remove('account-main-active', 'account-submenu-active');
     syncScreenThemeColor();
@@ -2161,6 +2173,8 @@ function renderAccount() {
   if (!SUPABASE_READY) {
     panel.classList.remove('hidden');
     panel.classList.remove('account-modal');
+    submenuPanel?.classList.add('hidden');
+    submenuPanel?.setAttribute('aria-hidden', 'true');
     loggedOut.classList.remove('hidden');
     loggedIn.classList.add('hidden');
     screens.forEach(screen => screen.classList.add('auth-locked'));
@@ -2174,6 +2188,8 @@ function renderAccount() {
   if (passwordRecoveryMode) {
     panel.classList.remove('hidden');
     panel.classList.remove('account-modal', 'account-open');
+    submenuPanel?.classList.add('hidden');
+    submenuPanel?.setAttribute('aria-hidden', 'true');
     loggedOut.classList.remove('hidden');
     loggedIn.classList.add('hidden');
     setAuthMode('reset');
@@ -2196,10 +2212,12 @@ function renderAccount() {
     }
     if (email) email.textContent = getAccountDisplayName();
     renderAccountMainSummary();
-    if (!panel.classList.contains('account-open')) panel.classList.add('hidden');
+    if (!panel.classList.contains('account-open') && submenuPanel?.classList.contains('hidden')) panel.classList.add('hidden');
   } else {
     panel.classList.remove('hidden');
     panel.classList.remove('account-modal', 'account-open');
+    submenuPanel?.classList.add('hidden');
+    submenuPanel?.setAttribute('aria-hidden', 'true');
     loggedOut.classList.remove('hidden');
     loggedIn.classList.add('hidden');
     screens.forEach(screen => screen.classList.add('auth-locked'));
@@ -2209,21 +2227,43 @@ function renderAccount() {
 }
 
 function openAccountModal() {
+  openAccountMain();
+}
+
+function openAccountMain() {
   const panel = document.getElementById('accountPanel');
+  const loggedIn = document.getElementById('loggedInAccount');
   if (!panel || !currentUser) return;
-  panel.classList.add('account-modal', 'account-open');
+  hideAccountSubmenuPanel();
+  hideAllAccountViews();
+  panel.classList.add('account-modal', 'account-open', 'account-main-mode');
+  panel.classList.remove('account-password-mode');
   panel.classList.remove('hidden');
-  showAccountView('main');
+  panel.setAttribute('aria-hidden', 'false');
+  if (loggedIn) loggedIn.classList.remove('hidden');
+  document.documentElement.classList.remove('account-submenu-active');
+  document.body.classList.remove('account-submenu-active');
+  document.documentElement.classList.add('account-main-active');
+  document.body.classList.add('account-main-active');
+  syncScreenThemeColor();
+  renderAccountView('main', { panel, content: loggedIn });
   renderModule.focusFirstInteractive(panel);
+  updateUpdateBanner();
 }
 
 function closeAccountModal() {
+  closeAccount();
+}
+
+function closeAccount() {
   const panel = document.getElementById('accountPanel');
-  if (!panel) return;
-  panel.classList.remove('account-open', 'account-main-mode', 'account-submenu-mode');
-  panel.style.backgroundColor = '';
-  panel.classList.add('hidden');
-  showAccountView('main');
+  if (panel) {
+    panel.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
+    panel.classList.add('hidden');
+    panel.setAttribute('aria-hidden', 'true');
+  }
+  hideAccountSubmenuPanel();
+  hideAllAccountViews();
   document.body.classList.remove('account-main-active', 'account-submenu-active');
   document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
   syncScreenThemeColor();
@@ -2234,46 +2274,69 @@ const accountSubmenuViews = ['goal', 'equipment', 'recovery', 'password', 'suppo
 
 function showAccountView(view) {
   if (view === 'password' && !canChangePassword()) view = 'main';
-  const panel = document.getElementById('accountPanel');
-  const isMainView = view === 'main';
-  const isSubmenuView = accountSubmenuViews.includes(view);
-  const content = document.getElementById('loggedInAccount');
-  const isMainToSubmenu = isSubmenuView &&
-    panel?.classList.contains('account-main-mode') &&
-    document.documentElement.classList.contains('account-main-active');
-
-  if (isMainToSubmenu) {
-    transitionToAccountSubmenu(view);
+  if (view === 'main') {
+    closeAccountSubmenu();
     return;
   }
-
-  applyAccountViewState({ panel, isMainView, isSubmenuView });
-  renderAccountView(view, { panel, content });
+  if (accountSubmenuViews.includes(view)) openAccountSubmenu(view);
 }
 
-function applyAccountViewState({ panel, isMainView, isSubmenuView }) {
-  document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
-  if (panel) panel.classList.remove('account-password-mode');
-  if (panel) panel.classList.remove('account-main-mode', 'account-submenu-mode');
-  if (panel) panel.style.backgroundColor = '';
+function hideAllAccountViews() {
+  document.querySelectorAll('#loggedInAccount .account-view, #accountSubmenuContent .account-view').forEach(item => item.classList.add('hidden'));
+}
+
+function hideAccountMainPanel() {
+  const panel = document.getElementById('accountPanel');
+  if (!panel) return;
+  panel.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
+  panel.classList.add('hidden');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+function hideAccountSubmenuPanel() {
+  const submenuPanel = document.getElementById('accountSubmenuPanel');
+  if (!submenuPanel) return;
+  submenuPanel.classList.add('hidden');
+  submenuPanel.setAttribute('aria-hidden', 'true');
+}
+
+function openAccountSubmenu(view) {
+  const submenuPanel = document.getElementById('accountSubmenuPanel');
+  const submenuContent = document.getElementById('accountSubmenuContent');
+  if (!submenuPanel || !submenuContent || !currentUser) return;
+  hideAllAccountViews();
+  hideAccountMainPanel();
   document.body.classList.remove('account-main-active', 'account-submenu-active');
   document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
-  if (panel) panel.classList.toggle('account-main-mode', isMainView);
-  if (panel) panel.classList.toggle('account-submenu-mode', isSubmenuView);
-  document.documentElement.classList.toggle('account-main-active', isMainView);
-  document.body.classList.toggle('account-main-active', isMainView);
-  document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
-  document.body.classList.toggle('account-submenu-active', isSubmenuView);
+  document.documentElement.classList.add('account-submenu-active');
+  document.body.classList.add('account-submenu-active');
   syncScreenThemeColor();
+  renderAccountView(view, { panel: submenuPanel, content: submenuContent });
+  submenuPanel.classList.remove('hidden');
+  submenuPanel.setAttribute('aria-hidden', 'false');
+  renderModule.focusFirstInteractive(submenuPanel);
+  updateUpdateBanner();
+}
+
+function closeAccountSubmenu() {
+  hideAccountSubmenuPanel();
+  document.documentElement.classList.remove('account-submenu-active');
+  document.body.classList.remove('account-submenu-active');
+  if (currentUser) {
+    openAccountMain();
+  } else {
+    syncScreenThemeColor();
+  }
 }
 
 function renderAccountView(view, { panel = null, content = null } = {}) {
+  hideAllAccountViews();
   const target = document.getElementById(`account${view[0].toUpperCase()}${view.slice(1)}View`);
   if (target) target.classList.remove('hidden');
   const title = document.getElementById('accountModalTitle');
   if (title) title.textContent = 'somthingreat';
-  const closeBtn = document.getElementById('closeAccountModalBtn');
-  if (closeBtn) closeBtn.classList.remove('hidden');
+  const submenuTitle = document.getElementById('accountSubmenuTitle');
+  if (submenuTitle) submenuTitle.textContent = 'somthingreat';
 
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
@@ -2290,46 +2353,6 @@ function renderAccountView(view, { panel = null, content = null } = {}) {
   setPanelMessage('accountEquipmentMessage', '');
   setPanelMessage('accountRecoveryMessage', '');
   setPanelMessage('supportMessage', '');
-}
-
-function transitionToAccountSubmenu(view) {
-  const panel = document.getElementById('accountPanel');
-  const content = document.getElementById('loggedInAccount');
-  if (!panel || !content) {
-    applyAccountViewState({
-      panel,
-      isMainView: view === 'main',
-      isSubmenuView: accountSubmenuViews.includes(view)
-    });
-    renderAccountView(view, { panel });
-    return;
-  }
-
-  document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
-  content.classList.add('account-transitioning');
-
-  panel.classList.remove('account-password-mode', 'account-main-mode');
-  document.documentElement.classList.remove('account-main-active');
-  document.body.classList.remove('account-main-active');
-
-  panel.classList.add('account-submenu-mode');
-  document.documentElement.classList.add('account-submenu-active');
-  document.body.classList.add('account-submenu-active');
-
-  document.documentElement.style.backgroundColor = '#ffffff';
-  document.body.style.backgroundColor = '#ffffff';
-  panel.style.backgroundColor = '#ffffff';
-  setMetaContent('theme-color', '#ffffff');
-
-  void document.documentElement.offsetHeight;
-  void panel.offsetHeight;
-
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => {
-      renderAccountView(view, { panel, content });
-      content.classList.remove('account-transitioning');
-    });
-  });
 }
 
 function renderAccountMainSummary() {
@@ -2470,7 +2493,6 @@ async function saveAccountGoal() {
   saveState();
   renderAll();
   openAccountModal();
-  showAccountView('main');
 }
 
 async function saveAccountEquipment() {
@@ -2484,7 +2506,6 @@ async function saveAccountEquipment() {
   saveState();
   renderAll();
   openAccountModal();
-  showAccountView('main');
 }
 
 async function changePasswordFromAccount() {
@@ -2924,6 +2945,13 @@ document.addEventListener('keydown', event => {
   }
 
   const accountPanel = document.getElementById('accountPanel');
+  const accountSubmenuPanel = document.getElementById('accountSubmenuPanel');
+  if (accountSubmenuPanel && !accountSubmenuPanel.classList.contains('hidden')) {
+    if (event.key === 'Escape') closeAccountModal();
+    renderModule.trapTabKey(event, accountSubmenuPanel);
+    return;
+  }
+
   if (accountPanel?.classList.contains('account-open')) {
     if (event.key === 'Escape') closeAccountModal();
     renderModule.trapTabKey(event, accountPanel);
@@ -3109,6 +3137,7 @@ document.addEventListener('click', event => {
 
   if (event.target.id === 'accountBtn' && currentUser) openAccountModal();
   if (event.target.id === 'closeAccountModalBtn') closeAccountModal();
+  if (event.target.id === 'closeAccountSubmenuBtn') closeAccountModal();
   if (event.target.id === 'accountPanel' && event.target.classList.contains('account-modal')) closeAccountModal();
   const accountViewButton = event.target.closest('[data-account-view]');
   if (accountViewButton) showAccountView(accountViewButton.dataset.accountView);

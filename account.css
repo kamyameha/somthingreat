@@ -34,10 +34,6 @@
   box-shadow: 0 22px 60px rgba(1, 45, 237, 0.22);
 }
 
-.account-modal-content.account-transitioning {
-  visibility: hidden;
-}
-
 .account-panel.account-password-mode {
   padding-top: calc(24px + env(safe-area-inset-top));
 }
@@ -294,9 +290,11 @@ body.account-submenu-active .app {
   text-underline-offset: 3px;
 }
 
-.account-panel.account-modal.account-submenu-mode {
-  align-items: stretch;
+.account-submenu-panel {
+  position: fixed;
   inset: 0;
+  z-index: 1001;
+  display: block;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
@@ -304,24 +302,16 @@ body.account-submenu-active .app {
   min-height: 100dvh;
   padding: 0;
   background-color: #ffffff;
+  color: var(--text);
   overflow: hidden;
 }
 
-.account-panel.account-modal.account-submenu-mode::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top);
-  background: #ffffff;
-  pointer-events: none;
-  z-index: 2;
+.account-submenu-panel.hidden {
+  display: none !important;
 }
 
-.account-panel.account-modal.account-submenu-mode .account-modal-content {
+.account-submenu-panel .account-submenu-panel__content {
   position: relative;
-  z-index: 1;
   width: min(100vw, var(--app-width));
   height: 100vh;
   height: 100dvh;
@@ -337,12 +327,12 @@ body.account-submenu-active .app {
   box-shadow: none;
 }
 
-.account-panel.account-modal.account-submenu-mode .account-modal-header {
+.account-submenu-panel .account-modal-header {
   align-items: center;
   margin-bottom: 44px;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountModalTitle {
+.account-submenu-panel #accountSubmenuTitle {
   width: 134px;
   height: 18px;
   margin: 0;
@@ -354,7 +344,7 @@ body.account-submenu-active .app {
   -webkit-mask: url("./somthingreat.svg") left center / 134px 18px no-repeat;
 }
 
-.account-panel.account-modal.account-submenu-mode #closeAccountModalBtn {
+.account-submenu-panel #closeAccountSubmenuBtn {
   min-width: 26px;
   width: 26px;
   height: 26px;
@@ -368,7 +358,7 @@ body.account-submenu-active .app {
   line-height: 0;
 }
 
-.account-panel.account-modal.account-submenu-mode #closeAccountModalBtn::before {
+.account-submenu-panel #closeAccountSubmenuBtn::before {
   content: "";
   display: block;
   width: 26px;
@@ -378,12 +368,12 @@ body.account-submenu-active .app {
   -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountGoalView,
-.account-panel.account-modal.account-submenu-mode #accountEquipmentView,
-.account-panel.account-modal.account-submenu-mode #accountRecoveryView,
-.account-panel.account-modal.account-submenu-mode #accountPasswordView,
-.account-panel.account-modal.account-submenu-mode #accountSupportView,
-.account-panel.account-modal.account-submenu-mode #accountAdminView {
+.account-submenu-panel #accountGoalView,
+.account-submenu-panel #accountEquipmentView,
+.account-submenu-panel #accountRecoveryView,
+.account-submenu-panel #accountPasswordView,
+.account-submenu-panel #accountSupportView,
+.account-submenu-panel #accountAdminView {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
@@ -392,11 +382,11 @@ body.account-submenu-active .app {
   color: var(--main);
 }
 
-.account-panel.account-modal.account-submenu-mode .account-view.hidden {
+.account-submenu-panel .account-view.hidden {
   display: none !important;
 }
 
-.account-panel.account-modal.account-submenu-mode .account-view > .text-btn {
+.account-submenu-panel .account-view > .text-btn {
   flex: 0 0 26px;
   width: 26px;
   height: 26px;
@@ -413,7 +403,7 @@ body.account-submenu-active .app {
   -webkit-mask: url("./arrow-left.svg") center / 26px 26px no-repeat;
 }
 
-.account-panel.account-modal.account-submenu-mode .account-view h2 {
+.account-submenu-panel .account-view h2 {
   flex: 1 1 calc(100% - 46px);
   width: auto;
   margin: 0 0 12px;
@@ -424,7 +414,7 @@ body.account-submenu-active .app {
   font-weight: 500;
 }
 
-.account-panel.account-modal.account-submenu-mode .account-view > .muted {
+.account-submenu-panel .account-view > .muted {
   flex: 0 0 100%;
   width: 100%;
   margin: 0 0 8px;
@@ -434,7 +424,7 @@ body.account-submenu-active .app {
   font-weight: 400;
 }
 
-.account-panel.account-modal.account-submenu-mode .option-row {
+.account-submenu-panel .option-row {
   width: auto;
   min-width: 0;
   height: 46px;
@@ -453,7 +443,7 @@ body.account-submenu-active .app {
   font-weight: 400;
 }
 
-.account-panel.account-modal.account-submenu-mode .option-row input {
+.account-submenu-panel .option-row input {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -461,12 +451,12 @@ body.account-submenu-active .app {
   pointer-events: none;
 }
 
-.account-panel.account-modal.account-submenu-mode .option-row:has(input:checked) {
+.account-submenu-panel .option-row:has(input:checked) {
   background: var(--main);
   color: #ffffff;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountEquipmentView .option-row::after {
+.account-submenu-panel #accountEquipmentView .option-row::after {
   content: "";
   display: block;
   width: 24px;
@@ -477,20 +467,20 @@ body.account-submenu-active .app {
   -webkit-mask: url("./plus.svg") center / 24px 24px no-repeat;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountEquipmentView .option-row:has(input:checked)::after {
+.account-submenu-panel #accountEquipmentView .option-row:has(input:checked)::after {
   mask-image: url("./x.svg");
   -webkit-mask-image: url("./x.svg");
 }
 
-.account-panel.account-modal.account-submenu-mode #accountRecoveryView .muted {
+.account-submenu-panel #accountRecoveryView .muted {
   margin-bottom: 8px;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountRecoveryView {
+.account-submenu-panel #accountRecoveryView {
   row-gap: 20px;
 }
 
-.account-panel.account-modal.account-submenu-mode .recovery-select {
+.account-submenu-panel .recovery-select {
   width: 353px;
   max-width: 100%;
   flex: 0 0 min(353px, 100%);
@@ -506,19 +496,19 @@ body.account-submenu-active .app {
   appearance: none;
 }
 
-.account-panel.account-modal.account-submenu-mode .recovery-mode-row {
+.account-submenu-panel .recovery-mode-row {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 19px;
 }
 
-.account-panel.account-modal.account-submenu-mode .recovery-mode-row .option-row {
+.account-submenu-panel .recovery-mode-row .option-row {
   width: 100%;
   font-size: 16px;
 }
 
-.account-panel.account-modal.account-submenu-mode .active-recovery-card {
+.account-submenu-panel .active-recovery-card {
   width: 100%;
   display: grid;
   gap: 15px;
@@ -529,57 +519,57 @@ body.account-submenu-active .app {
   color: #ffffff;
 }
 
-.account-panel.account-modal.account-submenu-mode .active-recovery-card.hidden {
+.account-submenu-panel .active-recovery-card.hidden {
   display: none;
 }
 
-.account-panel.account-modal.account-submenu-mode .active-recovery-card h3,
-.account-panel.account-modal.account-submenu-mode .active-recovery-card strong,
-.account-panel.account-modal.account-submenu-mode .active-recovery-card p {
+.account-submenu-panel .active-recovery-card h3,
+.account-submenu-panel .active-recovery-card strong,
+.account-submenu-panel .active-recovery-card p {
   margin: 0;
   color: #ffffff;
 }
 
-.account-panel.account-modal.account-submenu-mode .active-recovery-card h3 {
+.account-submenu-panel .active-recovery-card h3 {
   font-size: 24px;
   font-weight: 500;
   line-height: 1.15;
 }
 
-.account-panel.account-modal.account-submenu-mode .active-recovery-card strong,
-.account-panel.account-modal.account-submenu-mode .active-recovery-card p {
+.account-submenu-panel .active-recovery-card strong,
+.account-submenu-panel .active-recovery-card p {
   font-size: 18px;
   font-weight: 400;
   line-height: 1.2;
 }
 
-.account-panel.account-modal.account-submenu-mode .active-recovery-actions {
+.account-submenu-panel .active-recovery-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 19px;
   margin-top: 29px;
 }
 
-.account-panel.account-modal.account-submenu-mode .active-recovery-actions button {
+.account-submenu-panel .active-recovery-actions button {
   min-height: 46px;
   border-radius: 20px;
   font-size: 16px;
   font-weight: 500;
 }
 
-.account-panel.account-modal.account-submenu-mode .active-recovery-actions .secondary-btn {
+.account-submenu-panel .active-recovery-actions .secondary-btn {
   border-color: #ffffff;
   background: #ffffff;
   color: var(--main);
 }
 
-.account-panel.account-modal.account-submenu-mode .active-recovery-actions .ghost-btn {
+.account-submenu-panel .active-recovery-actions .ghost-btn {
   border: 1px solid #ffffff;
   background: transparent;
   color: #ffffff;
 }
 
-.account-panel.account-modal.account-submenu-mode .account-full-btn {
+.account-submenu-panel .account-full-btn {
   width: 100%;
   min-height: 46px;
   margin: 33px 0 0;
@@ -592,16 +582,16 @@ body.account-submenu-active .app {
   font-weight: 500;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountPasswordView .account-full-btn {
+.account-submenu-panel #accountPasswordView .account-full-btn {
   margin-top: 33px;
 }
 
-.account-panel.account-modal.account-submenu-mode .auth-message {
+.account-submenu-panel .auth-message {
   width: 100%;
   margin: 0;
 }
 
-.account-panel.account-modal.account-submenu-mode .auth-message:empty {
+.account-submenu-panel .auth-message:empty {
   display: none;
 }
 
@@ -698,39 +688,39 @@ body.account-submenu-active .app {
   margin: 0;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountHistoryView {
+.account-submenu-panel #accountHistoryView {
   display: block;
   color: var(--main);
 }
 
-.account-panel.account-modal.account-submenu-mode #accountSupportView,
-.account-panel.account-modal.account-submenu-mode #accountAdminView {
+.account-submenu-panel #accountSupportView,
+.account-submenu-panel #accountAdminView {
   color: var(--main);
 }
 
-.account-panel.account-modal.account-submenu-mode #accountHistoryView.hidden,
-.account-panel.account-modal.account-submenu-mode #accountSupportView.hidden,
-.account-panel.account-modal.account-submenu-mode #accountAdminView.hidden {
+.account-submenu-panel #accountHistoryView.hidden,
+.account-submenu-panel #accountSupportView.hidden,
+.account-submenu-panel #accountAdminView.hidden {
   display: none !important;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountHistoryView > .muted {
+.account-submenu-panel #accountHistoryView > .muted {
   margin: 20px 0 44px;
   font-size: 16px;
   line-height: 1.2;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountSupportView > .muted {
+.account-submenu-panel #accountSupportView > .muted {
   margin-bottom: 20px;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountAdminView > .muted {
+.account-submenu-panel #accountAdminView > .muted {
   margin-bottom: 20px;
   font-size: 16px;
   line-height: 1.45;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountSupportView .support-input {
+.account-submenu-panel #accountSupportView .support-input {
   flex: 0 0 100%;
   width: 100%;
   height: 46px;
@@ -743,23 +733,23 @@ body.account-submenu-active .app {
   font-weight: 400;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountSupportView .support-message-input {
+.account-submenu-panel #accountSupportView .support-message-input {
   height: 170px;
   min-height: 170px;
   resize: none;
   padding-top: 16px;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountSupportView .support-input::placeholder {
+.account-submenu-panel #accountSupportView .support-input::placeholder {
   color: rgba(1, 45, 237, 0.35);
 }
 
-.account-panel.account-modal.account-submenu-mode #accountSupportView .account-full-btn {
+.account-submenu-panel #accountSupportView .account-full-btn {
   flex: 0 0 100%;
   margin-top: 33px;
 }
 
-.account-panel.account-modal.account-submenu-mode .admin-users-toggle {
+.account-submenu-panel .admin-users-toggle {
   flex: 0 0 100%;
   width: 100%;
   height: 46px;
@@ -776,7 +766,7 @@ body.account-submenu-active .app {
   text-align: left;
 }
 
-.account-panel.account-modal.account-submenu-mode .admin-users-toggle.is-open {
+.account-submenu-panel .admin-users-toggle.is-open {
   height: auto;
   min-height: 46px;
   padding: 20px;
@@ -787,15 +777,15 @@ body.account-submenu-active .app {
   font-weight: 700;
 }
 
-.account-panel.account-modal.account-submenu-mode #adminDashboardMessage:empty {
+.account-submenu-panel #adminDashboardMessage:empty {
   display: none;
 }
 
-.account-panel.account-modal.account-submenu-mode #accountAdminView.admin-users-open #adminDashboardMessage {
+.account-submenu-panel #accountAdminView.admin-users-open #adminDashboardMessage {
   display: none;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-header {
+.account-submenu-panel .history-header {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: end;
@@ -803,7 +793,7 @@ body.account-submenu-active .app {
   margin: 0 0 20px;
 }
 
-.account-panel.account-modal.account-submenu-mode #historyYearTitle {
+.account-submenu-panel #historyYearTitle {
   margin: 0 0 5px;
   color: var(--main);
   font-size: 20px;
@@ -811,7 +801,7 @@ body.account-submenu-active .app {
   font-weight: 400;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-header h3 {
+.account-submenu-panel .history-header h3 {
   margin: 0;
   color: var(--main);
   font-size: 32px;
@@ -820,14 +810,14 @@ body.account-submenu-active .app {
   text-align: left;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-month-controls {
+.account-submenu-panel .history-month-controls {
   display: flex;
   align-items: center;
   gap: 12px;
   padding-bottom: 2px;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-month-controls button {
+.account-submenu-panel .history-month-controls button {
   width: 26px;
   height: 26px;
   min-width: 26px;
@@ -840,15 +830,15 @@ body.account-submenu-active .app {
   font-weight: 400;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-weekdays,
-.account-panel.account-modal.account-submenu-mode .history-calendar {
+.account-submenu-panel .history-weekdays,
+.account-submenu-panel .history-calendar {
   display: grid;
   grid-template-columns: repeat(7, 49px);
   justify-content: center;
   gap: 4px;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-weekdays {
+.account-submenu-panel .history-weekdays {
   margin: 0 0 8px;
   color: #000000;
   font-size: 18px;
@@ -856,11 +846,11 @@ body.account-submenu-active .app {
   font-weight: 700;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-weekdays .is-today-weekday {
+.account-submenu-panel .history-weekdays .is-today-weekday {
   color: var(--main);
 }
 
-.account-panel.account-modal.account-submenu-mode .history-day {
+.account-submenu-panel .history-day {
   width: 49px;
   height: 49px;
   min-height: 49px;
@@ -872,45 +862,45 @@ body.account-submenu-active .app {
   appearance: none;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-day:disabled {
+.account-submenu-panel .history-day:disabled {
   opacity: 1;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-day span {
+.account-submenu-panel .history-day span {
   display: none;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-day.past-empty {
+.account-submenu-panel .history-day.past-empty {
   border-color: transparent;
   background: rgba(1, 45, 237, 0.15);
 }
 
-.account-panel.account-modal.account-submenu-mode .history-day.has-workout {
+.account-submenu-panel .history-day.has-workout {
   border-color: #000000;
   background: #000000;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-day.is-today,
-.account-panel.account-modal.account-submenu-mode .history-day.is-selected {
+.account-submenu-panel .history-day.is-today,
+.account-submenu-panel .history-day.is-selected {
   border-color: var(--main);
   background: var(--main);
 }
 
-.account-panel.account-modal.account-submenu-mode .history-day.history-empty {
+.account-submenu-panel .history-day.history-empty {
   visibility: hidden;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-list {
+.account-submenu-panel .history-list {
   margin-top: 44px;
   padding: 0;
   border: 0;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-list:empty {
+.account-submenu-panel .history-list:empty {
   display: none;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-item {
+.account-submenu-panel .history-item {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -922,19 +912,19 @@ body.account-submenu-active .app {
   color: #ffffff;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-item + .history-item {
+.account-submenu-panel .history-item + .history-item {
   margin-top: 12px;
   padding-top: 20px;
   border-top: 0;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-item strong {
+.account-submenu-panel .history-item strong {
   font-size: 18px;
   line-height: 1.1;
   font-weight: 700;
 }
 
-.account-panel.account-modal.account-submenu-mode .history-item span {
+.account-submenu-panel .history-item span {
   color: #ffffff;
   font-size: 18px;
   line-height: 1.1;
@@ -1131,7 +1121,7 @@ body.account-submenu-active .app {
 
 @media (max-width: 380px) {
   .activity-screen .history-item,
-  .account-panel.account-modal.account-submenu-mode .history-item {
+  .account-submenu-panel .history-item {
     grid-template-columns: 1fr;
   }
 }
@@ -1175,7 +1165,7 @@ body.account-submenu-active .app {
   overflow-wrap: anywhere;
 }
 
-.account-panel.account-modal.account-submenu-mode .admin-dashboard-list {
+.account-submenu-panel .admin-dashboard-list {
   flex: 0 0 100%;
   width: 100%;
   margin-top: -19px;
