@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-90-submenu-same-shell';
+const APP_VERSION = 'v8-91-submenu-safe-area';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -401,36 +401,29 @@ function normaliseEmail(email = '') {
   return adminModule.normaliseEmail(email);
 }
 
-function setMetaContent(name, content, forceReplace = false) {
+function setMetaContent(name, content) {
   let meta = document.querySelector(`meta[name="${name}"]`);
   if (!meta) {
     meta = document.createElement('meta');
     meta.setAttribute('name', name);
     document.head.appendChild(meta);
   }
-  if (!forceReplace && meta.getAttribute('content') === content) return;
+  if (meta.getAttribute('content') === content) return;
   meta.setAttribute('content', content);
-  if (forceReplace && meta.parentNode) {
-    const replacement = meta.cloneNode(false);
-    meta.replaceWith(replacement);
-  }
 }
 
-function setThemeColor(color = '#ffffff', forceReplace = false) {
+function setThemeColor(color = '#ffffff') {
   document.documentElement.style.backgroundColor = color;
   document.body.style.backgroundColor = color;
-  setMetaContent('theme-color', color, forceReplace);
-  setMetaContent('apple-mobile-web-app-status-bar-style', 'default', forceReplace);
+  setMetaContent('theme-color', color);
 }
 
-function syncScreenThemeColor(forceReplace = false) {
+function syncScreenThemeColor() {
   const root = document.documentElement;
-  const isLoggedOut = root.classList.contains('logged-out');
-  const isSubmenu = root.classList.contains('account-submenu-active');
   const isBlueScreen = root.classList.contains('onboarding-active') ||
     root.classList.contains('confirmation-active') ||
-    (root.classList.contains('account-main-active') && !isLoggedOut && !isSubmenu);
-  setThemeColor(isBlueScreen ? '#012ded' : '#ffffff', forceReplace);
+    root.classList.contains('account-main-active');
+  setThemeColor(isBlueScreen ? '#012ded' : '#ffffff');
 }
 
 function isAdminUser() {
@@ -1726,10 +1719,13 @@ function getGoalJourneyTitle(goal) {
 }
 
 function hasCountableWorkoutProgress(item) {
-  if (!item || item.customType) return true;
+  if (!item) return false;
+  if (item.customType) return true;
   if (Number.isFinite(item.completedCount)) return item.completedCount > 0;
   const exercises = Array.isArray(item.exercises) ? item.exercises : [];
-  return exercises.some(exercise => !exercise.isAddOn);
+  if (exercises.some(exercise => !exercise.isAddOn)) return true;
+  const date = new Date(item.date);
+  return !Number.isNaN(date.getTime());
 }
 
 function countableHistory() {
@@ -2226,8 +2222,6 @@ function showAccountView(view) {
   const submenuViews = ['goal', 'equipment', 'recovery', 'password', 'support', 'admin'];
   const isMainView = view === 'main';
   const isSubmenuView = submenuViews.includes(view);
-  const isAccountScreenView = isMainView || isSubmenuView;
-  if (isSubmenuView) setThemeColor('#ffffff', true);
 
   document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
   const target = document.getElementById(`account${view[0].toUpperCase()}${view.slice(1)}View`);
@@ -2241,16 +2235,13 @@ function showAccountView(view) {
   if (panel) panel.classList.remove('account-main-mode', 'account-submenu-mode');
   document.body.classList.remove('account-main-active', 'account-submenu-active');
   document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
-  if (panel) panel.classList.toggle('account-main-mode', isAccountScreenView);
+  if (panel) panel.classList.toggle('account-main-mode', isMainView);
   if (panel) panel.classList.toggle('account-submenu-mode', isSubmenuView);
-  document.body.classList.toggle('account-submenu-active', isSubmenuView);
+  document.documentElement.classList.toggle('account-main-active', isMainView);
+  document.body.classList.toggle('account-main-active', isMainView);
   document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
-  document.body.classList.toggle('account-main-active', isAccountScreenView);
-  document.documentElement.classList.toggle('account-main-active', isAccountScreenView);
-  syncScreenThemeColor(isSubmenuView);
-  if (isSubmenuView) {
-    window.requestAnimationFrame(() => setThemeColor('#ffffff', true));
-  }
+  document.body.classList.toggle('account-submenu-active', isSubmenuView);
+  syncScreenThemeColor();
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
   if (view === 'goal') populateAccountGoal();

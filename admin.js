@@ -22,10 +22,13 @@
   }
 
   function hasCountableWorkoutProgress(item) {
-    if (!item || item.customType) return true;
+    if (!item) return false;
+    if (item.customType) return true;
     if (Number.isFinite(item.completedCount)) return item.completedCount > 0;
     const exercises = Array.isArray(item.exercises) ? item.exercises : [];
-    return exercises.some(exercise => !exercise.isAddOn);
+    if (exercises.some(exercise => !exercise.isAddOn)) return true;
+    const date = new Date(item.date);
+    return !Number.isNaN(date.getTime());
   }
 
   function isRecentlyActive(savedState, now = new Date(), activeWindowDays = 14) {

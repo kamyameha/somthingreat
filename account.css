@@ -132,50 +132,25 @@
   border-color: var(--main);
 }
 
-html.account-main-active:not(.logged-out):not(.account-submenu-active),
-html.account-main-active:not(.logged-out):not(.account-submenu-active) body,
-body.account-main-active:not(.logged-out):not(.account-submenu-active),
-body.account-main-active:not(.logged-out):not(.account-submenu-active) .app,
-body.account-main-active:not(.logged-out):not(.account-submenu-active) #accountPanel {
-  background: var(--main);
+html,
+body {
+  min-height: 100%;
+}
+
+html.account-main-active,
+body.account-main-active {
+  background-color: var(--main);
 }
 
 html.account-submenu-active,
-html.account-submenu-active body,
-body.account-submenu-active,
-body.account-submenu-active .app,
-body.account-submenu-active #accountPanel {
-  background: #ffffff;
-}
-
-html.account-main-active:not(.logged-out):not(.account-submenu-active)::before,
-body.account-main-active:not(.logged-out):not(.account-submenu-active)::before,
-html.account-submenu-active::before,
-body.account-submenu-active::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top);
-  pointer-events: none;
-  z-index: 10000;
-}
-
-html.account-main-active:not(.logged-out):not(.account-submenu-active)::before,
-body.account-main-active:not(.logged-out):not(.account-submenu-active)::before {
-  background: var(--main);
-}
-
-html.account-submenu-active::before,
-body.account-submenu-active::before {
-  background: #ffffff;
+body.account-submenu-active {
+  background-color: #ffffff;
 }
 
 .account-panel.account-modal.account-main-mode {
   align-items: stretch;
   padding: 0;
-  background: var(--main);
+  background-color: var(--main);
   overflow: hidden;
 }
 
@@ -323,7 +298,7 @@ body.account-submenu-active::before {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 0;
-  background: #ffffff;
+  background-color: #ffffff;
   overflow: hidden;
 }
 
@@ -336,7 +311,7 @@ body.account-submenu-active::before {
   height: env(safe-area-inset-top);
   background: #ffffff;
   pointer-events: none;
-  z-index: 10000;
+  z-index: 2;
 }
 
 .account-panel.account-modal.account-submenu-mode .account-modal-content {
