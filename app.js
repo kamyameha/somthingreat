@@ -49,6 +49,11 @@ let onboardingConfirmationReady = false;
 let accountHistoryDismissedDayKey = null;
 let recoveryFormEditing = false;
 
+// TEMP DIAGNOSTIC: direct-open Goal on authenticated startup to test iOS PWA safe-area color.
+// Remove this constant, openDiagnosticGoalOnAuthenticatedStartup(), and its initCloudSync() call after the device test.
+const DIAGNOSTIC_DIRECT_GOAL_ON_AUTHENTICATED_STARTUP = true;
+let diagnosticDirectGoalOpened = false;
+
 function clearLegacyPasswordSession() {
   try {
     localStorage.removeItem('somthingreat-password-session');
@@ -2330,6 +2335,29 @@ function openAccountSubmenu(view) {
   updateUpdateBanner();
 }
 
+// TEMP DIAGNOSTIC: opens Goal directly from a white authenticated startup state.
+// Revert by removing this function and the initCloudSync() call that invokes it.
+function openDiagnosticGoalOnAuthenticatedStartup() {
+  if (!DIAGNOSTIC_DIRECT_GOAL_ON_AUTHENTICATED_STARTUP) return;
+  if (diagnosticDirectGoalOpened || passwordRecoveryMode || !currentUser || !hasCompletedProfile()) return;
+  diagnosticDirectGoalOpened = true;
+
+  const panel = document.getElementById('accountPanel');
+  if (panel) {
+    panel.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
+    panel.classList.add('hidden');
+    panel.setAttribute('aria-hidden', 'true');
+  }
+
+  document.documentElement.classList.remove('account-main-active', 'onboarding-active', 'confirmation-active', 'workout-active');
+  document.body.classList.remove('account-main-active', 'onboarding-active', 'confirmation-active', 'workout-active');
+  document.documentElement.classList.add('account-submenu-active');
+  document.body.classList.add('account-submenu-active');
+  setThemeColor('#ffffff');
+
+  openAccountSubmenu('goal');
+}
+
 function closeAccountSubmenu() {
   hideAccountSubmenuPanel();
   document.documentElement.classList.remove('account-submenu-active');
@@ -2779,6 +2807,7 @@ async function initCloudSync() {
   }
 
   renderAll();
+  openDiagnosticGoalOnAuthenticatedStartup();
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session?.user || null;
