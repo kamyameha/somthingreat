@@ -49,10 +49,7 @@ let onboardingConfirmationReady = false;
 let accountHistoryDismissedDayKey = null;
 let recoveryFormEditing = false;
 
-// TEMP DIAGNOSTIC: direct-open Goal on authenticated startup to test iOS PWA safe-area color.
-// Remove this constant, openDiagnosticGoalOnAuthenticatedStartup(), and its initCloudSync() call after the device test.
-const DIAGNOSTIC_DIRECT_GOAL_ON_AUTHENTICATED_STARTUP = true;
-let diagnosticDirectGoalOpened = false;
+const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support', 'admin']);
 
 function clearLegacyPasswordSession() {
   try {
@@ -431,6 +428,50 @@ function syncScreenThemeColor() {
     root.classList.contains('confirmation-active') ||
     root.classList.contains('account-main-active');
   setThemeColor(isBlueScreen ? '#012ded' : '#ffffff');
+}
+
+function getRequestedAccountView() {
+  const view = new URLSearchParams(window.location.search).get('accountView');
+  if (view === 'main' || ACCOUNT_SUBMENU_VIEWS.has(view)) return view;
+  return null;
+}
+
+function hasAccountViewParam() {
+  return new URLSearchParams(window.location.search).has('accountView');
+}
+
+function clearInitialAccountRouteClasses() {
+  document.documentElement.classList.remove('initial-account-main', 'initial-account-submenu');
+}
+
+function replaceAccountRouteWithNormalUrl() {
+  if (!hasAccountViewParam()) return;
+  const url = new URL(window.location.href);
+  url.searchParams.delete('accountView');
+  window.history.replaceState({}, '', url.toString());
+}
+
+function navigateToAccountMain() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('accountView', 'main');
+  window.location.assign(url.toString());
+}
+
+function navigateToAccountSubmenu(view) {
+  if (!ACCOUNT_SUBMENU_VIEWS.has(view)) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set('accountView', view);
+  window.location.assign(url.toString());
+}
+
+function navigateBackToAccountMain() {
+  navigateToAccountMain();
+}
+
+function closeAccountRoute() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('accountView');
+  window.location.assign(url.toString());
 }
 
 function isAdminUser() {
@@ -2180,6 +2221,8 @@ function renderAccount() {
   panel.classList.toggle('account-modal', Boolean(currentUser));
 
   if (!currentUser) {
+    replaceAccountRouteWithNormalUrl();
+    clearInitialAccountRouteClasses();
     panel.classList.remove('account-main-mode');
     hideAccountSubmenuPanel();
     document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
@@ -2243,14 +2286,11 @@ function renderAccount() {
   }
 }
 
-function openAccountModal() {
-  openAccountMain();
-}
-
 function openAccountMain() {
   const panel = document.getElementById('accountPanel');
   const loggedIn = document.getElementById('loggedInAccount');
   if (!panel || !currentUser) return;
+  clearInitialAccountRouteClasses();
   hideAccountSubmenuPanel();
   hideAllAccountViews();
   panel.classList.add('account-modal', 'account-open', 'account-main-mode');
@@ -2266,36 +2306,6 @@ function openAccountMain() {
   renderAccountView('main', { panel, content: loggedIn });
   renderModule.focusFirstInteractive(panel);
   updateUpdateBanner();
-}
-
-function closeAccountModal() {
-  closeAccount();
-}
-
-function closeAccount() {
-  const panel = document.getElementById('accountPanel');
-  if (panel) {
-    panel.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
-    panel.classList.add('hidden');
-    panel.setAttribute('aria-hidden', 'true');
-  }
-  hideAccountSubmenuPanel();
-  hideAllAccountViews();
-  document.body.classList.remove('account-main-active', 'account-submenu-active');
-  document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
-  syncScreenThemeColor();
-  updateUpdateBanner();
-}
-
-const accountSubmenuViews = ['goal', 'equipment', 'recovery', 'password', 'support', 'admin'];
-
-function showAccountView(view) {
-  if (view === 'password' && !canChangePassword()) view = 'main';
-  if (view === 'main') {
-    closeAccountSubmenu();
-    return;
-  }
-  if (accountSubmenuViews.includes(view)) openAccountSubmenu(view);
 }
 
 function hideAllAccountViews() {
@@ -2321,6 +2331,7 @@ function openAccountSubmenu(view) {
   const submenuPanel = document.getElementById('accountSubmenuPanel');
   const submenuContent = document.getElementById('accountSubmenuContent');
   if (!submenuPanel || !submenuContent || !currentUser) return;
+  clearInitialAccountRouteClasses();
   hideAllAccountViews();
   hideAccountMainPanel();
   document.body.classList.remove('account-main-active', 'account-submenu-active');
@@ -2335,38 +2346,32 @@ function openAccountSubmenu(view) {
   updateUpdateBanner();
 }
 
-// TEMP DIAGNOSTIC: opens Goal directly from a white authenticated startup state.
-// Revert by removing this function and the initCloudSync() call that invokes it.
-function openDiagnosticGoalOnAuthenticatedStartup() {
-  if (!DIAGNOSTIC_DIRECT_GOAL_ON_AUTHENTICATED_STARTUP) return;
-  if (diagnosticDirectGoalOpened || passwordRecoveryMode || !currentUser || !hasCompletedProfile()) return;
-  diagnosticDirectGoalOpened = true;
-
-  const panel = document.getElementById('accountPanel');
-  if (panel) {
-    panel.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
-    panel.classList.add('hidden');
-    panel.setAttribute('aria-hidden', 'true');
+function restoreRequestedAccountRoute() {
+  const requestedView = getRequestedAccountView();
+  if (!requestedView || passwordRecoveryMode) {
+    clearInitialAccountRouteClasses();
+    return false;
   }
 
-  document.documentElement.classList.remove('account-main-active', 'onboarding-active', 'confirmation-active', 'workout-active');
-  document.body.classList.remove('account-main-active', 'onboarding-active', 'confirmation-active', 'workout-active');
-  document.documentElement.classList.add('account-submenu-active');
-  document.body.classList.add('account-submenu-active');
-  setThemeColor('#ffffff');
-
-  openAccountSubmenu('goal');
-}
-
-function closeAccountSubmenu() {
-  hideAccountSubmenuPanel();
-  document.documentElement.classList.remove('account-submenu-active');
-  document.body.classList.remove('account-submenu-active');
-  if (currentUser) {
-    openAccountMain();
-  } else {
+  if (!currentUser || !hasCompletedProfile()) {
+    replaceAccountRouteWithNormalUrl();
+    clearInitialAccountRouteClasses();
     syncScreenThemeColor();
+    return false;
   }
+
+  if (requestedView === 'main') {
+    openAccountMain();
+    return true;
+  }
+
+  if (ACCOUNT_SUBMENU_VIEWS.has(requestedView)) {
+    openAccountSubmenu(requestedView);
+    return true;
+  }
+
+  clearInitialAccountRouteClasses();
+  return false;
 }
 
 function renderAccountView(view, { panel = null, content = null } = {}) {
@@ -2532,7 +2537,9 @@ async function saveAccountGoal() {
   state.selectedEnergy = null;
   saveState();
   renderAll();
-  openAccountModal();
+  populateAccountGoal();
+  renderAccountMainSummary();
+  setPanelMessage('accountGoalMessage', 'Goal saved.', 'success');
 }
 
 async function saveAccountEquipment() {
@@ -2545,7 +2552,9 @@ async function saveAccountEquipment() {
   state.selectedEnergy = null;
   saveState();
   renderAll();
-  openAccountModal();
+  populateAccountEquipment();
+  renderAccountMainSummary();
+  setPanelMessage('accountEquipmentMessage', 'Equipment saved.', 'success');
 }
 
 async function changePasswordFromAccount() {
@@ -2787,6 +2796,8 @@ async function renderAdminDashboard() {
 
 async function initCloudSync() {
   if (!supabaseClient) {
+    replaceAccountRouteWithNormalUrl();
+    clearInitialAccountRouteClasses();
     renderAll();
     return;
   }
@@ -2807,7 +2818,7 @@ async function initCloudSync() {
   }
 
   renderAll();
-  openDiagnosticGoalOnAuthenticatedStartup();
+  restoreRequestedAccountRoute();
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session?.user || null;
@@ -2826,6 +2837,7 @@ async function initCloudSync() {
     // Do not block the UI on cloud sync. If Supabase profile/state loading is slow,
     // users must still leave the auth screen instead of staying on “Logging in...”.
     renderAll();
+    restoreRequestedAccountRoute();
     if (currentUser && !passwordRecoveryMode) loadCloudStateInBackground();
   });
 }
@@ -2988,13 +3000,13 @@ document.addEventListener('keydown', event => {
   const accountPanel = document.getElementById('accountPanel');
   const accountSubmenuPanel = document.getElementById('accountSubmenuPanel');
   if (accountSubmenuPanel && !accountSubmenuPanel.classList.contains('hidden')) {
-    if (event.key === 'Escape') closeAccountModal();
+    if (event.key === 'Escape') closeAccountRoute();
     renderModule.trapTabKey(event, accountSubmenuPanel);
     return;
   }
 
   if (accountPanel?.classList.contains('account-open')) {
-    if (event.key === 'Escape') closeAccountModal();
+    if (event.key === 'Escape') closeAccountRoute();
     renderModule.trapTabKey(event, accountPanel);
   }
 });
@@ -3176,12 +3188,19 @@ document.addEventListener('click', event => {
 
   if (event.target.id === 'completeBtn') completeWorkout();
 
-  if (event.target.id === 'accountBtn' && currentUser) openAccountModal();
-  if (event.target.id === 'closeAccountModalBtn') closeAccountModal();
-  if (event.target.id === 'closeAccountSubmenuBtn') closeAccountModal();
-  if (event.target.id === 'accountPanel' && event.target.classList.contains('account-modal')) closeAccountModal();
+  if (event.target.id === 'accountBtn' && currentUser) navigateToAccountMain();
+  if (event.target.id === 'closeAccountModalBtn') closeAccountRoute();
+  if (event.target.id === 'closeAccountSubmenuBtn') closeAccountRoute();
+  if (event.target.id === 'accountPanel' && event.target.classList.contains('account-modal')) closeAccountRoute();
   const accountViewButton = event.target.closest('[data-account-view]');
-  if (accountViewButton) showAccountView(accountViewButton.dataset.accountView);
+  if (accountViewButton) {
+    const view = accountViewButton.dataset.accountView;
+    if (view === 'main') {
+      navigateBackToAccountMain();
+    } else {
+      navigateToAccountSubmenu(view);
+    }
+  }
   if (event.target.id === 'saveAccountGoalBtn') saveAccountGoal();
   if (event.target.id === 'saveAccountEquipmentBtn') saveAccountEquipment();
   if (event.target.id === 'saveAccountRecoveryBtn') saveAccountRecovery();
@@ -3343,5 +3362,7 @@ function registerServiceWorker() {
 registerServiceWorker();
 
 setupStarAnimation();
-renderAll();
+if (!(SUPABASE_READY && getRequestedAccountView())) {
+  renderAll();
+}
 initCloudSync();
