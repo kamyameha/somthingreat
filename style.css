@@ -1,6 +1,7 @@
 :root {
   --bg: #ffffff;
   --main: #012ded;
+  --route-target-background: #ffffff;
   --card: #ffffff;
   --soft: rgba(1, 45, 237, 0.08);
   --border: rgba(1, 45, 237, 0.16);
@@ -50,6 +51,39 @@
 html,
 body {
   background: var(--bg);
+}
+
+html.route-leaving,
+html.route-leaving body {
+  background-color: var(--route-target-background);
+}
+
+.app,
+.account-panel,
+.account-submenu-panel,
+#welcomeScreen {
+  transition: opacity 120ms ease;
+}
+
+html.route-leaving .app,
+html.route-leaving .account-panel,
+html.route-leaving .account-submenu-panel,
+html.route-leaving #welcomeScreen {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.account-route-focus-target:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app,
+  .account-panel,
+  .account-submenu-panel,
+  #welcomeScreen {
+    transition: none;
+  }
 }
 
 body {

@@ -27,24 +27,58 @@
       if (theme) theme.content = color;
     })();
   </script>
-	  <style>
-	    html.initial-account-main,
-	    html.initial-account-main body {
-	      background: #012ded;
-	    }
+  <style>
+    html.initial-account-main,
+    html.initial-account-main body {
+      background: #012ded;
+    }
 
-	    html.initial-account-submenu,
-	    html.initial-account-submenu body {
-	      background: #ffffff;
-	    }
+    html.initial-account-submenu,
+    html.initial-account-submenu body {
+      background: #ffffff;
+    }
 
-	    html.initial-account-main #welcomeScreen,
-	    html.initial-account-main .app,
-	    html.initial-account-submenu #welcomeScreen,
-	    html.initial-account-submenu .app {
-	      display: none !important;
-	    }
-	  </style>
+    html.initial-account-main #welcomeScreen,
+    html.initial-account-main .app,
+    html.initial-account-submenu #welcomeScreen,
+    html.initial-account-submenu .app {
+      display: none !important;
+    }
+
+    #accountRouteShell {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      background: #ffffff;
+      opacity: 1;
+      transition: opacity 120ms ease;
+    }
+
+    html.initial-account-main #accountRouteShell,
+    html.initial-account-submenu #accountRouteShell {
+      display: block;
+    }
+
+    html.initial-account-main #accountRouteShell {
+      background: #012ded;
+    }
+
+    html.initial-account-submenu #accountRouteShell {
+      background: #ffffff;
+    }
+
+    #accountRouteShell.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #accountRouteShell {
+        transition: none;
+      }
+    }
+  </style>
   <title>Somthingreat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -66,17 +100,18 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.16.114727" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.16.114727" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.16.114727" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.16.114727" />
-  <link rel="stylesheet" href="account.css?v=2026.07.16.114727" />
+  <link rel="stylesheet" href="style.css?v=2026.07.16.120524" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.16.120524" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.16.120524" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.16.120524" />
+  <link rel="stylesheet" href="account.css?v=2026.07.16.120524" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
-<body>
-  <section id="welcomeScreen" class="welcome-screen">
+	<body>
+  <div id="accountRouteShell" aria-hidden="true"></div>
+	  <section id="welcomeScreen" class="welcome-screen">
     <div class="welcome-inner">
 
       <img id="welcomeStar" class="welcome-star" src="Assets/Animations/start1.png" alt="Somthingreat star" />
@@ -161,7 +196,7 @@
       <div id="loggedInAccount" class="hidden account-modal-content">
         <div class="account-modal-header">
             <div>
-            <h2 id="accountModalTitle">Account</h2>
+	            <h2 id="accountModalTitle" class="account-main-heading account-route-focus-target" tabindex="-1">Account</h2>
           </div>
           <button id="closeAccountModalBtn" class="ghost-btn compact" type="button" aria-label="Close account">×</button>
         </div>
@@ -213,7 +248,7 @@
 
         <div id="accountGoalView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-          <h2>Focus</h2>
+	          <h2 class="account-view-title account-route-focus-target" tabindex="-1">Focus</h2>
           <p class="muted">Choose the main goal your workouts should prioritize.</p>
           <label class="option-row"><input type="radio" name="accountGoal" value="pullup"> <span>Pull-up</span></label>
           <label class="option-row"><input type="radio" name="accountGoal" value="muscleup"> <span>Muscle-up</span></label>
@@ -226,7 +261,7 @@
 
         <div id="accountEquipmentView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-          <h2>Equipment</h2>
+	          <h2 class="account-view-title account-route-focus-target" tabindex="-1">Equipment</h2>
           <p class="muted">Update the equipment you can use right now.</p>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="none"> <span>No equipment</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="pullupBar"> <span>Pull-up bar</span></label>
@@ -239,7 +274,7 @@
 
         <div id="accountRecoveryView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-          <h2>Recovery</h2>
+	          <h2 class="account-view-title account-route-focus-target" tabindex="-1">Recovery</h2>
           <p class="muted">Give your body the time it needs. We’ll adjust your workouts so you can keep moving safely.</p>
           <select id="recoveryAreaInput" class="recovery-select" aria-label="Select an area">
             <option value="">Select an area</option>
@@ -282,7 +317,7 @@
 
         <div id="accountPasswordView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-          <h2>Password</h2>
+	          <h2 class="account-view-title account-route-focus-target" tabindex="-1">Password</h2>
           <p class="muted">We will email you a secure reset link so you can choose a new password.</p>
           <button id="saveAccountPasswordBtn" class="primary-btn account-full-btn" type="button">Send reset link</button>
           <p id="accountPasswordMessage" class="auth-message" aria-live="polite"></p>
@@ -290,7 +325,7 @@
 
         <div id="accountSupportView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-          <h2>Support</h2>
+	          <h2 class="account-view-title account-route-focus-target" tabindex="-1">Support</h2>
           <p class="muted">Send us a message and we’ll get back to you as soon as possible.</p>
           <input id="supportSubjectInput" class="text-input support-input" type="text" maxlength="120" placeholder="Subject *" autocomplete="off" />
           <textarea id="supportMessageInput" class="text-input support-input support-message-input" maxlength="1500" placeholder="Tell us what happened *"></textarea>
@@ -300,7 +335,7 @@
 
         <div id="accountAdminView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-          <h2>Dashboard</h2>
+	          <h2 class="account-view-title account-route-focus-target" tabindex="-1">Dashboard</h2>
           <p id="adminDashboardSummary" class="muted">Loading dashboard...</p>
           <button id="toggleAdminUsersBtn" class="admin-users-toggle" type="button" aria-expanded="false">Users list</button>
           <p id="adminDashboardMessage" class="sync-status">Loading users...</p>
@@ -592,13 +627,13 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.16.114727"></script>
-  <script src="workouts.js?v=2026.07.16.114727"></script>
-  <script src="state.js?v=2026.07.16.114727"></script>
-  <script src="account.js?v=2026.07.16.114727"></script>
-  <script src="admin.js?v=2026.07.16.114727"></script>
-  <script src="render.js?v=2026.07.16.114727"></script>
-  <script src="app-version.js?v=2026.07.16.114727"></script>
-  <script src="app.js?v=2026.07.16.114727"></script>
+  <script src="auth.js?v=2026.07.16.120524"></script>
+  <script src="workouts.js?v=2026.07.16.120524"></script>
+  <script src="state.js?v=2026.07.16.120524"></script>
+  <script src="account.js?v=2026.07.16.120524"></script>
+  <script src="admin.js?v=2026.07.16.120524"></script>
+  <script src="render.js?v=2026.07.16.120524"></script>
+  <script src="app-version.js?v=2026.07.16.120524"></script>
+  <script src="app.js?v=2026.07.16.120524"></script>
 </body>
 </html>

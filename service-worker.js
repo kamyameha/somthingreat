@@ -83,12 +83,22 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Always try the network first for pages and core app files.
-  // This prevents users from staying stuck on an old app.js/index.html.
   const isNavigation = request.mode === 'navigate';
-  const isCoreFile = /\/(index\.html|app(?:-\d+)?\.js|app-version\.js|auth\.js|workouts\.js|state\.js|account\.js|admin\.js|render\.js|style\.css|supabase-config\.js|manifest\.json|version\.json)$/.test(url.pathname);
+  const isVersionedAppAsset = url.searchParams.get('v') === APP_VERSION &&
+    /\.(?:css|js)$/.test(url.pathname);
+  const isFreshCoreFile = /\/(?:supabase-config\.js|manifest\.json|version\.json)$/.test(url.pathname);
 
-  if (isNavigation || isCoreFile) {
+  if (isNavigation) {
+    event.respondWith(appShellFirst(request));
+    return;
+  }
+
+  if (isVersionedAppAsset) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  if (isFreshCoreFile) {
     event.respondWith(networkFirst(request));
     return;
   }
@@ -118,6 +128,27 @@ async function cacheFirst(request) {
   const freshResponse = await fetch(request);
   await cache.put(request, freshResponse.clone());
   return freshResponse;
+}
+
+async function appShellFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cachedResponse = await cache.match('./index.html') || await cache.match('./');
+  const refresh = fetch(request, { cache: 'no-store' })
+    .then(async response => {
+      if (response.ok) await cache.put('./index.html', response.clone());
+      return response;
+    })
+    .catch(error => {
+      if (!cachedResponse) throw error;
+      return null;
+    });
+
+  if (cachedResponse) {
+    refresh.catch(() => {});
+    return cachedResponse;
+  }
+
+  return refresh;
 }
 
 async function cacheAppShell(cache) {

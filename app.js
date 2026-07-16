@@ -50,6 +50,7 @@ let accountHistoryDismissedDayKey = null;
 let recoveryFormEditing = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support', 'admin']);
+const ACCOUNT_ROUTE_TRANSITION_MS = 120;
 
 function clearLegacyPasswordSession() {
   try {
@@ -444,6 +445,44 @@ function clearInitialAccountRouteClasses() {
   document.documentElement.classList.remove('initial-account-main', 'initial-account-submenu');
 }
 
+function removeAccountRouteShell() {
+  document.getElementById('accountRouteShell')?.remove();
+}
+
+function revealAccountRoute() {
+  const shell = document.getElementById('accountRouteShell');
+  window.requestAnimationFrame(() => {
+    document.documentElement.classList.add('account-route-ready');
+    if (!shell) return;
+
+    shell.addEventListener('transitionend', () => shell.remove(), { once: true });
+    shell.classList.add('is-hidden');
+    window.setTimeout(() => {
+      shell.remove();
+    }, 250);
+  });
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
+
+function navigateToAccountRoute(url, targetColor) {
+  if (document.documentElement.classList.contains('route-leaving')) return;
+
+  document.documentElement.style.setProperty('--route-target-background', targetColor);
+
+  if (prefersReducedMotion()) {
+    window.location.assign(url.toString());
+    return;
+  }
+
+  document.documentElement.classList.add('route-leaving');
+  window.setTimeout(() => {
+    window.location.assign(url.toString());
+  }, ACCOUNT_ROUTE_TRANSITION_MS);
+}
+
 function replaceAccountRouteWithNormalUrl() {
   if (!hasAccountViewParam()) return;
   const url = new URL(window.location.href);
@@ -454,14 +493,14 @@ function replaceAccountRouteWithNormalUrl() {
 function navigateToAccountMain() {
   const url = new URL(window.location.href);
   url.searchParams.set('accountView', 'main');
-  window.location.assign(url.toString());
+  navigateToAccountRoute(url, '#012ded');
 }
 
 function navigateToAccountSubmenu(view) {
   if (!ACCOUNT_SUBMENU_VIEWS.has(view)) return;
   const url = new URL(window.location.href);
   url.searchParams.set('accountView', view);
-  window.location.assign(url.toString());
+  navigateToAccountRoute(url, '#ffffff');
 }
 
 function navigateBackToAccountMain() {
@@ -471,7 +510,14 @@ function navigateBackToAccountMain() {
 function closeAccountRoute() {
   const url = new URL(window.location.href);
   url.searchParams.delete('accountView');
-  window.location.assign(url.toString());
+  navigateToAccountRoute(url, '#ffffff');
+}
+
+function focusAccountRouteHeading(view) {
+  const target = view === 'main'
+    ? document.querySelector('#accountPanel .account-main-heading')
+    : document.querySelector(`#account${view[0].toUpperCase()}${view.slice(1)}View .account-view-title`);
+  target?.focus({ preventScroll: true });
 }
 
 function isAdminUser() {
@@ -2220,10 +2266,11 @@ function renderAccount() {
 
   panel.classList.toggle('account-modal', Boolean(currentUser));
 
-  if (!currentUser) {
-    replaceAccountRouteWithNormalUrl();
-    clearInitialAccountRouteClasses();
-    panel.classList.remove('account-main-mode');
+	  if (!currentUser) {
+	    replaceAccountRouteWithNormalUrl();
+	    clearInitialAccountRouteClasses();
+	    removeAccountRouteShell();
+	    panel.classList.remove('account-main-mode');
     hideAccountSubmenuPanel();
     document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
     document.body.classList.remove('account-main-active', 'account-submenu-active');
@@ -2290,21 +2337,26 @@ function openAccountMain() {
   const panel = document.getElementById('accountPanel');
   const loggedIn = document.getElementById('loggedInAccount');
   if (!panel || !currentUser) return;
+
   clearInitialAccountRouteClasses();
   hideAccountSubmenuPanel();
   hideAllAccountViews();
+
   panel.classList.add('account-modal', 'account-open', 'account-main-mode');
   panel.classList.remove('account-password-mode');
   panel.classList.remove('hidden');
   panel.setAttribute('aria-hidden', 'false');
   if (loggedIn) loggedIn.classList.remove('hidden');
+
   document.documentElement.classList.remove('account-submenu-active');
   document.body.classList.remove('account-submenu-active');
   document.documentElement.classList.add('account-main-active');
   document.body.classList.add('account-main-active');
+
   syncScreenThemeColor();
   renderAccountView('main', { panel, content: loggedIn });
-  renderModule.focusFirstInteractive(panel);
+  focusAccountRouteHeading('main');
+  revealAccountRoute();
   updateUpdateBanner();
 }
 
@@ -2331,31 +2383,38 @@ function openAccountSubmenu(view) {
   const submenuPanel = document.getElementById('accountSubmenuPanel');
   const submenuContent = document.getElementById('accountSubmenuContent');
   if (!submenuPanel || !submenuContent || !currentUser) return;
+
   clearInitialAccountRouteClasses();
   hideAllAccountViews();
   hideAccountMainPanel();
+
   document.body.classList.remove('account-main-active', 'account-submenu-active');
   document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
   document.documentElement.classList.add('account-submenu-active');
   document.body.classList.add('account-submenu-active');
+
   syncScreenThemeColor();
   renderAccountView(view, { panel: submenuPanel, content: submenuContent });
   submenuPanel.classList.remove('hidden');
   submenuPanel.setAttribute('aria-hidden', 'false');
-  renderModule.focusFirstInteractive(submenuPanel);
+  focusAccountRouteHeading(view);
+  revealAccountRoute();
   updateUpdateBanner();
 }
 
 function restoreRequestedAccountRoute() {
   const requestedView = getRequestedAccountView();
+
   if (!requestedView || passwordRecoveryMode) {
     clearInitialAccountRouteClasses();
+    removeAccountRouteShell();
     return false;
   }
 
   if (!currentUser || !hasCompletedProfile()) {
     replaceAccountRouteWithNormalUrl();
     clearInitialAccountRouteClasses();
+    removeAccountRouteShell();
     syncScreenThemeColor();
     return false;
   }
@@ -2371,6 +2430,7 @@ function restoreRequestedAccountRoute() {
   }
 
   clearInitialAccountRouteClasses();
+  removeAccountRouteShell();
   return false;
 }
 
