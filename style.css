@@ -52,26 +52,13 @@ body {
   background: var(--bg);
 }
 
-.account-route-focus-target:focus {
+.account-heading-focus-target:focus {
   outline: none;
-}
-
-html.account-document-route .account-panel,
-html.account-document-route .account-submenu-panel {
-  opacity: 0;
-  transition: none;
-}
-
-html.account-document-route.account-route-content-ready .account-panel:not(.hidden),
-html.account-document-route.account-route-content-ready .account-submenu-panel:not(.hidden) {
-  opacity: 1;
-  transition: opacity 240ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .account-panel,
-  .account-submenu-panel,
-  #accountRouteShell {
+  .account-submenu-panel {
     transition: none !important;
   }
 }

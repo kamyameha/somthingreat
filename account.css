@@ -137,15 +137,10 @@ body {
   min-height: 100%;
 }
 
-html.account-main-active,
-body.account-main-active {
+html.account-active,
+body.account-active,
+body.account-active .app {
   background-color: var(--main);
-}
-
-html.account-submenu-active,
-body.account-submenu-active,
-body.account-submenu-active .app {
-  background-color: #ffffff;
 }
 
 .account-panel.account-modal.account-main-mode {
@@ -301,8 +296,8 @@ body.account-submenu-active .app {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 0;
-  background-color: #ffffff;
-  color: var(--text);
+  background-color: var(--main);
+  color: #ffffff;
   overflow: hidden;
 }
 
@@ -323,7 +318,7 @@ body.account-submenu-active .app {
   padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(80px + env(safe-area-inset-bottom));
   border: 0;
   border-radius: 0;
-  background: #ffffff;
+  background: var(--main);
   box-shadow: none;
 }
 
@@ -336,7 +331,7 @@ body.account-submenu-active .app {
   width: 134px;
   height: 18px;
   margin: 0;
-  background: var(--main);
+  background: #ffffff;
   color: transparent;
   font-size: 0;
   line-height: 0;
@@ -363,7 +358,7 @@ body.account-submenu-active .app {
   display: block;
   width: 26px;
   height: 26px;
-  background: var(--main);
+  background: #ffffff;
   mask: url("./x.svg") center / 26px 26px no-repeat;
   -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
 }
@@ -379,7 +374,7 @@ body.account-submenu-active .app {
   align-content: flex-start;
   column-gap: 20px;
   row-gap: 19px;
-  color: var(--main);
+  color: #ffffff;
 }
 
 .account-submenu-panel .account-view.hidden {
@@ -395,7 +390,7 @@ body.account-submenu-active .app {
   align-self: center;
   padding: 0;
   border: 0;
-  background: var(--main);
+  background: #ffffff;
   color: transparent;
   font-size: 0;
   line-height: 0;
@@ -408,7 +403,7 @@ body.account-submenu-active .app {
   width: auto;
   margin: 0 0 12px;
   align-self: center;
-  color: var(--main);
+  color: #ffffff;
   font-size: 32px;
   line-height: 1.1;
   font-weight: 500;
@@ -418,7 +413,7 @@ body.account-submenu-active .app {
   flex: 0 0 100%;
   width: 100%;
   margin: 0 0 8px;
-  color: var(--main);
+  color: #ffffff;
   font-size: 18px;
   line-height: 1.2;
   font-weight: 400;
@@ -434,10 +429,10 @@ body.account-submenu-active .app {
   gap: 15px;
   margin: 0;
   padding: 0 21px;
-  border: 1px solid var(--main);
+  border: 1px solid #ffffff;
   border-radius: 20px;
   background: transparent;
-  color: var(--main);
+  color: #ffffff;
   font-size: 18px;
   line-height: 1;
   font-weight: 400;
@@ -452,8 +447,8 @@ body.account-submenu-active .app {
 }
 
 .account-submenu-panel .option-row:has(input:checked) {
-  background: var(--main);
-  color: #ffffff;
+  background: #ffffff;
+  color: var(--main);
 }
 
 .account-submenu-panel #accountEquipmentView .option-row::after {
@@ -486,14 +481,37 @@ body.account-submenu-active .app {
   flex: 0 0 min(353px, 100%);
   height: 46px;
   padding: 0 21px;
-  border: 1px solid var(--main);
+  border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 20px;
   background: transparent;
-  color: var(--main);
+  color: #ffffff;
   font: inherit;
   font-size: 16px;
   line-height: 1;
   appearance: none;
+}
+
+.account-submenu-panel .recovery-select option {
+  background: #ffffff;
+  color: var(--main);
+}
+
+.account-submenu-panel .recovery-select:focus,
+.account-submenu-panel #accountSupportView .support-input:focus,
+.account-submenu-panel .admin-users-toggle:focus,
+.account-submenu-panel .option-row:focus-within,
+.account-submenu-panel .account-full-btn:focus-visible,
+.account-submenu-panel .active-recovery-actions button:focus-visible,
+.account-submenu-panel .history-month-controls button:focus-visible {
+  border-color: #ffffff;
+  outline: 2px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+}
+
+.account-submenu-panel #accountSupportView .support-input:-webkit-autofill {
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  box-shadow: 0 0 0 1000px var(--main) inset;
 }
 
 .account-submenu-panel .recovery-mode-row {
@@ -515,7 +533,8 @@ body.account-submenu-active .app {
   margin-top: 0;
   padding: 20px;
   border-radius: 20px;
-  background: var(--main);
+  border: 1px solid #ffffff;
+  background: transparent;
   color: #ffffff;
 }
 
@@ -574,9 +593,9 @@ body.account-submenu-active .app {
   min-height: 46px;
   margin: 33px 0 0;
   border-radius: 20px;
-  background: var(--main);
-  border-color: var(--main);
-  color: #ffffff;
+  background: #ffffff;
+  border-color: #ffffff;
+  color: var(--main);
   font-size: 16px;
   line-height: 1;
   font-weight: 500;
@@ -589,10 +608,18 @@ body.account-submenu-active .app {
 .account-submenu-panel .auth-message {
   width: 100%;
   margin: 0;
+  color: #ffffff;
 }
 
 .account-submenu-panel .auth-message:empty {
   display: none;
+}
+
+.account-submenu-panel .auth-message[data-type="error"],
+.account-submenu-panel .auth-message[data-type="success"],
+.account-submenu-panel .auth-message[data-type="info"],
+.account-submenu-panel .sync-status {
+  color: #ffffff;
 }
 
 .account-view > .text-btn {
@@ -690,12 +717,12 @@ body.account-submenu-active .app {
 
 .account-submenu-panel #accountHistoryView {
   display: block;
-  color: var(--main);
+  color: #ffffff;
 }
 
 .account-submenu-panel #accountSupportView,
 .account-submenu-panel #accountAdminView {
-  color: var(--main);
+  color: #ffffff;
 }
 
 .account-submenu-panel #accountHistoryView.hidden,
@@ -725,10 +752,10 @@ body.account-submenu-active .app {
   width: 100%;
   height: 46px;
   margin: 0;
-  border: 1px solid rgba(1, 45, 237, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 20px;
   background: transparent;
-  color: var(--main);
+  color: #ffffff;
   font-size: 16px;
   font-weight: 400;
 }
@@ -741,7 +768,7 @@ body.account-submenu-active .app {
 }
 
 .account-submenu-panel #accountSupportView .support-input::placeholder {
-  color: rgba(1, 45, 237, 0.35);
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .account-submenu-panel #accountSupportView .account-full-btn {
@@ -756,10 +783,10 @@ body.account-submenu-active .app {
   min-height: 46px;
   margin: 0;
   padding: 0 21px;
-  border: 1px solid var(--main);
+  border: 1px solid #ffffff;
   border-radius: 20px;
   background: transparent;
-  color: var(--main);
+  color: #ffffff;
   font-size: 16px;
   line-height: 1;
   font-weight: 400;
@@ -770,10 +797,10 @@ body.account-submenu-active .app {
   height: auto;
   min-height: 46px;
   padding: 20px;
-  border: 0;
+  border: 1px solid #ffffff;
   border-radius: 20px 20px 0 0;
-  background: var(--main);
-  color: #ffffff;
+  background: #ffffff;
+  color: var(--main);
   font-weight: 700;
 }
 
@@ -795,7 +822,7 @@ body.account-submenu-active .app {
 
 .account-submenu-panel #historyYearTitle {
   margin: 0 0 5px;
-  color: var(--main);
+  color: #ffffff;
   font-size: 20px;
   line-height: 1.1;
   font-weight: 400;
@@ -803,7 +830,7 @@ body.account-submenu-active .app {
 
 .account-submenu-panel .history-header h3 {
   margin: 0;
-  color: var(--main);
+  color: #ffffff;
   font-size: 32px;
   line-height: 1;
   font-weight: 700;
@@ -824,7 +851,7 @@ body.account-submenu-active .app {
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--main);
+  color: #ffffff;
   font-size: 26px;
   line-height: 1;
   font-weight: 400;
@@ -840,14 +867,14 @@ body.account-submenu-active .app {
 
 .account-submenu-panel .history-weekdays {
   margin: 0 0 8px;
-  color: #000000;
+  color: #ffffff;
   font-size: 18px;
   line-height: 1;
   font-weight: 700;
 }
 
 .account-submenu-panel .history-weekdays .is-today-weekday {
-  color: var(--main);
+  color: #ffffff;
 }
 
 .account-submenu-panel .history-day {
@@ -855,7 +882,7 @@ body.account-submenu-active .app {
   height: 49px;
   min-height: 49px;
   padding: 0;
-  border: 1px solid rgba(1, 45, 237, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 50%;
   background: transparent;
   color: transparent;
@@ -872,18 +899,18 @@ body.account-submenu-active .app {
 
 .account-submenu-panel .history-day.past-empty {
   border-color: transparent;
-  background: rgba(1, 45, 237, 0.15);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .account-submenu-panel .history-day.has-workout {
-  border-color: #000000;
-  background: #000000;
+  border-color: #ffffff;
+  background: #ffffff;
 }
 
 .account-submenu-panel .history-day.is-today,
 .account-submenu-panel .history-day.is-selected {
-  border-color: var(--main);
-  background: var(--main);
+  border-color: #ffffff;
+  background: #ffffff;
 }
 
 .account-submenu-panel .history-day.history-empty {
@@ -908,7 +935,8 @@ body.account-submenu-active .app {
   padding: 20px;
   border: 0;
   border-radius: 20px;
-  background: var(--main);
+  border: 1px solid #ffffff;
+  background: transparent;
   color: #ffffff;
 }
 
@@ -1169,6 +1197,9 @@ body.account-submenu-active .app {
   flex: 0 0 100%;
   width: 100%;
   margin-top: -19px;
+  border: 1px solid #ffffff;
+  border-top: 0;
+  background: transparent;
 }
 
 .admin-user-stats {
@@ -1180,7 +1211,7 @@ body.account-submenu-active .app {
 .admin-user-stats span {
   padding: 6px 10px;
   border-radius: 999px;
-  background: var(--soft);
+  background: #ffffff;
   color: var(--main);
   font-weight: 800;
 }
@@ -1197,8 +1228,8 @@ body.account-submenu-active .app {
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: var(--main);
-  color: #ffffff;
+  background: #ffffff;
+  color: var(--main);
   font-size: 14px;
 }
 

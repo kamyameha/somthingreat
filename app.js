@@ -227,14 +227,14 @@ function setWelcomeVisible(visible) {
   const app = document.querySelector('.app');
   const bottomNav = document.querySelector('.bottom-nav');
 
-  document.documentElement.classList.toggle('welcome-active', visible);
-  document.body.classList.toggle('welcome-active', visible);
-  if (visible) {
-    document.documentElement.classList.remove('onboarding-active', 'confirmation-active', 'account-main-active', 'account-submenu-active', 'workout-active');
-    document.body.classList.remove('onboarding-active', 'confirmation-active', 'account-main-active', 'account-submenu-active', 'workout-active');
-    document.getElementById('accountPanel')?.classList.remove('account-main-mode');
-    hideAccountSubmenuPanel();
-    syncScreenThemeColor();
+	  document.documentElement.classList.toggle('welcome-active', visible);
+	  document.body.classList.toggle('welcome-active', visible);
+	  if (visible) {
+	    document.documentElement.classList.remove('onboarding-active', 'confirmation-active', 'account-active', 'workout-active');
+	    document.body.classList.remove('onboarding-active', 'confirmation-active', 'account-active', 'workout-active');
+	    document.getElementById('accountPanel')?.classList.remove('account-main-mode');
+	    hideAccountSubmenuPanel();
+	    syncScreenThemeColor();
   }
   if (welcome) welcome.classList.toggle('hidden', !visible);
   if (app) app.classList.toggle('hidden', visible);
@@ -427,133 +427,17 @@ function syncScreenThemeColor() {
   const root = document.documentElement;
   const isBlueScreen = root.classList.contains('onboarding-active') ||
     root.classList.contains('confirmation-active') ||
-    root.classList.contains('account-main-active');
+    root.classList.contains('account-active');
   setThemeColor(isBlueScreen ? '#012ded' : '#ffffff');
 }
 
-function getRequestedAccountView() {
-  const view = new URLSearchParams(window.location.search).get('accountView');
-  if (view === 'main' || ACCOUNT_SUBMENU_VIEWS.has(view)) return view;
-  return null;
+function setAccountActive(active) {
+  document.documentElement.classList.toggle('account-active', active);
+  document.body.classList.toggle('account-active', active);
+  if (active) setThemeColor('#012ded');
 }
 
-function isAccountDocumentRoute() {
-  return Boolean(getRequestedAccountView());
-}
-
-function hasAccountViewParam() {
-  return new URLSearchParams(window.location.search).has('accountView');
-}
-
-function clearInitialAccountRouteClasses() {
-  document.documentElement.classList.remove('initial-account-main', 'initial-account-submenu');
-}
-
-function clearAccountDocumentRouteClasses() {
-  clearInitialAccountRouteClasses();
-  document.documentElement.classList.remove('account-document-route', 'account-route-content-ready');
-}
-
-function removeAccountRouteShell() {
-  document.getElementById('accountRouteShell')?.remove();
-}
-
-function revealAccountRouteContent(view) {
-  const shell = document.getElementById('accountRouteShell');
-  hideNormalAppChrome();
-
-  window.requestAnimationFrame(() => {
-    clearInitialAccountRouteClasses();
-
-    window.requestAnimationFrame(() => {
-      focusAccountRouteHeading(view);
-      document.documentElement.classList.add('account-route-content-ready');
-
-      if (!shell) return;
-      shell.addEventListener('transitionend', () => shell.remove(), { once: true });
-      shell.classList.add('is-hidden');
-      window.setTimeout(() => {
-        shell.remove();
-      }, 260);
-    });
-  });
-}
-
-function showRouteNavigationCover(color) {
-  const cover = document.getElementById('routeNavigationCover');
-  if (!cover) return;
-
-  cover.classList.remove('is-blue', 'is-white');
-  cover.classList.add('is-visible', color === '#012ded' ? 'is-blue' : 'is-white');
-  void cover.offsetHeight;
-}
-
-function navigateToUrl(url) {
-  window.location.assign(url.toString());
-}
-
-function navigateToAccountRoute(url, targetColor) {
-  hideNormalAppChrome();
-  showRouteNavigationCover(targetColor);
-  navigateToUrl(url);
-}
-
-function navigateToNormalAppRoute(url) {
-  hideNormalAppChrome();
-  showRouteNavigationCover('#ffffff');
-  navigateToUrl(url);
-}
-
-function removeRouteNavigationCover() {
-  document.getElementById('routeNavigationCover')?.remove();
-}
-
-function removeRouteShells() {
-  removeAccountRouteShell();
-  removeRouteNavigationCover();
-}
-
-function clearAccountRouteStartup() {
-  clearAccountDocumentRouteClasses();
-  removeRouteShells();
-}
-
-function removeAccountRouteParam() {
-  if (!hasAccountViewParam()) return null;
-  const url = new URL(window.location.href);
-  url.searchParams.delete('accountView');
-  return url;
-}
-
-function replaceAccountRouteWithNormalUrl() {
-  const url = removeAccountRouteParam();
-  if (!url) return;
-  window.history.replaceState({}, '', url.toString());
-}
-
-function closeAccountRoute() {
-  const url = removeAccountRouteParam() || new URL(window.location.href);
-  navigateToNormalAppRoute(url);
-}
-
-function navigateToAccountMain() {
-  const url = new URL(window.location.href);
-  url.searchParams.set('accountView', 'main');
-  navigateToAccountRoute(url, '#012ded');
-}
-
-function navigateToAccountSubmenu(view) {
-  if (!ACCOUNT_SUBMENU_VIEWS.has(view)) return;
-  const url = new URL(window.location.href);
-  url.searchParams.set('accountView', view);
-  navigateToAccountRoute(url, '#ffffff');
-}
-
-function navigateBackToAccountMain() {
-  navigateToAccountMain();
-}
-
-function focusAccountRouteHeading(view) {
+function focusAccountViewHeading(view) {
   const target = view === 'main'
     ? document.querySelector('#accountPanel .account-main-heading')
     : document.querySelector(`#account${view[0].toUpperCase()}${view.slice(1)}View .account-view-title`);
@@ -570,18 +454,43 @@ function syncBottomNavVisibility(profileDone = hasCompletedProfile()) {
   const bottomNav = document.querySelector('.bottom-nav');
   if (!bottomNav) return;
 
-  if (isAccountDocumentRoute()) {
-    bottomNav.classList.add('hidden');
-    return;
-  }
-
   const shouldHide = !profileDone ||
     passwordRecoveryMode ||
     !currentUser ||
     document.documentElement.classList.contains('welcome-active') ||
+    document.documentElement.classList.contains('account-active') ||
     document.body.classList.contains('workout-active');
 
   bottomNav.classList.toggle('hidden', shouldHide);
+}
+
+function openAccountModal() {
+  openAccountMain();
+}
+
+function showAccountView(view = 'main') {
+  if (view === 'main') {
+    openAccountMain();
+    return;
+  }
+  if (ACCOUNT_SUBMENU_VIEWS.has(view)) openAccountSubmenu(view);
+}
+
+function closeAccountModal() {
+  const panel = document.getElementById('accountPanel');
+  const submenuPanel = document.getElementById('accountSubmenuPanel');
+
+  panel?.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
+  panel?.classList.add('hidden');
+  panel?.setAttribute('aria-hidden', 'true');
+  submenuPanel?.classList.remove('account-submenu-mode');
+  submenuPanel?.classList.add('hidden');
+  submenuPanel?.setAttribute('aria-hidden', 'true');
+  hideAllAccountViews();
+  setAccountActive(false);
+  syncScreenThemeColor();
+  syncBottomNavVisibility();
+  updateUpdateBanner();
 }
 function isAdminUser() {
   return adminModule.isAdminUser(currentUser, ADMIN_EMAILS);
@@ -840,12 +749,12 @@ async function loadCloudStateInBackground() {
 }
 
 function setAuthMode(mode = 'welcome') {
-  blurActiveAuthField();
-  document.documentElement.classList.remove('account-main-active', 'account-submenu-active', 'workout-active');
-  document.body.classList.remove('account-main-active', 'account-submenu-active', 'workout-active');
-  document.getElementById('accountPanel')?.classList.remove('account-main-mode');
-  hideAccountSubmenuPanel();
-  syncScreenThemeColor();
+	  blurActiveAuthField();
+	  document.documentElement.classList.remove('account-active', 'workout-active');
+	  document.body.classList.remove('account-active', 'workout-active');
+	  document.getElementById('accountPanel')?.classList.remove('account-main-mode');
+	  hideAccountSubmenuPanel();
+	  syncScreenThemeColor();
   const welcome = document.getElementById('authWelcome');
   const login = document.getElementById('authLoginForm');
   const reset = document.getElementById('authResetForm');
@@ -2047,8 +1956,8 @@ function renderOnboarding() {
 
   onboarding.classList.remove('hidden');
   hideAccountSubmenuPanel();
-  document.documentElement.classList.remove('welcome-active', 'account-submenu-active');
-  document.body.classList.remove('welcome-active', 'account-submenu-active');
+	  document.documentElement.classList.remove('welcome-active', 'account-active');
+	  document.body.classList.remove('welcome-active', 'account-active');
   document.documentElement.classList.add('onboarding-active');
   document.body.classList.add('onboarding-active');
   syncScreenThemeColor();
@@ -2169,7 +2078,6 @@ function isSafeToShowUpdateBanner() {
     updateBannerReady &&
     currentUser &&
     !passwordRecoveryMode &&
-    !isAccountDocumentRoute() &&
     !state.current &&
     !accountPanel?.classList.contains('account-open') &&
     accountSubmenuPanel?.classList.contains('hidden') &&
@@ -2328,17 +2236,14 @@ function renderAccount() {
 
   if (!panel || !loggedOut || !loggedIn) return;
 
-  panel.classList.toggle('account-modal', Boolean(currentUser));
+	  panel.classList.toggle('account-modal', Boolean(currentUser));
 
 	  if (!currentUser) {
-	    replaceAccountRouteWithNormalUrl();
-	    clearAccountRouteStartup();
 	    panel.classList.remove('account-main-mode');
-    hideAccountSubmenuPanel();
-    document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
-    document.body.classList.remove('account-main-active', 'account-submenu-active');
-    syncScreenThemeColor();
-  }
+	    hideAccountSubmenuPanel();
+	    setAccountActive(false);
+	    syncScreenThemeColor();
+	  }
 
   if (!SUPABASE_READY) {
     panel.classList.remove('hidden');
@@ -2402,8 +2307,6 @@ function openAccountMain() {
   if (!panel || !currentUser) return;
 
   hideNormalAppChrome();
-  document.documentElement.classList.add('account-document-route');
-  document.documentElement.classList.remove('account-route-content-ready');
   hideAccountSubmenuPanel();
   hideAllAccountViews();
 
@@ -2413,14 +2316,9 @@ function openAccountMain() {
   panel.setAttribute('aria-hidden', 'false');
   if (loggedIn) loggedIn.classList.remove('hidden');
 
-  document.documentElement.classList.remove('account-submenu-active');
-  document.body.classList.remove('account-submenu-active');
-  document.documentElement.classList.add('account-main-active');
-  document.body.classList.add('account-main-active');
-
-  syncScreenThemeColor();
+  setAccountActive(true);
   renderAccountView('main', { panel, content: loggedIn });
-  revealAccountRouteContent('main');
+  focusAccountViewHeading('main');
   updateUpdateBanner();
 }
 
@@ -2439,6 +2337,7 @@ function hideAccountMainPanel() {
 function hideAccountSubmenuPanel() {
   const submenuPanel = document.getElementById('accountSubmenuPanel');
   if (!submenuPanel) return;
+  submenuPanel.classList.remove('account-submenu-mode');
   submenuPanel.classList.add('hidden');
   submenuPanel.setAttribute('aria-hidden', 'true');
 }
@@ -2449,51 +2348,15 @@ function openAccountSubmenu(view) {
   if (!submenuPanel || !submenuContent || !currentUser) return;
 
   hideNormalAppChrome();
-  document.documentElement.classList.add('account-document-route');
-  document.documentElement.classList.remove('account-route-content-ready');
   hideAllAccountViews();
   hideAccountMainPanel();
-
-  document.body.classList.remove('account-main-active', 'account-submenu-active');
-  document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
-  document.documentElement.classList.add('account-submenu-active');
-  document.body.classList.add('account-submenu-active');
-
-  syncScreenThemeColor();
+  setAccountActive(true);
   renderAccountView(view, { panel: submenuPanel, content: submenuContent });
+  submenuPanel.classList.add('account-submenu-mode');
   submenuPanel.classList.remove('hidden');
   submenuPanel.setAttribute('aria-hidden', 'false');
-  revealAccountRouteContent(view);
+  focusAccountViewHeading(view);
   updateUpdateBanner();
-}
-
-function restoreRequestedAccountRoute() {
-  const requestedView = getRequestedAccountView();
-
-  if (!requestedView || passwordRecoveryMode) {
-    clearAccountRouteStartup();
-    return false;
-  }
-
-  if (!currentUser || !hasCompletedProfile()) {
-    replaceAccountRouteWithNormalUrl();
-    clearAccountRouteStartup();
-    syncScreenThemeColor();
-    return false;
-  }
-
-  if (requestedView === 'main') {
-    openAccountMain();
-    return true;
-  }
-
-  if (ACCOUNT_SUBMENU_VIEWS.has(requestedView)) {
-    openAccountSubmenu(requestedView);
-    return true;
-  }
-
-  clearAccountRouteStartup();
-  return false;
 }
 
 function renderAccountView(view, { panel = null, content = null } = {}) {
@@ -2918,8 +2781,6 @@ async function renderAdminDashboard() {
 
 async function initCloudSync() {
   if (!supabaseClient) {
-    replaceAccountRouteWithNormalUrl();
-    clearAccountRouteStartup();
     renderAll();
     return;
   }
@@ -2939,10 +2800,9 @@ async function initCloudSync() {
     if (currentUser) await loadCloudState();
   }
 
-  renderAll();
-  restoreRequestedAccountRoute();
+	  renderAll();
 
-  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+	  supabaseClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session?.user || null;
     currentProfileId = null;
     if (event === 'PASSWORD_RECOVERY') passwordRecoveryMode = true;
@@ -2956,12 +2816,11 @@ async function initCloudSync() {
       if (!currentUser) await ensureRecoverySession();
     }
 
-    // Do not block the UI on cloud sync. If Supabase profile/state loading is slow,
-    // users must still leave the auth screen instead of staying on “Logging in...”.
-    renderAll();
-    restoreRequestedAccountRoute();
-    if (currentUser && !passwordRecoveryMode) loadCloudStateInBackground();
-  });
+	    // Do not block the UI on cloud sync. If Supabase profile/state loading is slow,
+	    // users must still leave the auth screen instead of staying on “Logging in...”.
+	    renderAll();
+	    if (currentUser && !passwordRecoveryMode) loadCloudStateInBackground();
+	  });
 }
 
 async function signUp() {
@@ -3119,18 +2978,18 @@ document.addEventListener('keydown', event => {
     return;
   }
 
-  const accountPanel = document.getElementById('accountPanel');
-  const accountSubmenuPanel = document.getElementById('accountSubmenuPanel');
-  if (accountSubmenuPanel && !accountSubmenuPanel.classList.contains('hidden')) {
-    if (event.key === 'Escape') closeAccountRoute();
-    renderModule.trapTabKey(event, accountSubmenuPanel);
-    return;
-  }
+	  const accountPanel = document.getElementById('accountPanel');
+	  const accountSubmenuPanel = document.getElementById('accountSubmenuPanel');
+	  if (accountSubmenuPanel && !accountSubmenuPanel.classList.contains('hidden')) {
+	    if (event.key === 'Escape') closeAccountModal();
+	    renderModule.trapTabKey(event, accountSubmenuPanel);
+	    return;
+	  }
 
-  if (accountPanel?.classList.contains('account-open')) {
-    if (event.key === 'Escape') closeAccountRoute();
-    renderModule.trapTabKey(event, accountPanel);
-  }
+	  if (accountPanel?.classList.contains('account-open')) {
+	    if (event.key === 'Escape') closeAccountModal();
+	    renderModule.trapTabKey(event, accountPanel);
+	  }
 });
 
 document.addEventListener('click', event => {
@@ -3310,19 +3169,15 @@ document.addEventListener('click', event => {
 
   if (event.target.id === 'completeBtn') completeWorkout();
 
-  if (event.target.id === 'accountBtn' && currentUser) navigateToAccountMain();
-  if (event.target.id === 'closeAccountModalBtn') closeAccountRoute();
-  if (event.target.id === 'closeAccountSubmenuBtn') closeAccountRoute();
-  if (event.target.id === 'accountPanel' && event.target.classList.contains('account-modal')) closeAccountRoute();
-  const accountViewButton = event.target.closest('[data-account-view]');
-  if (accountViewButton) {
-    const view = accountViewButton.dataset.accountView;
-    if (view === 'main') {
-      navigateBackToAccountMain();
-    } else {
-      navigateToAccountSubmenu(view);
-    }
-  }
+	  if (event.target.id === 'accountBtn' && currentUser) openAccountModal();
+	  if (event.target.id === 'closeAccountModalBtn') closeAccountModal();
+	  if (event.target.id === 'closeAccountSubmenuBtn') closeAccountModal();
+	  if (event.target.id === 'accountPanel' && event.target.classList.contains('account-modal')) closeAccountModal();
+	  const accountViewButton = event.target.closest('[data-account-view]');
+	  if (accountViewButton) {
+	    const view = accountViewButton.dataset.accountView;
+	    showAccountView(view);
+	  }
   if (event.target.id === 'saveAccountGoalBtn') saveAccountGoal();
   if (event.target.id === 'saveAccountEquipmentBtn') saveAccountEquipment();
   if (event.target.id === 'saveAccountRecoveryBtn') saveAccountRecovery();
@@ -3484,7 +3339,5 @@ function registerServiceWorker() {
 registerServiceWorker();
 
 setupStarAnimation();
-if (!(SUPABASE_READY && getRequestedAccountView())) {
-  renderAll();
-}
+renderAll();
 initCloudSync();
