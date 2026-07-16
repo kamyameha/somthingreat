@@ -34,6 +34,10 @@
   box-shadow: 0 22px 60px rgba(1, 45, 237, 0.22);
 }
 
+.account-modal-content.account-transitioning {
+  visibility: hidden;
+}
+
 .account-panel.account-password-mode {
   padding-top: calc(24px + env(safe-area-inset-top));
 }
@@ -143,7 +147,8 @@ body.account-main-active {
 }
 
 html.account-submenu-active,
-body.account-submenu-active {
+body.account-submenu-active,
+body.account-submenu-active .app {
   background-color: #ffffff;
 }
 

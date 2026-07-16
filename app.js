@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-95-exercise-scoring';
+const APP_VERSION = 'v8-96-account-submenu-painted';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -408,8 +408,8 @@ function setMetaContent(name, content) {
     meta.setAttribute('name', name);
     document.head.appendChild(meta);
   }
-  if (meta.getAttribute('content') === content) return;
-  meta.setAttribute('content', content);
+  if (meta.content === content) return;
+  meta.content = content;
 }
 
 function setThemeColor(color = '#ffffff') {
@@ -2221,6 +2221,7 @@ function closeAccountModal() {
   const panel = document.getElementById('accountPanel');
   if (!panel) return;
   panel.classList.remove('account-open', 'account-main-mode', 'account-submenu-mode');
+  panel.style.backgroundColor = '';
   panel.classList.add('hidden');
   showAccountView('main');
   document.body.classList.remove('account-main-active', 'account-submenu-active');
@@ -2229,17 +2230,32 @@ function closeAccountModal() {
   updateUpdateBanner();
 }
 
+const accountSubmenuViews = ['goal', 'equipment', 'recovery', 'password', 'support', 'admin'];
+
 function showAccountView(view) {
   if (view === 'password' && !canChangePassword()) view = 'main';
   const panel = document.getElementById('accountPanel');
-  const submenuViews = ['goal', 'equipment', 'recovery', 'password', 'support', 'admin'];
   const isMainView = view === 'main';
-  const isSubmenuView = submenuViews.includes(view);
+  const isSubmenuView = accountSubmenuViews.includes(view);
   const content = document.getElementById('loggedInAccount');
+  const isMainToSubmenu = isSubmenuView &&
+    panel?.classList.contains('account-main-mode') &&
+    document.documentElement.classList.contains('account-main-active');
 
+  if (isMainToSubmenu) {
+    transitionToAccountSubmenu(view);
+    return;
+  }
+
+  applyAccountViewState({ panel, isMainView, isSubmenuView });
+  renderAccountView(view, { panel, content });
+}
+
+function applyAccountViewState({ panel, isMainView, isSubmenuView }) {
   document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
   if (panel) panel.classList.remove('account-password-mode');
   if (panel) panel.classList.remove('account-main-mode', 'account-submenu-mode');
+  if (panel) panel.style.backgroundColor = '';
   document.body.classList.remove('account-main-active', 'account-submenu-active');
   document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
   if (panel) panel.classList.toggle('account-main-mode', isMainView);
@@ -2249,7 +2265,9 @@ function showAccountView(view) {
   document.documentElement.classList.toggle('account-submenu-active', isSubmenuView);
   document.body.classList.toggle('account-submenu-active', isSubmenuView);
   syncScreenThemeColor();
+}
 
+function renderAccountView(view, { panel = null, content = null } = {}) {
   const target = document.getElementById(`account${view[0].toUpperCase()}${view.slice(1)}View`);
   if (target) target.classList.remove('hidden');
   const title = document.getElementById('accountModalTitle');
@@ -2272,6 +2290,46 @@ function showAccountView(view) {
   setPanelMessage('accountEquipmentMessage', '');
   setPanelMessage('accountRecoveryMessage', '');
   setPanelMessage('supportMessage', '');
+}
+
+function transitionToAccountSubmenu(view) {
+  const panel = document.getElementById('accountPanel');
+  const content = document.getElementById('loggedInAccount');
+  if (!panel || !content) {
+    applyAccountViewState({
+      panel,
+      isMainView: view === 'main',
+      isSubmenuView: accountSubmenuViews.includes(view)
+    });
+    renderAccountView(view, { panel });
+    return;
+  }
+
+  document.querySelectorAll('#loggedInAccount .account-view').forEach(item => item.classList.add('hidden'));
+  content.classList.add('account-transitioning');
+
+  panel.classList.remove('account-password-mode', 'account-main-mode');
+  document.documentElement.classList.remove('account-main-active');
+  document.body.classList.remove('account-main-active');
+
+  panel.classList.add('account-submenu-mode');
+  document.documentElement.classList.add('account-submenu-active');
+  document.body.classList.add('account-submenu-active');
+
+  document.documentElement.style.backgroundColor = '#ffffff';
+  document.body.style.backgroundColor = '#ffffff';
+  panel.style.backgroundColor = '#ffffff';
+  setMetaContent('theme-color', '#ffffff');
+
+  void document.documentElement.offsetHeight;
+  void panel.offsetHeight;
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      renderAccountView(view, { panel, content });
+      content.classList.remove('account-transitioning');
+    });
+  });
 }
 
 function renderAccountMainSummary() {
