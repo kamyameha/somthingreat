@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-91-submenu-safe-area';
+const APP_VERSION = 'v8-92-workout-progression';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -1705,6 +1705,9 @@ function getTrackLevel(trackKey) {
 }
 
 function getGoalTrackKey(goal) {
+  if (typeof workoutModule.getGoalTrackKey === 'function') {
+    return workoutModule.getGoalTrackKey(goal, getProfile(), state);
+  }
   return goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : 'pullup';
 }
 
@@ -1965,19 +1968,29 @@ function saveProfileFromOnboarding() {
 
 function initialLevelsFromProfile(profile, existingLevels) {
   const levels = { ...defaultState().levels, ...(existingLevels || {}) };
-  const pushMap = { zero: 0, oneFive: 0, sixTen: 5, tenPlus: 7 };
-  const squatMap = { zeroFive: 0, sixTen: 0, tenPlus: 1 };
-  levels.pushup = { level: pushMap[profile.pushups] ?? 0, points: 0 };
-  levels.legs = { level: squatMap[profile.squats] ?? 0, points: 0 };
+  const pushMap = { zero: 0, oneFive: 1, sixTen: 5, tenPlus: 7 };
+  const squatMap = { zeroFive: 0, sixTen: 2, tenPlus: 3 };
+  const pushLevel = pushMap[profile.pushups] ?? 0;
+  const squatLevel = squatMap[profile.squats] ?? 0;
+  levels.pushup = { ...levels.pushup, level: pushLevel, points: 0 };
+  levels.horizontalPush = { ...levels.horizontalPush, level: pushLevel, points: 0 };
+  levels.legs = { ...levels.legs, level: squatLevel, points: 0 };
+  levels.squat = { ...levels.squat, level: squatLevel, points: 0 };
   if (profile.equipment.includes('pullupBar')) {
-    levels.pullup = { level: profile.negativePullup === 'yes' ? 1 : profile.deadHang === 'yes' ? 0 : 0, points: 0 };
+    const pullLevel = profile.negativePullup === 'yes' ? 4 : profile.deadHang === 'yes' ? 0 : 0;
+    levels.pullup = { ...levels.pullup, level: pullLevel, points: 0 };
+    levels.verticalPull = { ...levels.verticalPull, level: pullLevel, points: 0 };
   } else {
-    levels.pullup = { level: 0, points: 0 };
+    levels.pullup = { ...levels.pullup, level: 0, points: 0 };
+    levels.horizontalPull = { ...levels.horizontalPull, level: 0, points: 0 };
   }
   if (profile.equipment.includes('dipBars')) {
-    levels.dip = { level: profile.dip === 'yes' ? 2 : 0, points: 0 };
+    const dipLevel = profile.dip === 'yes' ? 8 : 0;
+    levels.dip = { ...levels.dip, level: dipLevel, points: 0 };
+    levels.dipStrength = { ...levels.dipStrength, level: dipLevel, points: 0 };
   } else {
-    levels.dip = { level: 0, points: 0 };
+    levels.dip = { ...levels.dip, level: 0, points: 0 };
+    levels.dipStrength = { ...levels.dipStrength, level: 0, points: 0 };
   }
   return levels;
 }

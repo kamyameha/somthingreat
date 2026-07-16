@@ -54,15 +54,22 @@
 
     function sanitizeLevels(levels = {}, profile = null) {
       const defaults = workoutModule.createDefaultLevels();
+      const migratedLevels = typeof workoutModule.migrateLevels === 'function'
+        ? workoutModule.migrateLevels(levels)
+        : levels;
       const tracks = workoutModule.getTracks(profile);
       Object.keys(defaults).forEach(key => {
-        const source = levels[key] || {};
+        const source = migratedLevels[key] || {};
         const trackLength = Math.max(1, (tracks[key] || baseTracks[key] || []).length);
         const level = Number.isFinite(Number(source.level)) ? Number(source.level) : defaults[key].level;
         const points = Number.isFinite(Number(source.points)) ? Number(source.points) : defaults[key].points;
         defaults[key] = {
           level: Math.max(0, Math.min(Math.round(level), trackLength - 1)),
-          points: Math.max(-1, Math.min(Math.round(points), 2))
+          points: Math.max(-6, Math.min(Math.round(points), 10)),
+          positiveExposures: Number.isFinite(Number(source.positiveExposures)) ? Math.max(0, Number(source.positiveExposures)) : 0,
+          difficultExposures: Number.isFinite(Number(source.difficultExposures)) ? Math.max(0, Number(source.difficultExposures)) : 0,
+          levelExposures: Number.isFinite(Number(source.levelExposures)) ? Math.max(0, Math.round(Number(source.levelExposures))) : 0,
+          plateauCount: Number.isFinite(Number(source.plateauCount)) ? Math.max(0, Math.min(Math.round(Number(source.plateauCount)), 3)) : 0
         };
       });
       return defaults;
