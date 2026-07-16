@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-94-account-submenu-order';
+const APP_VERSION = 'v8-95-exercise-scoring';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&

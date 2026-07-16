@@ -35,6 +35,145 @@
     rope: ['rope']
   };
 
+  const scoreSchema = {
+    difficulty: '1-10 overall physical and technical difficulty',
+    fatigue: '1-10 systemic fatigue from one normal working set',
+    skill: '1-10 coordination, timing, and precision demand',
+    stability: '1-10 balance and joint-control demand',
+    stimulus: ['strength', 'skill', 'mobility', 'stability', 'power', 'conditioning', 'recovery'],
+    jointStress: ['wrist', 'elbow', 'shoulder', 'lowerBack', 'hip', 'knee', 'ankle']
+  };
+
+  // Scoring is intentionally simple and deterministic. The values are not
+  // medical or scientific claims; they give the generator a consistent way to
+  // compare exercises without parsing names.
+  const scoringGuidelines = {
+    difficulty: 'Blend of physical difficulty, technical execution, and strength required.',
+    fatigue: 'Estimated systemic cost of one working set: dead bug 2, glute bridge 3, push-up 5, pull-up 8, muscle-up 10.',
+    skill: 'Coordination and precision: squat 1, push-up 2, Bulgarian split squat 4, pull-up 5, L-sit 8, handstand 10.',
+    stability: 'Balance and joint control: wall push-up 1, push-up 3, split squat 5, shrimp squat 8, handstand 10.',
+    stimulus: 'Exactly one primary training stimulus used by budget and balance decisions.',
+    jointStress: '0 means negligible; higher values mean the reduce/rest recovery filters should prefer easier alternatives.'
+  };
+
+  const stimuli = new Set(scoreSchema.stimulus);
+  const jointKeys = scoreSchema.jointStress;
+  const fatigueBudgets = {
+    great: { min: 26, max: 30, tolerance: 2, skillLimit: 18 },
+    normal: { min: 18, max: 24, tolerance: 2, skillLimit: 14 },
+    tired: { min: 12, max: 16, tolerance: 2, skillLimit: 10 },
+    exhausted: { min: 8, max: 10, tolerance: 2, skillLimit: 6 }
+  };
+
+  function clampScore(value, fallback = 1) {
+    const number = Number.isFinite(Number(value)) ? Math.round(Number(value)) : fallback;
+    return Math.max(1, Math.min(number, 10));
+  }
+
+  function clampStress(value) {
+    const number = Number.isFinite(Number(value)) ? Math.round(Number(value)) : 0;
+    return Math.max(0, Math.min(number, 10));
+  }
+
+  function defaultStimulus(movementFamily, options = {}) {
+    if (options.stimulus && stimuli.has(options.stimulus)) return options.stimulus;
+    if (options.explosive) return 'power';
+    if (options.type === 'preparation' || movementFamily === 'handstand' || movementFamily === 'lsit' || movementFamily === 'crow') return 'skill';
+    if (movementFamily === 'scapular-pull' || movementFamily === 'anti-extension' || movementFamily === 'lateral-core') return 'stability';
+    if (movementFamily === 'rope') return 'conditioning';
+    return 'strength';
+  }
+
+  function estimateFatigue(difficulty, movementFamily, options = {}) {
+    let fatigue = Math.ceil(difficulty * 0.75);
+    if (['vertical-pull', 'unilateral', 'muscle-up', 'dip-strength'].includes(movementFamily)) fatigue += 1;
+    if (['calves', 'anti-extension', 'compression', 'lateral-core', 'handstand', 'crow'].includes(movementFamily)) fatigue -= 1;
+    if (options.explosive) fatigue += 1;
+    if (options.type === 'preparation') fatigue -= 2;
+    return clampScore(options.fatigue, fatigue);
+  }
+
+  function estimateSkill(difficulty, movementFamily, options = {}) {
+    let skill = Math.ceil(difficulty * 0.45);
+    if (movementFamily === 'handstand') skill = Math.max(skill, difficulty + 1);
+    if (movementFamily === 'lsit') skill = Math.max(skill, Math.ceil(difficulty * 0.85));
+    if (movementFamily === 'muscle-up') skill = Math.max(skill, 8);
+    if (movementFamily === 'crow') skill = Math.max(skill, difficulty + 2);
+    if (['unilateral', 'vertical-pull'].includes(movementFamily)) skill += 1;
+    if (options.highSkill) skill += 2;
+    return clampScore(options.skill, skill);
+  }
+
+  function estimateStability(difficulty, movementFamily, options = {}) {
+    let stability = Math.ceil(difficulty * 0.45);
+    if (movementFamily === 'handstand') stability = Math.max(stability, difficulty + 1);
+    if (movementFamily === 'crow') stability = Math.max(stability, difficulty + 2);
+    if (movementFamily === 'unilateral') stability += 2;
+    if (movementFamily === 'lsit') stability += 1;
+    if (options.unilateral) stability += 1;
+    return clampScore(options.stability, stability);
+  }
+
+  function defaultJointStress(loadedAreas, difficulty, options = {}) {
+    const stress = {};
+    jointKeys.forEach(key => stress[key] = 0);
+    const areaToJoint = {
+      wrist: 'wrist',
+      elbow: 'elbow',
+      shoulder: 'shoulder',
+      'lower-back': 'lowerBack',
+      lowerBack: 'lowerBack',
+      hip: 'hip',
+      knee: 'knee',
+      ankle: 'ankle'
+    };
+    loadedAreas.forEach(area => {
+      const key = areaToJoint[area];
+      if (!key) return;
+      stress[key] = Math.max(stress[key], clampStress(Math.ceil(difficulty * 0.8)));
+    });
+    if (options.explosive) {
+      ['knee', 'ankle', 'shoulder'].forEach(key => {
+        if (stress[key]) stress[key] = clampStress(stress[key] + 1);
+      });
+    }
+    if (options.jointStress) {
+      jointKeys.forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(options.jointStress, key)) {
+          stress[key] = clampStress(options.jointStress[key]);
+        }
+      });
+    }
+    return stress;
+  }
+
+  function withScoreDefaults(item) {
+    const movementFamily = item.movementFamily || 'legacy';
+    const difficulty = clampScore(item.difficulty, 1);
+    const loadedAreas = item.loadedAreas || [];
+    const options = {
+      fatigue: item.fatigue,
+      skill: item.skill,
+      stability: item.stability,
+      stimulus: item.stimulus,
+      jointStress: item.jointStress,
+      highSkill: item.highSkill,
+      explosive: item.explosive,
+      unilateral: item.unilateral,
+      type: item.type
+    };
+    return {
+      ...item,
+      movementFamily,
+      difficulty,
+      fatigue: estimateFatigue(difficulty, movementFamily, options),
+      skill: estimateSkill(difficulty, movementFamily, options),
+      stability: estimateStability(difficulty, movementFamily, options),
+      stimulus: defaultStimulus(movementFamily, options),
+      jointStress: defaultJointStress(loadedAreas, difficulty, options)
+    };
+  }
+
   function prescriptionToString(prescription) {
     if (typeof prescription === 'string') return prescription;
     if (!prescription || typeof prescription !== 'object') return '';
@@ -55,11 +194,18 @@
     const setup = options.setup || `Set up for ${name.toLowerCase()} with a stable position.`;
     const execution = options.execution || 'Move with control and stop the set before your form breaks.';
     const safety = options.safety || PAIN_NOTICE;
+    const safeDifficulty = clampScore(difficulty);
+    const stimulus = defaultStimulus(movementFamily, options);
     return {
       id,
       name,
       movementFamily,
-      difficulty,
+      difficulty: safeDifficulty,
+      fatigue: estimateFatigue(safeDifficulty, movementFamily, options),
+      skill: estimateSkill(safeDifficulty, movementFamily, options),
+      stability: estimateStability(safeDifficulty, movementFamily, options),
+      stimulus,
+      jointStress: defaultJointStress(loadedAreas, safeDifficulty, options),
       equipment: options.equipment || [],
       primaryAreas,
       loadedAreas,
@@ -1059,6 +1205,8 @@
       title: 'Great',
       description: 'Full session · 4 exercises · full sets and reps.',
       exerciseCount: 4,
+      fatigueBudget: fatigueBudgets.great,
+      skillLimit: fatigueBudgets.great.skillLimit,
       setMultiplier: 1,
       repMultiplier: 1,
       levelShift: 0,
@@ -1070,6 +1218,8 @@
       title: 'Normal',
       description: 'Standard session · 4 exercises · slightly reduced sets and reps.',
       exerciseCount: 4,
+      fatigueBudget: fatigueBudgets.normal,
+      skillLimit: fatigueBudgets.normal.skillLimit,
       setMultiplier: 0.8,
       repMultiplier: 0.85,
       levelShift: 0,
@@ -1081,6 +1231,8 @@
       title: 'Tired',
       description: 'Shorter session · 3 exercises · reduced volume.',
       exerciseCount: 3,
+      fatigueBudget: fatigueBudgets.tired,
+      skillLimit: fatigueBudgets.tired.skillLimit,
       setMultiplier: 0.8,
       repMultiplier: 0.85,
       levelShift: 0,
@@ -1092,6 +1244,8 @@
       title: 'Exhausted',
       description: 'Minimum session · 3 easier exercises · low sets and reps.',
       exerciseCount: 3,
+      fatigueBudget: fatigueBudgets.exhausted,
+      skillLimit: fatigueBudgets.exhausted.skillLimit,
       setMultiplier: 0.55,
       repMultiplier: 0.65,
       levelShift: -1,
@@ -1341,6 +1495,7 @@
       ...(catalogMatch || {}),
       ...rawExercise
     };
+    Object.assign(normalized, withScoreDefaults(normalized));
     normalized.id = normalized.id || `legacy-${normalized.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     normalized.trackKey = normalized.trackKey || `exercise-${normalized.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     normalized.progressionTrackKey = normalized.progressionTrackKey || normalized.trackKey;
@@ -1394,17 +1549,35 @@
     other: { restAreas: [], reduceAreas: [], fallbackTracks: ['antiExtension', 'horizontalPush', 'posteriorChain'] }
   };
 
+  const recoveryStressThresholds = {
+    reduce: 5,
+    rest: 2
+  };
+
   function exerciseLoadsArea(exercise, areas) {
     return areas.some(area => (exercise.loadedAreas || []).includes(area) || (exercise.contraindicationTags || []).includes(`${area}-load`));
+  }
+
+  function jointKeyForRecovery(recovery) {
+    const area = recoveryAreaType(recovery);
+    return area === 'lower-back' ? 'lowerBack' : jointKeys.includes(area) ? area : null;
+  }
+
+  function exerciseJointStress(exercise, recovery) {
+    const key = jointKeyForRecovery(recovery);
+    if (!key) return 0;
+    return clampStress(exercise?.jointStress?.[key]);
   }
 
   function isExerciseAllowedForRecovery(exercise, recovery, mode = recovery?.mode || 'reduce') {
     if (!exercise || !recovery) return true;
     const rule = recoveryRules[recoveryAreaType(recovery)] || recoveryRules.other;
-    if (mode === 'rest' && exerciseLoadsArea(exercise, rule.restAreas)) return false;
+    const stress = exerciseJointStress(exercise, recovery);
+    if (mode === 'rest' && (stress > recoveryStressThresholds.rest || exerciseLoadsArea(exercise, rule.restAreas))) return false;
     if (mode === 'reduce') {
       if (exercise.explosive || exercise.highSkill) return false;
-      if (exerciseLoadsArea(exercise, rule.reduceAreas) && exercise.difficulty > 2) return false;
+      if (stress > recoveryStressThresholds.reduce) return false;
+      if (exerciseLoadsArea(exercise, rule.reduceAreas) && exercise.difficulty > 7) return false;
     }
     return true;
   }
@@ -1441,8 +1614,27 @@
     const track = filteredTrackForRecovery(originalTrack, recovery);
     if (!track.length) return null;
     const adjustedLevel = chooseLevel(safeTrackKey, track, config, state, recovery);
-    const selectedLevel = levelSearchOrder(adjustedLevel, track.length)
-      .find(level => !usedIds.has(track[level].id));
+    const currentFatigue = options.currentFatigue || 0;
+    const currentSkill = options.currentSkill || 0;
+    const remainingSlots = Math.max(0, options.remainingSlots || 0);
+    const budget = config.fatigueBudget || fatigueBudgets.normal;
+    const fatigueLimit = budget.max + (budget.tolerance || 0);
+    const skillLimit = config.skillLimit || budget.skillLimit || fatigueBudgets.normal.skillLimit;
+    const recoveryJoint = jointKeyForRecovery(recovery);
+    const orderedLevels = levelSearchOrder(adjustedLevel, track.length).filter(level => !usedIds.has(track[level].id));
+    const selectedLevel = orderedLevels.find(level => {
+      const candidate = track[level];
+      return currentFatigue + candidate.fatigue + remainingSlots <= fatigueLimit &&
+        currentSkill + candidate.skill + remainingSlots <= skillLimit;
+    }) ?? (['tired', 'exhausted'].includes(config.mode) ? undefined : orderedLevels
+      .slice()
+      .sort((a, b) => {
+        const first = track[a];
+        const second = track[b];
+        const firstStress = recoveryJoint ? first.jointStress[recoveryJoint] : 0;
+        const secondStress = recoveryJoint ? second.jointStress[recoveryJoint] : 0;
+        return (first.fatigue + first.skill + firstStress) - (second.fatigue + second.skill + secondStress);
+      })[0]);
     if (selectedLevel === undefined) return null;
     const baseExercise = track[selectedLevel];
     const trackState = state?.levels?.[safeTrackKey] || {};
@@ -1511,13 +1703,23 @@
     });
     const usedIds = new Set();
     const exercises = [];
+    let totalFatigue = 0;
+    let totalSkill = 0;
 
     tracks.forEach(trackKey => {
       if (exercises.length >= config.exerciseCount) return;
-      const item = getExercise(trackKey, config, state, profile, { recovery, usedIds });
+      const item = getExercise(trackKey, config, state, profile, {
+        recovery,
+        usedIds,
+        currentFatigue: totalFatigue,
+        currentSkill: totalSkill,
+        remainingSlots: config.exerciseCount - exercises.length - 1
+      });
       if (!item) return;
       exercises.push(item);
       usedIds.add(item.id);
+      totalFatigue += item.fatigue || 0;
+      totalSkill += item.skill || 0;
     });
 
     return {
@@ -1526,6 +1728,10 @@
       focusLabel: workout.focusLabel || '',
       energyTitle: config.title,
       energyDescription: config.description,
+      fatigueBudget: config.fatigueBudget,
+      skillLimit: config.skillLimit,
+      totalFatigue,
+      totalSkill,
       exercises
     };
   }
@@ -1634,6 +1840,17 @@
       if (!item.prescription) errors.push(`Missing prescription: ${item.id}`);
       if (!item.instructions?.setup || !item.instructions?.execution || !item.instructions?.safety) errors.push(`Missing instructions: ${item.id}`);
       if (/recommended/i.test(item.name) || /recommended/i.test(item.prescription)) errors.push(`Informational exercise: ${item.id}`);
+      ['difficulty', 'fatigue', 'skill', 'stability'].forEach(field => {
+        if (!Number.isInteger(item[field]) || item[field] < 1 || item[field] > 10) {
+          errors.push(`Invalid ${field}: ${item.id}`);
+        }
+      });
+      if (!stimuli.has(item.stimulus)) errors.push(`Invalid stimulus: ${item.id}`);
+      jointKeys.forEach(key => {
+        if (!Number.isInteger(item.jointStress?.[key]) || item.jointStress[key] < 0 || item.jointStress[key] > 10) {
+          errors.push(`Invalid joint stress ${key}: ${item.id}`);
+        }
+      });
     });
     Object.entries(movementTracks).forEach(([key, track]) => {
       let previousDifficulty = 0;
@@ -1649,6 +1866,9 @@
     baseTracks,
     movementTracks,
     exerciseCatalog,
+    scoreSchema,
+    scoringGuidelines,
+    fatigueBudgets,
     recoveryRules,
     energyOptions,
     workoutAddOns,
