@@ -1421,15 +1421,30 @@
     return Math.max(0, Math.min(baseLevel + levelShift, track.length - 1));
   }
 
+  function levelSearchOrder(startLevel, length) {
+    const order = [];
+    for (let offset = 0; offset < length; offset += 1) {
+      const higher = startLevel + offset;
+      const lower = startLevel - offset;
+      if (higher < length) order.push(higher);
+      if (offset > 0 && lower >= 0) order.push(lower);
+    }
+    return order;
+  }
+
   function getExercise(trackKey, config, state, profile = null, options = {}) {
     const recovery = options.recovery || getActiveRecovery(state);
+    const usedIds = options.usedIds || new Set();
     const tracks = getTracks(profile, state);
     const safeTrackKey = isTrackAvailable(trackKey, tracks) ? trackKey : 'antiExtension';
     const originalTrack = tracks[safeTrackKey] || tracks.antiExtension || baseTracks.antiExtension;
     const track = filteredTrackForRecovery(originalTrack, recovery);
     if (!track.length) return null;
     const adjustedLevel = chooseLevel(safeTrackKey, track, config, state, recovery);
-    const baseExercise = track[adjustedLevel];
+    const selectedLevel = levelSearchOrder(adjustedLevel, track.length)
+      .find(level => !usedIds.has(track[level].id));
+    if (selectedLevel === undefined) return null;
+    const baseExercise = track[selectedLevel];
     const trackState = state?.levels?.[safeTrackKey] || {};
     const plateauCount = Math.max(0, Math.floor(trackState.plateauCount || 0));
     const prescription = adaptPrescription(baseExercise.prescription, config, recovery, plateauCount);
@@ -1440,7 +1455,7 @@
       progressionTrackKey: safeTrackKey,
       prescription,
       basePrescription: baseExercise.prescription,
-      level: adjustedLevel + 1,
+      level: selectedLevel + 1,
       originalLevel: Math.min(Math.max(trackState.level || 0, 0), originalTrack.length - 1) + 1,
       setCount: getSetCount(prescription),
       plateau: plateauCount > 0
@@ -1485,14 +1500,22 @@
     const workout = rotation[(state.rotationIndex || 0) % rotation.length];
     const config = getEnergyConfig(mode);
     const recovery = getActiveRecovery(state);
-    const tracks = buildWorkoutTracks(workout, config.exerciseCount, profile, state);
+    const preferredTracks = buildWorkoutTracks(workout, config.exerciseCount, profile, state);
+    const availableTracks = getTracks(profile, state);
+    const tracks = [...preferredTracks];
+    Object.keys(availableTracks).forEach(trackKey => {
+      if (tracks.length >= config.exerciseCount * 2) return;
+      if (tracks.includes(trackKey) || !isTrackAvailable(trackKey, availableTracks)) return;
+      if (!filteredTrackForRecovery(availableTracks[trackKey], recovery).length) return;
+      tracks.push(trackKey);
+    });
     const usedIds = new Set();
     const exercises = [];
 
     tracks.forEach(trackKey => {
       if (exercises.length >= config.exerciseCount) return;
-      const item = getExercise(trackKey, config, state, profile, { recovery });
-      if (!item || usedIds.has(item.id)) return;
+      const item = getExercise(trackKey, config, state, profile, { recovery, usedIds });
+      if (!item) return;
       exercises.push(item);
       usedIds.add(item.id);
     });
