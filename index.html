@@ -16,11 +16,11 @@
       document.documentElement.style.backgroundColor = color;
 
       if (isAccountMain) {
-        document.documentElement.classList.add('initial-account-main');
+        document.documentElement.classList.add('account-document-route', 'initial-account-main');
       }
 
       if (isAccountSubmenu) {
-        document.documentElement.classList.add('initial-account-submenu');
+        document.documentElement.classList.add('account-document-route', 'initial-account-submenu');
       }
 
       const theme = document.querySelector('meta[name="theme-color"]');
@@ -58,7 +58,28 @@
       display: none;
       background: #ffffff;
       opacity: 1;
-      transition: opacity 120ms ease;
+      transition: opacity 180ms ease-out;
+    }
+
+    #routeNavigationCover {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      display: none;
+      background: #ffffff;
+      pointer-events: all;
+    }
+
+    #routeNavigationCover.is-visible {
+      display: block;
+    }
+
+    #routeNavigationCover.is-blue {
+      background: #012ded;
+    }
+
+    #routeNavigationCover.is-white {
+      background: #ffffff;
     }
 
     html.initial-account-main #accountRouteShell,
@@ -106,18 +127,19 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.16.123040" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.16.123040" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.16.123040" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.16.123040" />
-  <link rel="stylesheet" href="account.css?v=2026.07.16.123040" />
+  <link rel="stylesheet" href="style.css?v=2026.07.16.124644" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.16.124644" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.16.124644" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.16.124644" />
+  <link rel="stylesheet" href="account.css?v=2026.07.16.124644" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-	</head>
-	<body>
-	  <div id="accountRouteShell" aria-hidden="true"></div>
-	  <section id="welcomeScreen" class="welcome-screen">
+</head>
+<body>
+  <div id="routeNavigationCover" aria-hidden="true"></div>
+  <div id="accountRouteShell" aria-hidden="true"></div>
+  <section id="welcomeScreen" class="welcome-screen">
     <div class="welcome-inner">
 
       <img id="welcomeStar" class="welcome-star" src="Assets/Animations/start1.png" alt="Somthingreat star" />
@@ -633,13 +655,13 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.16.123040"></script>
-  <script src="workouts.js?v=2026.07.16.123040"></script>
-  <script src="state.js?v=2026.07.16.123040"></script>
-  <script src="account.js?v=2026.07.16.123040"></script>
-  <script src="admin.js?v=2026.07.16.123040"></script>
-  <script src="render.js?v=2026.07.16.123040"></script>
-  <script src="app-version.js?v=2026.07.16.123040"></script>
-  <script src="app.js?v=2026.07.16.123040"></script>
+  <script src="auth.js?v=2026.07.16.124644"></script>
+  <script src="workouts.js?v=2026.07.16.124644"></script>
+  <script src="state.js?v=2026.07.16.124644"></script>
+  <script src="account.js?v=2026.07.16.124644"></script>
+  <script src="admin.js?v=2026.07.16.124644"></script>
+  <script src="render.js?v=2026.07.16.124644"></script>
+  <script src="app-version.js?v=2026.07.16.124644"></script>
+  <script src="app.js?v=2026.07.16.124644"></script>
 </body>
 </html>

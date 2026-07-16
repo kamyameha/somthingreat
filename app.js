@@ -50,7 +50,6 @@ let accountHistoryDismissedDayKey = null;
 let recoveryFormEditing = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support', 'admin']);
-const ACCOUNT_ROUTE_TRANSITION_MS = 100;
 
 function clearLegacyPasswordSession() {
   try {
@@ -438,7 +437,7 @@ function getRequestedAccountView() {
   return null;
 }
 
-function isAccountRouteActive() {
+function isAccountDocumentRoute() {
   return Boolean(getRequestedAccountView());
 }
 
@@ -450,49 +449,91 @@ function clearInitialAccountRouteClasses() {
   document.documentElement.classList.remove('initial-account-main', 'initial-account-submenu');
 }
 
+function clearAccountDocumentRouteClasses() {
+  clearInitialAccountRouteClasses();
+  document.documentElement.classList.remove('account-document-route', 'account-route-content-ready');
+}
+
 function removeAccountRouteShell() {
   document.getElementById('accountRouteShell')?.remove();
 }
 
-function revealAccountRoute() {
+function revealAccountRouteContent(view) {
   const shell = document.getElementById('accountRouteShell');
   hideNormalAppChrome();
-  document.documentElement.classList.add('account-route-ready');
-  if (!shell) return;
 
-  shell.addEventListener('transitionend', () => shell.remove(), { once: true });
-  shell.classList.add('is-hidden');
-  window.setTimeout(() => {
-    shell.remove();
-  }, 250);
+  window.requestAnimationFrame(() => {
+    clearInitialAccountRouteClasses();
+
+    window.requestAnimationFrame(() => {
+      focusAccountRouteHeading(view);
+      document.documentElement.classList.add('account-route-content-ready');
+
+      if (!shell) return;
+      shell.addEventListener('transitionend', () => shell.remove(), { once: true });
+      shell.classList.add('is-hidden');
+      window.setTimeout(() => {
+        shell.remove();
+      }, 260);
+    });
+  });
 }
 
-function prefersReducedMotion() {
-  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+function showRouteNavigationCover(color) {
+  const cover = document.getElementById('routeNavigationCover');
+  if (!cover) return;
+
+  cover.classList.remove('is-blue', 'is-white');
+  cover.classList.add('is-visible', color === '#012ded' ? 'is-blue' : 'is-white');
+  void cover.offsetHeight;
+}
+
+function navigateToUrl(url) {
+  window.location.assign(url.toString());
 }
 
 function navigateToAccountRoute(url, targetColor) {
-  if (document.documentElement.classList.contains('route-leaving')) return;
+  hideNormalAppChrome();
+  showRouteNavigationCover(targetColor);
+  navigateToUrl(url);
+}
 
-  document.documentElement.style.setProperty('--route-target-background', targetColor);
-  prepareForAccountRouteNavigation();
+function navigateToNormalAppRoute(url) {
+  hideNormalAppChrome();
+  showRouteNavigationCover('#ffffff');
+  navigateToUrl(url);
+}
 
-  if (prefersReducedMotion()) {
-    window.location.assign(url.toString());
-    return;
-  }
+function removeRouteNavigationCover() {
+  document.getElementById('routeNavigationCover')?.remove();
+}
 
-  document.documentElement.classList.add('route-leaving');
-  window.setTimeout(() => {
-    window.location.assign(url.toString());
-  }, ACCOUNT_ROUTE_TRANSITION_MS);
+function removeRouteShells() {
+  removeAccountRouteShell();
+  removeRouteNavigationCover();
+}
+
+function clearAccountRouteStartup() {
+  clearAccountDocumentRouteClasses();
+  removeRouteShells();
+}
+
+function removeAccountRouteParam() {
+  if (!hasAccountViewParam()) return null;
+  const url = new URL(window.location.href);
+  url.searchParams.delete('accountView');
+  return url;
 }
 
 function replaceAccountRouteWithNormalUrl() {
-  if (!hasAccountViewParam()) return;
-  const url = new URL(window.location.href);
-  url.searchParams.delete('accountView');
+  const url = removeAccountRouteParam();
+  if (!url) return;
   window.history.replaceState({}, '', url.toString());
+}
+
+function closeAccountRoute() {
+  const url = removeAccountRouteParam() || new URL(window.location.href);
+  navigateToNormalAppRoute(url);
 }
 
 function navigateToAccountMain() {
@@ -512,12 +553,6 @@ function navigateBackToAccountMain() {
   navigateToAccountMain();
 }
 
-function closeAccountRoute() {
-  const url = new URL(window.location.href);
-  url.searchParams.delete('accountView');
-  navigateToAccountRoute(url, '#ffffff');
-}
-
 function focusAccountRouteHeading(view) {
   const target = view === 'main'
     ? document.querySelector('#accountPanel .account-main-heading')
@@ -531,17 +566,16 @@ function hideNormalAppChrome() {
   document.querySelectorAll('.confirm-panel').forEach(panel => panel.classList.add('hidden'));
 }
 
-function prepareForAccountRouteNavigation() {
-  hideNormalAppChrome();
-}
-
 function syncBottomNavVisibility(profileDone = hasCompletedProfile()) {
   const bottomNav = document.querySelector('.bottom-nav');
   if (!bottomNav) return;
 
-  const shouldHide = isAccountRouteActive() ||
-    document.documentElement.classList.contains('route-leaving') ||
-    !profileDone ||
+  if (isAccountDocumentRoute()) {
+    bottomNav.classList.add('hidden');
+    return;
+  }
+
+  const shouldHide = !profileDone ||
     passwordRecoveryMode ||
     !currentUser ||
     document.documentElement.classList.contains('welcome-active') ||
@@ -549,7 +583,6 @@ function syncBottomNavVisibility(profileDone = hasCompletedProfile()) {
 
   bottomNav.classList.toggle('hidden', shouldHide);
 }
-
 function isAdminUser() {
   return adminModule.isAdminUser(currentUser, ADMIN_EMAILS);
 }
@@ -2135,9 +2168,9 @@ function isSafeToShowUpdateBanner() {
   return Boolean(
     updateBannerReady &&
     currentUser &&
-	    !passwordRecoveryMode &&
-	    !isAccountRouteActive() &&
-	    !state.current &&
+    !passwordRecoveryMode &&
+    !isAccountDocumentRoute() &&
+    !state.current &&
     !accountPanel?.classList.contains('account-open') &&
     accountSubmenuPanel?.classList.contains('hidden') &&
     loggedOut?.classList.contains('hidden') &&
@@ -2181,8 +2214,8 @@ function applyWaitingUpdate() {
   const activateWorker = worker => {
     if (!worker) {
       reloadSoon();
-      return;
-    }
+    return;
+  }
     try {
       worker.postMessage({ type: 'SKIP_WAITING' });
     } catch (error) {
@@ -2297,11 +2330,10 @@ function renderAccount() {
 
   panel.classList.toggle('account-modal', Boolean(currentUser));
 
-  if (!currentUser) {
-    replaceAccountRouteWithNormalUrl();
-    clearInitialAccountRouteClasses();
-    removeAccountRouteShell();
-    panel.classList.remove('account-main-mode');
+	  if (!currentUser) {
+	    replaceAccountRouteWithNormalUrl();
+	    clearAccountRouteStartup();
+	    panel.classList.remove('account-main-mode');
     hideAccountSubmenuPanel();
     document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
     document.body.classList.remove('account-main-active', 'account-submenu-active');
@@ -2370,7 +2402,8 @@ function openAccountMain() {
   if (!panel || !currentUser) return;
 
   hideNormalAppChrome();
-  clearInitialAccountRouteClasses();
+  document.documentElement.classList.add('account-document-route');
+  document.documentElement.classList.remove('account-route-content-ready');
   hideAccountSubmenuPanel();
   hideAllAccountViews();
 
@@ -2387,8 +2420,7 @@ function openAccountMain() {
 
   syncScreenThemeColor();
   renderAccountView('main', { panel, content: loggedIn });
-  focusAccountRouteHeading('main');
-  window.requestAnimationFrame(() => revealAccountRoute());
+  revealAccountRouteContent('main');
   updateUpdateBanner();
 }
 
@@ -2417,7 +2449,8 @@ function openAccountSubmenu(view) {
   if (!submenuPanel || !submenuContent || !currentUser) return;
 
   hideNormalAppChrome();
-  clearInitialAccountRouteClasses();
+  document.documentElement.classList.add('account-document-route');
+  document.documentElement.classList.remove('account-route-content-ready');
   hideAllAccountViews();
   hideAccountMainPanel();
 
@@ -2430,8 +2463,7 @@ function openAccountSubmenu(view) {
   renderAccountView(view, { panel: submenuPanel, content: submenuContent });
   submenuPanel.classList.remove('hidden');
   submenuPanel.setAttribute('aria-hidden', 'false');
-  focusAccountRouteHeading(view);
-  window.requestAnimationFrame(() => revealAccountRoute());
+  revealAccountRouteContent(view);
   updateUpdateBanner();
 }
 
@@ -2439,15 +2471,13 @@ function restoreRequestedAccountRoute() {
   const requestedView = getRequestedAccountView();
 
   if (!requestedView || passwordRecoveryMode) {
-    clearInitialAccountRouteClasses();
-    removeAccountRouteShell();
+    clearAccountRouteStartup();
     return false;
   }
 
   if (!currentUser || !hasCompletedProfile()) {
     replaceAccountRouteWithNormalUrl();
-    clearInitialAccountRouteClasses();
-    removeAccountRouteShell();
+    clearAccountRouteStartup();
     syncScreenThemeColor();
     return false;
   }
@@ -2462,8 +2492,7 @@ function restoreRequestedAccountRoute() {
     return true;
   }
 
-  clearInitialAccountRouteClasses();
-  removeAccountRouteShell();
+  clearAccountRouteStartup();
   return false;
 }
 
@@ -2890,7 +2919,7 @@ async function renderAdminDashboard() {
 async function initCloudSync() {
   if (!supabaseClient) {
     replaceAccountRouteWithNormalUrl();
-    clearInitialAccountRouteClasses();
+    clearAccountRouteStartup();
     renderAll();
     return;
   }

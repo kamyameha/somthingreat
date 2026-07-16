@@ -1,7 +1,6 @@
 :root {
   --bg: #ffffff;
   --main: #012ded;
-  --route-target-background: #ffffff;
   --card: #ffffff;
   --soft: rgba(1, 45, 237, 0.08);
   --border: rgba(1, 45, 237, 0.16);
@@ -53,42 +52,27 @@ body {
   background: var(--bg);
 }
 
-html.route-leaving,
-html.route-leaving body {
-  background-color: var(--route-target-background);
-}
-
-.app,
-.account-panel,
-.account-submenu-panel,
-#welcomeScreen,
-.bottom-nav,
-.update-banner {
-  transition: opacity 120ms ease;
-}
-
-html.route-leaving .app,
-html.route-leaving .account-panel,
-html.route-leaving .account-submenu-panel,
-html.route-leaving #welcomeScreen,
-html.route-leaving .bottom-nav,
-html.route-leaving .update-banner {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .account-route-focus-target:focus {
   outline: none;
 }
 
+html.account-document-route .account-panel,
+html.account-document-route .account-submenu-panel {
+  opacity: 0;
+  transition: none;
+}
+
+html.account-document-route.account-route-content-ready .account-panel:not(.hidden),
+html.account-document-route.account-route-content-ready .account-submenu-panel:not(.hidden) {
+  opacity: 1;
+  transition: opacity 240ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .app,
   .account-panel,
   .account-submenu-panel,
-  #welcomeScreen,
-  .bottom-nav,
-  .update-banner {
-    transition: none;
+  #accountRouteShell {
+    transition: none !important;
   }
 }
 
