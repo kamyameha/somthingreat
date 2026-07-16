@@ -1,6 +1,6 @@
 const INITIAL_AUTH_SEARCH = window.location.search || '';
 const INITIAL_AUTH_HASH = window.location.hash || '';
-const APP_VERSION = 'v8-97-account-split-surfaces';
+const APP_VERSION = window.SOMTHINGREAT_VERSION || window.APP_VERSION || 'dev';
 const SUPABASE_READY = Boolean(
   window.supabase &&
   window.SUPABASE_URL &&
@@ -34,6 +34,7 @@ let updateBannerReady = false;
 let applyingUpdate = false;
 let versionUpdateReady = false;
 let versionCheckInProgress = false;
+let latestKnownVersion = APP_VERSION;
 let activeRecoveryClient = null;
 let authSessionCheckInProgress = false;
 let pendingConfirmAction = null;
@@ -2029,13 +2030,14 @@ function updateUpdateBanner() {
 
 function markUpdateReady(worker) {
   waitingServiceWorker = worker || waitingServiceWorker;
-  updateBannerReady = Boolean(waitingServiceWorker) || versionUpdateReady;
+  updateBannerReady = versionUpdateReady;
   updateUpdateBanner();
 }
 
-function markVersionUpdateReady() {
-  versionUpdateReady = true;
-  updateBannerReady = true;
+function setVersionUpdateReady(isReady, latestVersion = latestKnownVersion) {
+  latestKnownVersion = latestVersion || latestKnownVersion;
+  versionUpdateReady = Boolean(isReady);
+  updateBannerReady = versionUpdateReady;
   updateUpdateBanner();
 }
 
@@ -2077,10 +2079,20 @@ function applyWaitingUpdate() {
 }
 
 async function checkLiveVersion() {
-  // Recovery note: the update banner is driven by the service worker only.
-  // Avoid using version.json as a second trigger, because a cached app.js with
-  // a newer version.json can keep the banner visible forever after a rollback.
-  versionCheckInProgress = false;
+  if (versionCheckInProgress) return;
+  versionCheckInProgress = true;
+  try {
+    const response = await fetch(`./version.json?ts=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) return;
+    const data = await response.json();
+    const latestVersion = typeof data.version === 'string' ? data.version.trim() : '';
+    if (!latestVersion) return;
+    setVersionUpdateReady(latestVersion !== APP_VERSION, latestVersion);
+  } catch (error) {
+    console.warn('Version check failed:', error);
+  } finally {
+    versionCheckInProgress = false;
+  }
 }
 
 

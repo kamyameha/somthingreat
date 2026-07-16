@@ -1,23 +1,26 @@
-// Release rule: when deploying, keep this cache name aligned with the
-// CSS/JS query versions in index.html.
-const CACHE_NAME = 'somthingreat-v8-97-account-split-surfaces';
+importScripts('./app-version.js');
+
+const APP_VERSION = self.SOMTHINGREAT_VERSION || self.APP_VERSION || 'dev';
+const CACHE_NAME = `somthingreat-${APP_VERSION}`;
+const versionedAsset = asset => `${asset}?v=${APP_VERSION}`;
 const APP_SHELL = [
   './',
   './index.html',
   './privacy/',
   './privacy/index.html',
-  './style.css?v=v8-97-account-split-surfaces',
-  './welcome.css?v=v8-97-account-split-surfaces',
-  './auth.css?v=v8-97-account-split-surfaces',
-  './workout.css?v=v8-97-account-split-surfaces',
-  './account.css?v=v8-97-account-split-surfaces',
-  './auth.js?v=v8-97-account-split-surfaces',
-  './workouts.js?v=v8-97-account-split-surfaces',
-  './state.js?v=v8-97-account-split-surfaces',
-  './account.js?v=v8-97-account-split-surfaces',
-  './admin.js?v=v8-97-account-split-surfaces',
-  './render.js?v=v8-97-account-split-surfaces',
-  './app.js?v=v8-97-account-split-surfaces',
+  versionedAsset('./style.css'),
+  versionedAsset('./welcome.css'),
+  versionedAsset('./auth.css'),
+  versionedAsset('./workout.css'),
+  versionedAsset('./account.css'),
+  versionedAsset('./app-version.js'),
+  versionedAsset('./auth.js'),
+  versionedAsset('./workouts.js'),
+  versionedAsset('./state.js'),
+  versionedAsset('./account.js'),
+  versionedAsset('./admin.js'),
+  versionedAsset('./render.js'),
+  versionedAsset('./app.js'),
   './version.json',
   './manifest.json',
   './supabase-config.js',
@@ -83,7 +86,7 @@ self.addEventListener('fetch', event => {
   // Always try the network first for pages and core app files.
   // This prevents users from staying stuck on an old app.js/index.html.
   const isNavigation = request.mode === 'navigate';
-  const isCoreFile = /\/(index\.html|app(?:-\d+)?\.js|auth\.js|workouts\.js|state\.js|account\.js|admin\.js|render\.js|style\.css|supabase-config\.js|manifest\.json|version\.json)$/.test(url.pathname);
+  const isCoreFile = /\/(index\.html|app(?:-\d+)?\.js|app-version\.js|auth\.js|workouts\.js|state\.js|account\.js|admin\.js|render\.js|style\.css|supabase-config\.js|manifest\.json|version\.json)$/.test(url.pathname);
 
   if (isNavigation || isCoreFile) {
     event.respondWith(networkFirst(request));
