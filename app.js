@@ -50,7 +50,7 @@ let accountHistoryDismissedDayKey = null;
 let recoveryFormEditing = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support', 'admin']);
-const ACCOUNT_ROUTE_TRANSITION_MS = 120;
+const ACCOUNT_ROUTE_TRANSITION_MS = 100;
 
 function clearLegacyPasswordSession() {
   try {
@@ -242,6 +242,7 @@ function setWelcomeVisible(visible) {
   // Only force-hide the bottom nav while the welcome screen is open.
   // When the welcome screen closes, renderAccount() decides if the nav should show.
   if (bottomNav && visible) bottomNav.classList.add('hidden');
+  if (!visible) syncBottomNavVisibility();
 }
 
 function setupStarAnimation() {
@@ -437,6 +438,10 @@ function getRequestedAccountView() {
   return null;
 }
 
+function isAccountRouteActive() {
+  return Boolean(getRequestedAccountView());
+}
+
 function hasAccountViewParam() {
   return new URLSearchParams(window.location.search).has('accountView');
 }
@@ -451,16 +456,15 @@ function removeAccountRouteShell() {
 
 function revealAccountRoute() {
   const shell = document.getElementById('accountRouteShell');
-  window.requestAnimationFrame(() => {
-    document.documentElement.classList.add('account-route-ready');
-    if (!shell) return;
+  hideNormalAppChrome();
+  document.documentElement.classList.add('account-route-ready');
+  if (!shell) return;
 
-    shell.addEventListener('transitionend', () => shell.remove(), { once: true });
-    shell.classList.add('is-hidden');
-    window.setTimeout(() => {
-      shell.remove();
-    }, 250);
-  });
+  shell.addEventListener('transitionend', () => shell.remove(), { once: true });
+  shell.classList.add('is-hidden');
+  window.setTimeout(() => {
+    shell.remove();
+  }, 250);
 }
 
 function prefersReducedMotion() {
@@ -471,6 +475,7 @@ function navigateToAccountRoute(url, targetColor) {
   if (document.documentElement.classList.contains('route-leaving')) return;
 
   document.documentElement.style.setProperty('--route-target-background', targetColor);
+  prepareForAccountRouteNavigation();
 
   if (prefersReducedMotion()) {
     window.location.assign(url.toString());
@@ -518,6 +523,31 @@ function focusAccountRouteHeading(view) {
     ? document.querySelector('#accountPanel .account-main-heading')
     : document.querySelector(`#account${view[0].toUpperCase()}${view.slice(1)}View .account-view-title`);
   target?.focus({ preventScroll: true });
+}
+
+function hideNormalAppChrome() {
+  document.querySelector('.bottom-nav')?.classList.add('hidden');
+  document.getElementById('updateBanner')?.classList.add('hidden');
+  document.querySelectorAll('.confirm-panel').forEach(panel => panel.classList.add('hidden'));
+}
+
+function prepareForAccountRouteNavigation() {
+  hideNormalAppChrome();
+}
+
+function syncBottomNavVisibility(profileDone = hasCompletedProfile()) {
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (!bottomNav) return;
+
+  const shouldHide = isAccountRouteActive() ||
+    document.documentElement.classList.contains('route-leaving') ||
+    !profileDone ||
+    passwordRecoveryMode ||
+    !currentUser ||
+    document.documentElement.classList.contains('welcome-active') ||
+    document.body.classList.contains('workout-active');
+
+  bottomNav.classList.toggle('hidden', shouldHide);
 }
 
 function isAdminUser() {
@@ -2105,8 +2135,9 @@ function isSafeToShowUpdateBanner() {
   return Boolean(
     updateBannerReady &&
     currentUser &&
-    !passwordRecoveryMode &&
-    !state.current &&
+	    !passwordRecoveryMode &&
+	    !isAccountRouteActive() &&
+	    !state.current &&
     !accountPanel?.classList.contains('account-open') &&
     accountSubmenuPanel?.classList.contains('hidden') &&
     loggedOut?.classList.contains('hidden') &&
@@ -2233,7 +2264,7 @@ function enforceScreenSeparation() {
 
   const profileDone = hasCompletedProfile();
   screens.forEach(screen => screen.classList.toggle('auth-locked', !profileDone));
-  bottomNav?.classList.toggle('hidden', !profileDone);
+  syncBottomNavVisibility(profileDone);
   accountBtn?.classList.toggle('hidden', !profileDone && !currentUser);
 }
 function renderAll() {
@@ -2266,11 +2297,11 @@ function renderAccount() {
 
   panel.classList.toggle('account-modal', Boolean(currentUser));
 
-	  if (!currentUser) {
-	    replaceAccountRouteWithNormalUrl();
-	    clearInitialAccountRouteClasses();
-	    removeAccountRouteShell();
-	    panel.classList.remove('account-main-mode');
+  if (!currentUser) {
+    replaceAccountRouteWithNormalUrl();
+    clearInitialAccountRouteClasses();
+    removeAccountRouteShell();
+    panel.classList.remove('account-main-mode');
     hideAccountSubmenuPanel();
     document.documentElement.classList.remove('account-main-active', 'account-submenu-active');
     document.body.classList.remove('account-main-active', 'account-submenu-active');
@@ -2312,7 +2343,7 @@ function renderAccount() {
     loggedIn.classList.remove('hidden');
     const profileDone = hasCompletedProfile();
     screens.forEach(screen => screen.classList.toggle('auth-locked', !profileDone));
-    if (bottomNav) bottomNav.classList.toggle('hidden', !profileDone);
+    syncBottomNavVisibility(profileDone);
     if (accountBtn) {
       accountBtn.classList.remove('hidden');
       accountBtn.textContent = 'Account';
@@ -2338,6 +2369,7 @@ function openAccountMain() {
   const loggedIn = document.getElementById('loggedInAccount');
   if (!panel || !currentUser) return;
 
+  hideNormalAppChrome();
   clearInitialAccountRouteClasses();
   hideAccountSubmenuPanel();
   hideAllAccountViews();
@@ -2356,7 +2388,7 @@ function openAccountMain() {
   syncScreenThemeColor();
   renderAccountView('main', { panel, content: loggedIn });
   focusAccountRouteHeading('main');
-  revealAccountRoute();
+  window.requestAnimationFrame(() => revealAccountRoute());
   updateUpdateBanner();
 }
 
@@ -2384,6 +2416,7 @@ function openAccountSubmenu(view) {
   const submenuContent = document.getElementById('accountSubmenuContent');
   if (!submenuPanel || !submenuContent || !currentUser) return;
 
+  hideNormalAppChrome();
   clearInitialAccountRouteClasses();
   hideAllAccountViews();
   hideAccountMainPanel();
@@ -2398,7 +2431,7 @@ function openAccountSubmenu(view) {
   submenuPanel.classList.remove('hidden');
   submenuPanel.setAttribute('aria-hidden', 'false');
   focusAccountRouteHeading(view);
-  revealAccountRoute();
+  window.requestAnimationFrame(() => revealAccountRoute());
   updateUpdateBanner();
 }
 
@@ -3336,7 +3369,7 @@ document.addEventListener('click', event => {
       document.body.classList.remove('workout-active');
       document.documentElement.classList.remove('workout-active');
       document.querySelector('.topbar')?.classList.remove('hidden');
-      document.querySelector('.bottom-nav')?.classList.remove('hidden');
+      syncBottomNavVisibility();
     }
     const title = document.getElementById('screenTitle');
     if (title) title.textContent = event.target.textContent;

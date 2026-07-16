@@ -40,15 +40,21 @@
 
     html.initial-account-main #welcomeScreen,
     html.initial-account-main .app,
+    html.initial-account-main .bottom-nav,
+    html.initial-account-main .update-banner,
+    html.initial-account-main .confirm-panel,
     html.initial-account-submenu #welcomeScreen,
-    html.initial-account-submenu .app {
+    html.initial-account-submenu .app,
+    html.initial-account-submenu .bottom-nav,
+    html.initial-account-submenu .update-banner,
+    html.initial-account-submenu .confirm-panel {
       display: none !important;
     }
 
     #accountRouteShell {
       position: fixed;
       inset: 0;
-      z-index: 9999;
+      z-index: 2147483647;
       display: none;
       background: #ffffff;
       opacity: 1;
@@ -100,17 +106,17 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.16.120524" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.16.120524" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.16.120524" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.16.120524" />
-  <link rel="stylesheet" href="account.css?v=2026.07.16.120524" />
+  <link rel="stylesheet" href="style.css?v=2026.07.16.123040" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.16.123040" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.16.123040" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.16.123040" />
+  <link rel="stylesheet" href="account.css?v=2026.07.16.123040" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-</head>
+	</head>
 	<body>
-  <div id="accountRouteShell" aria-hidden="true"></div>
+	  <div id="accountRouteShell" aria-hidden="true"></div>
 	  <section id="welcomeScreen" class="welcome-screen">
     <div class="welcome-inner">
 
@@ -627,13 +633,13 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.16.120524"></script>
-  <script src="workouts.js?v=2026.07.16.120524"></script>
-  <script src="state.js?v=2026.07.16.120524"></script>
-  <script src="account.js?v=2026.07.16.120524"></script>
-  <script src="admin.js?v=2026.07.16.120524"></script>
-  <script src="render.js?v=2026.07.16.120524"></script>
-  <script src="app-version.js?v=2026.07.16.120524"></script>
-  <script src="app.js?v=2026.07.16.120524"></script>
+  <script src="auth.js?v=2026.07.16.123040"></script>
+  <script src="workouts.js?v=2026.07.16.123040"></script>
+  <script src="state.js?v=2026.07.16.123040"></script>
+  <script src="account.js?v=2026.07.16.123040"></script>
+  <script src="admin.js?v=2026.07.16.123040"></script>
+  <script src="render.js?v=2026.07.16.123040"></script>
+  <script src="app-version.js?v=2026.07.16.123040"></script>
+  <script src="app.js?v=2026.07.16.123040"></script>
 </body>
 </html>

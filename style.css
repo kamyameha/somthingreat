@@ -61,14 +61,18 @@ html.route-leaving body {
 .app,
 .account-panel,
 .account-submenu-panel,
-#welcomeScreen {
+#welcomeScreen,
+.bottom-nav,
+.update-banner {
   transition: opacity 120ms ease;
 }
 
 html.route-leaving .app,
 html.route-leaving .account-panel,
 html.route-leaving .account-submenu-panel,
-html.route-leaving #welcomeScreen {
+html.route-leaving #welcomeScreen,
+html.route-leaving .bottom-nav,
+html.route-leaving .update-banner {
   opacity: 0;
   pointer-events: none;
 }
@@ -81,7 +85,9 @@ html.route-leaving #welcomeScreen {
   .app,
   .account-panel,
   .account-submenu-panel,
-  #welcomeScreen {
+  #welcomeScreen,
+  .bottom-nav,
+  .update-banner {
     transition: none;
   }
 }
