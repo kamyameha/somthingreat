@@ -1,5 +1,5 @@
 (function (scope) {
-  const APP_VERSION = '2026.07.17.154200';
+  const APP_VERSION = '2026.07.17.155200';
 
   scope.APP_VERSION = APP_VERSION;
   scope.SOMTHINGREAT_VERSION = APP_VERSION;
@@ -36,10 +36,12 @@
   }
 
   if (typeof document !== 'undefined') {
-    const style = document.createElement('link');
-    style.rel = 'stylesheet';
-    style.href = `preview-actions.css?v=${APP_VERSION}`;
-    document.head.appendChild(style);
+    ['preview-actions.css', 'bottom-nav-polish.css'].forEach(href => {
+      const style = document.createElement('link');
+      style.rel = 'stylesheet';
+      style.href = `${href}?v=${APP_VERSION}`;
+      document.head.appendChild(style);
+    });
 
     scope.addEventListener('load', () => {
       const script = document.createElement('script');
