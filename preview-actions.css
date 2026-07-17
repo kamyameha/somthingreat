@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap');
+
 .generated-preview-list .preview-action-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
