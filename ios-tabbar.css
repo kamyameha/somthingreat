@@ -1,37 +1,43 @@
 /* Floating text-only tab bar */
 .app {
-  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  padding-bottom: calc(82px + env(safe-area-inset-bottom));
 }
 
 .bottom-nav {
-  bottom: calc(8px + env(safe-area-inset-bottom));
+  bottom: calc(2px + env(safe-area-inset-bottom));
   width: min(353px, calc(100% - 40px));
-  height: 60px;
+  height: 50px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.05);
-  -webkit-backdrop-filter: blur(20px) saturate(145%);
-  backdrop-filter: blur(20px) saturate(145%);
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 25px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.98),
+    rgba(255, 255, 255, 0.91)
+  );
+  box-shadow:
+    0 10px 28px rgba(20, 25, 40, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
   overflow: hidden;
 }
 
 .nav-btn {
   min-width: 0;
-  min-height: 48px;
-  height: 48px;
+  min-height: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 8px;
   border: 0;
-  border-radius: 24px;
+  border-radius: 21px;
   background: transparent;
   color: #8f9299;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   line-height: 1;
   transition: color 180ms ease, background-color 180ms ease, transform 150ms ease;
 }
@@ -50,7 +56,7 @@
 }
 
 .update-banner {
-  bottom: calc(84px + env(safe-area-inset-bottom));
+  bottom: calc(72px + env(safe-area-inset-bottom));
 }
 
 @media (prefers-reduced-motion: reduce) {
