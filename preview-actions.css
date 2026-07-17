@@ -62,7 +62,7 @@
 .generated-preview-list .preview-help-btn {
   display: grid;
   place-items: center;
-  border: 1.5px solid #000000;
+  border: 1px solid #000000;
   border-radius: 50%;
   background: transparent;
   color: #000000;
