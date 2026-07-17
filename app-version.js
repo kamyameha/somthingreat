@@ -1,5 +1,5 @@
 (function (scope) {
-  const APP_VERSION = '2026.07.17.160400';
+  const APP_VERSION = '2026.07.17.161600';
 
   scope.APP_VERSION = APP_VERSION;
   scope.SOMTHINGREAT_VERSION = APP_VERSION;
@@ -36,7 +36,7 @@
   }
 
   if (typeof document !== 'undefined') {
-    ['preview-actions.css', 'bottom-nav-polish.css', 'polish-ui.css'].forEach(href => {
+    ['preview-actions.css', 'bottom-nav-polish.css', 'polish-ui.css', 'ios-tabbar.css'].forEach(href => {
       const style = document.createElement('link');
       style.rel = 'stylesheet';
       style.href = `${href}?v=${APP_VERSION}`;
