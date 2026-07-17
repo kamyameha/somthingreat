@@ -707,6 +707,10 @@ body.workout-active .bottom-nav {
   color: #ffffff;
 }
 
+.workout-accordion-card .set-row.has-help {
+  grid-template-columns: minmax(0, 1fr) 26px 26px;
+}
+
 .workout-accordion-card .set-row.completed {
   background: #ffffff;
   color: var(--main);
@@ -718,6 +722,15 @@ body.workout-active .bottom-nav {
   font-size: 18px;
   font-weight: 400;
   line-height: 1;
+}
+
+.workout-accordion-card .set-help-btn {
+  align-self: center;
+}
+
+.workout-accordion-card .set-row.completed .set-help-btn {
+  background: var(--main);
+  color: #ffffff;
 }
 
 .set-control {

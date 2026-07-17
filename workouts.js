@@ -1300,16 +1300,134 @@
     ]
   };
 
-  const addOnHelp = {
-    'Warm-up': {
-      purpose: 'Raises temperature and prepares joints before training.',
-      cues: ['Do each listed movement for about 30 seconds.', 'Move lightly and breathe steadily.', 'Treat it as preparation, not a test.'],
-      safety: 'Keep it easy and pain-free.'
+  const addOnMovementHelp = {
+    'March in place': {
+      instructions: {
+        purpose: 'Gently raises your heart rate and gets the whole body moving.',
+        setup: 'Stand tall with room around you and arms relaxed by your sides.',
+        execution: 'March in place at an easy pace, lifting knees only as high as feels controlled.',
+        safety: 'Keep steps quiet and steady. Slow down if balance feels off.'
+      }
     },
-    'Stretch': {
-      purpose: 'Helps you cool down and leave the session calmly.',
-      cues: ['Do each listed stretch for about 30 seconds.', 'Ease into each position slowly and breathe.', 'Do not force range.'],
-      safety: 'Stretch should feel gentle, not sharp.'
+    'Arm circles': {
+      instructions: {
+        purpose: 'Prepares the shoulders for pushing, pulling, and overhead work.',
+        setup: 'Stand tall and reach both arms out to the sides.',
+        execution: 'Make small smooth circles, then switch direction halfway through.',
+        safety: 'Keep the circles comfortable and avoid forcing a big range.'
+      }
+    },
+    'Hip circles': {
+      instructions: {
+        purpose: 'Wakes up the hips before squats, hinges, and single-leg work.',
+        setup: 'Stand with feet about hip-width and hands on your hips.',
+        execution: 'Circle the hips slowly in one direction, then switch direction.',
+        safety: 'Move gently and keep your feet planted.'
+      }
+    },
+    'Bodyweight squats': {
+      instructions: {
+        purpose: 'Warms up the legs and practices your squat pattern.',
+        setup: 'Stand with feet about shoulder-width and toes slightly turned out.',
+        execution: 'Sit down and back, then stand tall with control.',
+        safety: 'Use a smaller range if your knees or hips feel uncomfortable.'
+      }
+    },
+    'Step touch': {
+      instructions: {
+        purpose: 'Adds light movement while warming up hips, ankles, and coordination.',
+        setup: 'Stand tall with space to step side to side.',
+        execution: 'Step one foot to the side, tap the other foot in, then repeat the other way.',
+        safety: 'Keep the pace easy and avoid rushing the taps.'
+      }
+    },
+    'Shoulder rolls': {
+      instructions: {
+        purpose: 'Helps the shoulders and upper back loosen before training.',
+        setup: 'Stand or sit tall with arms relaxed.',
+        execution: 'Roll shoulders up, back, and down slowly, then reverse direction.',
+        safety: 'Keep the neck relaxed and make the motion smooth.'
+      }
+    },
+    'Good mornings': {
+      instructions: {
+        purpose: 'Prepares the hinge pattern for glutes, hamstrings, and back control.',
+        setup: 'Stand tall with soft knees and hands on hips or across your chest.',
+        execution: 'Push hips back with a long spine, then squeeze glutes to stand tall.',
+        safety: 'Keep the range easy and stop before your back rounds.'
+      }
+    },
+    'Ankle bounces': {
+      instructions: {
+        purpose: 'Warms up the calves and ankles for lower-body work.',
+        setup: 'Stand tall with feet under hips and knees soft.',
+        execution: 'Lightly bounce through the ankles, keeping the movement small.',
+        safety: 'Stay gentle and keep both feet landing softly.'
+      }
+    },
+    'Hamstring stretch': {
+      instructions: {
+        purpose: 'Gently relaxes the back of the thigh after training.',
+        setup: 'Place one heel forward with the knee soft and toes up.',
+        execution: 'Hinge from the hips until you feel an easy stretch, then breathe.',
+        safety: 'Do not pull or bounce. Keep the stretch mild.'
+      }
+    },
+    'Quad stretch': {
+      instructions: {
+        purpose: 'Gently stretches the front of the thigh after leg work.',
+        setup: 'Stand tall near support and hold one ankle behind you.',
+        execution: 'Keep knees close and gently bring the heel toward the glute.',
+        safety: 'Use support for balance and avoid pulling hard.'
+      }
+    },
+    'Chest opener': {
+      instructions: {
+        purpose: 'Opens the chest and front of the shoulders after upper-body work.',
+        setup: 'Stand tall and clasp hands behind your back, or hold a towel if needed.',
+        execution: 'Reach hands slightly back and down while breathing calmly.',
+        safety: 'Keep shoulders relaxed and avoid pinching.'
+      }
+    },
+    "Child's pose": {
+      instructions: {
+        purpose: 'Creates a calm reset for the back, hips, and shoulders.',
+        setup: 'Start on hands and knees, then sit hips back toward heels.',
+        execution: 'Reach arms forward and breathe slowly in a comfortable position.',
+        safety: 'Use a smaller range if knees, hips, or shoulders feel uncomfortable.'
+      }
+    },
+    'Calf stretch': {
+      instructions: {
+        purpose: 'Gently stretches the calves after lower-body or jumping work.',
+        setup: 'Step one foot back and press the back heel toward the floor.',
+        execution: 'Keep the back leg long and lean forward slightly.',
+        safety: 'Keep pressure gentle and avoid forcing the heel down.'
+      }
+    },
+    'Hip flexor stretch': {
+      instructions: {
+        purpose: 'Gently opens the front of the hip after squats and core work.',
+        setup: 'Take a split stance or kneeling lunge with the front foot planted.',
+        execution: 'Tuck ribs slightly and shift forward until the front of the hip eases open.',
+        safety: 'Keep the range small and avoid arching the lower back.'
+      }
+    },
+    'Shoulder stretch': {
+      instructions: {
+        purpose: 'Gently relaxes the shoulders after pushing, pulling, or handstand work.',
+        setup: 'Bring one arm across your chest and hold it lightly with the other arm.',
+        execution: 'Draw the arm in until you feel an easy shoulder stretch.',
+        safety: 'Keep the shoulder down and do not yank the arm.'
+      }
+    },
+    'Forward fold': {
+      instructions: {
+        purpose: 'Helps the back of the body settle at the end of the session.',
+        setup: 'Stand with feet comfortable and knees softly bent.',
+        execution: 'Fold forward from the hips and let your head and arms relax.',
+        safety: 'Keep knees bent and rise slowly when finished.'
+      }
     }
   };
 
@@ -1768,14 +1886,32 @@
     return 'Workout';
   }
 
-  function getExerciseHelp(nameOrId = '') {
-    const item = byId[nameOrId] || exerciseCatalog.find(exercise => exercise.name === nameOrId);
-    if (!item) return addOnHelp[nameOrId] || null;
+  function normaliseHelpName(value = '') {
+    return String(value)
+      .toLowerCase()
+      .replace(/[’']/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  function helpFromInstructions(item) {
+    if (!item?.instructions) return null;
     return {
       purpose: item.instructions.purpose,
       cues: [item.instructions.setup, item.instructions.execution],
       safety: item.instructions.safety
     };
+  }
+
+  function findAddOnMovementHelp(nameOrId = '') {
+    const normalised = normaliseHelpName(nameOrId);
+    const key = Object.keys(addOnMovementHelp).find(item => normaliseHelpName(item) === normalised);
+    return key ? addOnMovementHelp[key] : null;
+  }
+
+  function getExerciseHelp(nameOrId = '') {
+    const item = byId[nameOrId] || exerciseCatalog.find(exercise => exercise.name === nameOrId);
+    return helpFromInstructions(item) || helpFromInstructions(findAddOnMovementHelp(nameOrId));
   }
 
   function ratingRulesForTrack(trackKey) {

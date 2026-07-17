@@ -1313,12 +1313,17 @@ function setControlMarkup(exercise, exerciseKey, index, completed, timedSeconds)
   const label = exercise.setLabels?.[index] || `Round ${index + 1}`;
   const iconClass = completed ? 'is-check' : timedSeconds ? 'is-timer' : 'is-square';
   const exerciseName = exerciseDisplayName(exercise);
+  const rowHelp = exercise.isAddOn ? getExerciseHelp(label) : null;
+  const rowHelpButton = rowHelp
+    ? `<button class="exercise-help-btn set-help-btn" type="button" data-exercise-name="${escapeHTML(label)}" aria-label="Help with ${escapeHTML(label)}">?</button>`
+    : '';
   const timerData = timedSeconds
     ? `data-timer-seconds="${timedSeconds}" data-exercise-name="${escapeHTML(exerciseName)}" data-track="${escapeHTML(exerciseKey)}" data-set-index="${index}" data-set-label="${escapeHTML(label)}"`
     : '';
   return `
-    <div class="set-row ${timedSeconds ? 'timed-set-row' : ''} ${completed ? 'completed' : ''}">
+    <div class="set-row ${rowHelp ? 'has-help' : ''} ${timedSeconds ? 'timed-set-row' : ''} ${completed ? 'completed' : ''}">
       <span>${escapeHTML(label)}</span>
+      ${rowHelpButton}
       <button class="set-control ${iconClass}" type="button" data-track="${escapeHTML(exerciseKey)}" data-set-index="${index}" ${timerData} aria-label="${completed ? 'Completed' : timedSeconds ? `Start ${label} timer` : `Complete ${label}`}"></button>
     </div>
   `;
@@ -1375,7 +1380,7 @@ function renderExercises() {
     const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => {
       return setControlMarkup(exercise, exerciseKey, index, Boolean(completedSets[index]), timedSeconds);
     }).join('');
-    const help = getExerciseHelp(exerciseName);
+    const help = exercise.isAddOn ? null : getExerciseHelp(exerciseName);
     const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exerciseName)}" aria-label="Help with ${escapeHTML(exerciseName)}">?</button>` : '';
     const ratingBlock = exercise.isAddOn ? '' : `
       <p class="rating-label">How was it?</p>
