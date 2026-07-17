@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap');
+
 .generated-preview-list .preview-action-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -64,7 +66,8 @@
   border-radius: 50%;
   background: transparent;
   color: #000000;
-  font-size: 16px;
+  font-family: Inter, sans-serif;
+  font-size: 18px;
   font-weight: 400;
   line-height: 1;
 }
