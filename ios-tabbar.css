@@ -30,8 +30,8 @@
   border-radius: 24px;
   background: transparent;
   color: #8f9299;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 700;
   line-height: 1;
   transition: color 180ms ease, background-color 180ms ease, transform 150ms ease;
 }
