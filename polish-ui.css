@@ -7,9 +7,18 @@
   line-height: 1.08;
 }
 
-/* Make secondary and outlined controls feel less stark without changing hierarchy. */
-.secondary-btn,
+/* Keep every secondary CTA on the same established value. */
+.secondary-btn {
+  background-color: var(--auth-secondary);
+}
+
+/* Energy and other outlined choices should remain transparent when inactive. */
 .feel-btn:not(.selected),
+.energy-option:not(.selected) {
+  background-color: transparent;
+}
+
+/* Preserve only the very subtle tint on non-energy selection controls. */
 .custom-type-row label:not(:has(input:checked)),
 .onboarding-chip:not(:has(input:checked)) {
   background-color: rgba(1, 45, 237, 0.025);
