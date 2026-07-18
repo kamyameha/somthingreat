@@ -119,13 +119,11 @@
   function installWorkoutTimerSound() {
     if (typeof tickWorkoutTimer !== 'function' || tickWorkoutTimer.__soundInstalled) return;
     const originalTick = tickWorkoutTimer;
-    let wasAboveZero = false;
     window.tickWorkoutTimer = tickWorkoutTimer = function () {
       const before = activeTimer?.phase === 'active' ? Number(activeTimer.remainingSeconds || 0) : null;
       originalTick();
       const after = activeTimer?.phase === 'active' ? Number(activeTimer.remainingSeconds || 0) : null;
-      if (before !== null && before > 0 && after === 0 && !wasAboveZero) playCompletionSound();
-      wasAboveZero = after > 0;
+      if (before !== null && before > 0 && after === 0) playCompletionSound();
     };
     tickWorkoutTimer.__soundInstalled = true;
   }
