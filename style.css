@@ -1486,7 +1486,7 @@ textarea::placeholder {
 }
 
 /* Neutral popup material. Menu and submenu screens intentionally keep their own design. */
-.confirm-card,
+.confirm-panel:not(.workout-completion-panel) .confirm-card,
 .exercise-help-card,
 .timer-card,
 .generated-workout-modal,
@@ -1498,14 +1498,14 @@ textarea::placeholder {
   backdrop-filter: blur(24px) saturate(180%);
 }
 
-.confirm-card,
+.confirm-panel:not(.workout-completion-panel) .confirm-card,
 .exercise-help-card,
 .timer-card {
   padding: var(--ui-space-4) !important;
 }
 
 .exercise-help-card h2,
-.confirm-card h2 {
+.confirm-panel:not(.workout-completion-panel) .confirm-card h2 {
   margin: 0 48px var(--ui-space-2) 0;
   line-height: 1.15;
 }
@@ -1528,63 +1528,6 @@ textarea::placeholder {
   min-height: var(--ui-control-height);
   border-radius: 23px;
   font-size: 16px;
-  line-height: 1;
-}
-
-/* Help always precedes timer. Icon colour follows its surface. */
-.add-on-exercise-actions,
-.warmup-exercise-actions,
-.stretch-exercise-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.add-on-help-btn,
-.add-on-timer-btn,
-.warmup-help-btn,
-.warmup-timer-btn,
-.stretch-help-btn,
-.stretch-timer-btn,
-[data-addon-help],
-[data-addon-timer] {
-  width: 30px !important;
-  min-width: 30px !important;
-  height: 30px !important;
-  min-height: 30px !important;
-  padding: 0 !important;
-  border: 1px solid currentColor !important;
-  border-radius: 50% !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  font-size: 0 !important;
-}
-
-.workout-add-on-card [data-addon-help],
-.workout-add-on-card [data-addon-timer],
-.add-on-exercise-actions [data-addon-help],
-.add-on-exercise-actions [data-addon-timer] {
-  color: #ffffff !important;
-}
-
-.generated-workout-modal .preview-help-btn,
-.generated-workout-modal .exercise-help-btn {
-  color: #111111 !important;
-  border-color: #111111 !important;
-  background: transparent !important;
-  opacity: 1 !important;
-}
-
-.add-on-help-btn::before,
-.warmup-help-btn::before,
-.stretch-help-btn::before,
-[data-addon-help]::before {
-  content: "?";
-  font-size: 18px;
-  font-weight: 500;
   line-height: 1;
 }
 
@@ -1793,16 +1736,18 @@ textarea::placeholder {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px !important;
-  margin: 19px 0 0 !important;
+  margin: 44px 0 0 !important;
   padding: 0 !important;
   background: transparent !important;
 }
 
 .activity-timer {
+  grid-column: 1 / -1;
   width: 100%;
   display: grid !important;
   place-items: center;
   padding: 22px 0 8px !important;
+  overflow: hidden;
 }
 
 .activity-timer-count {
@@ -1815,6 +1760,9 @@ textarea::placeholder {
   letter-spacing: -0.05em;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  text-shadow: none;
+  -webkit-text-stroke: 0;
+  contain: paint;
 }
 
 .custom-checklist-modal:has(.activity-timer) .custom-checklist-actions {

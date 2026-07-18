@@ -1313,7 +1313,7 @@ function setControlMarkup(exercise, exerciseKey, index, completed, timedSeconds)
   const label = exercise.setLabels?.[index] || `Round ${index + 1}`;
   const iconClass = completed ? 'is-check' : timedSeconds ? 'is-timer' : 'is-square';
   const exerciseName = exerciseDisplayName(exercise);
-  const rowHelp = exercise.isAddOn ? getExerciseHelp(label) : null;
+  const rowHelp = !completed && exercise.isAddOn ? getExerciseHelp(label) : null;
   const rowHelpButton = rowHelp
     ? `<button class="exercise-help-btn set-help-btn" type="button" data-exercise-name="${escapeHTML(label)}" aria-label="Help with ${escapeHTML(label)}">?</button>`
     : '';
@@ -1323,8 +1323,8 @@ function setControlMarkup(exercise, exerciseKey, index, completed, timedSeconds)
   return `
     <div class="set-row ${rowHelp ? 'has-help' : ''} ${timedSeconds ? 'timed-set-row' : ''} ${completed ? 'completed' : ''}">
       <span>${escapeHTML(label)}</span>
-      ${rowHelpButton}
       <button class="set-control ${iconClass}" type="button" data-track="${escapeHTML(exerciseKey)}" data-set-index="${index}" ${timerData} aria-label="${completed ? 'Completed' : timedSeconds ? `Start ${label} timer` : `Complete ${label}`}"></button>
+      ${rowHelpButton}
     </div>
   `;
 }
@@ -1553,6 +1553,7 @@ function tickWorkoutTimer() {
   if (activeTimer.remainingSeconds <= 0) {
     activeTimer.remainingSeconds = 0;
     window.navigator?.vibrate?.(120);
+    window.SomthingreatTimerSound?.playCompletion?.();
     clearInterval(timerInterval);
     timerInterval = null;
     if (activeTimer.completeOnFinish && activeTimer.trackKey) {
@@ -1571,6 +1572,7 @@ function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0, trackKey 
   if (!panel || !seconds) return;
 
   requestWorkoutWakeLock();
+  window.SomthingreatTimerSound?.unlock?.();
   closeWorkoutTimer(false);
   lastFocusedElement = document.activeElement;
   activeTimer = {

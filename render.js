@@ -96,7 +96,10 @@
     const elapsed = Math.min(checklist.target * 60, currentElapsed(timer));
     const count = document.getElementById('activityTimerCount');
     const toggle = document.getElementById('toggleActivityTimerBtn');
-    if (count) count.textContent = formatClock(elapsed);
+    if (count) {
+      const nextValue = formatClock(elapsed);
+      if (count.textContent !== nextValue) count.textContent = nextValue;
+    }
     if (toggle) {
       toggle.dataset.state = timer.running ? 'running' : 'paused';
       toggle.setAttribute('aria-label', timer.running ? 'Pause timer' : elapsed > 0 ? 'Resume timer' : 'Start timer');
@@ -281,6 +284,7 @@
         timer.running = false;
         timer.startedAt = null;
       } else if (timer.elapsedSeconds < timer.target * 60) {
+        window.SomthingreatTimerSound?.unlock?.();
         timer.running = true;
         timer.startedAt = Date.now();
       }
@@ -294,10 +298,11 @@
   window.addEventListener('load', installActivityCounter, { once: true });
 })();
 
-/* Consolidated from quality-audit.js */
+/* Shared timer sound and one-time progression migration. */
 (function () {
   const AUDIT_KEY = 'somthingreat-quality-audit-2026-07-18';
   const SOUND_KEY = 'somthingreat-timer-sound';
+  let audioContext = null;
 
   function normalise(value = '') {
     return String(value).toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -307,48 +312,49 @@
     return localStorage.getItem(SOUND_KEY) !== 'off';
   }
 
-  function playCompletionSound() {
+  function getAudioContext() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!audioContext || audioContext.state === 'closed') audioContext = new AudioContextClass();
+    return audioContext;
+  }
+
+  function unlockAudio() {
     if (!soundEnabled()) return;
     try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) return;
-      const context = new AudioContextClass();
-      const now = context.currentTime;
-      [659.25, 880].forEach((frequency, index) => {
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-        oscillator.type = 'sine';
-        oscillator.frequency.value = frequency;
-        gain.gain.setValueAtTime(0.0001, now + index * 0.16);
-        gain.gain.exponentialRampToValueAtTime(0.18, now + index * 0.16 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.16 + 0.24);
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start(now + index * 0.16);
-        oscillator.stop(now + index * 0.16 + 0.26);
-      });
-      window.setTimeout(() => context.close().catch(() => {}), 800);
+      const context = getAudioContext();
+      if (context?.state === 'suspended') context.resume().catch(() => {});
     } catch (error) {
       console.warn('Timer sound unavailable:', error);
     }
   }
 
-  function reorderAddOnActions(root = document) {
-    root.querySelectorAll('button').forEach(button => {
-      const label = normalise(button.getAttribute('aria-label') || button.title || button.textContent);
-      if (!label) return;
-      const isHelp = label.includes('how to') || label.includes('instruction') || label === 'help' || label === '?';
-      const isTimer = label.includes('timer') || label.includes('start 30') || label.includes('start timer');
-      if (isHelp) button.dataset.addonHelp = 'true';
-      if (isTimer) button.dataset.addonTimer = 'true';
-    });
-
-    root.querySelectorAll('[data-addon-help]').forEach(help => {
-      const container = help.parentElement;
-      if (!container) return;
-      const timer = Array.from(container.children).find(child => child.matches?.('[data-addon-timer]'));
-      if (timer && timer.previousElementSibling !== help) container.insertBefore(help, timer);
-    });
+  function playCompletionSound() {
+    if (!soundEnabled()) return;
+    try {
+      const context = getAudioContext();
+      if (!context) return;
+      const play = () => {
+        const now = context.currentTime;
+        [659.25, 880].forEach((frequency, index) => {
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.type = 'sine';
+          oscillator.frequency.value = frequency;
+          gain.gain.setValueAtTime(0.0001, now + index * 0.16);
+          gain.gain.exponentialRampToValueAtTime(0.18, now + index * 0.16 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.16 + 0.24);
+          oscillator.connect(gain);
+          gain.connect(context.destination);
+          oscillator.start(now + index * 0.16);
+          oscillator.stop(now + index * 0.16 + 0.26);
+        });
+      };
+      if (context.state === 'suspended') context.resume().then(play).catch(() => {});
+      else play();
+    } catch (error) {
+      console.warn('Timer sound unavailable:', error);
+    }
   }
 
   function observedLevelForTrack(trackKey, track, history) {
@@ -413,32 +419,12 @@
     }
   }
 
-  function installWorkoutTimerSound() {
-    if (typeof tickWorkoutTimer !== 'function' || tickWorkoutTimer.__soundInstalled) return;
-    const originalTick = tickWorkoutTimer;
-    window.tickWorkoutTimer = tickWorkoutTimer = function () {
-      const before = activeTimer?.phase === 'active' ? Number(activeTimer.remainingSeconds || 0) : null;
-      originalTick();
-      const after = activeTimer?.phase === 'active' ? Number(activeTimer.remainingSeconds || 0) : null;
-      if (before !== null && before > 0 && after === 0) playCompletionSound();
-    };
-    tickWorkoutTimer.__soundInstalled = true;
-  }
-
   window.SomthingreatTimerSound = {
     enabled: soundEnabled,
+    unlock: unlockAudio,
     playCompletion: playCompletionSound
   };
 
-  const observer = new MutationObserver(records => {
-    records.forEach(record => record.addedNodes.forEach(node => {
-      if (node.nodeType === 1) reorderAddOnActions(node);
-    }));
-  });
-
-  reorderAddOnActions();
-  observer.observe(document.body, { childList: true, subtree: true });
-  installWorkoutTimerSound();
   window.setTimeout(recalibrateLegacyLegsAndCore, 2500);
 })();
 

@@ -685,6 +685,16 @@ body.workout-active .bottom-nav {
   line-height: 1;
 }
 
+.workout-accordion-card .set-help-btn {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  border: 1px solid #ffffff;
+  background: transparent;
+  color: #ffffff;
+}
+
 .set-list {
   display: grid;
   gap: 19px;
@@ -708,7 +718,8 @@ body.workout-active .bottom-nav {
 }
 
 .workout-accordion-card .set-row.has-help {
-  grid-template-columns: minmax(0, 1fr) 26px 26px;
+  grid-template-columns: minmax(0, 1fr) 26px 30px;
+  gap: 14px;
 }
 
 .workout-accordion-card .set-row.completed {
@@ -726,11 +737,6 @@ body.workout-active .bottom-nav {
 
 .workout-accordion-card .set-help-btn {
   align-self: center;
-}
-
-.workout-accordion-card .set-row.completed .set-help-btn {
-  background: var(--main);
-  color: #ffffff;
 }
 
 .set-control {
@@ -751,6 +757,8 @@ body.workout-active .bottom-nav {
 }
 
 .set-control.is-timer {
+  background-color: #ffffff;
+  color: #ffffff;
   -webkit-mask: url("Assets/clock.svg") center / contain no-repeat;
   mask: url("Assets/clock.svg") center / contain no-repeat;
 }
