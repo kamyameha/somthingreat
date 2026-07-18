@@ -87,7 +87,6 @@
   font-size: 0 !important;
 }
 
-/* Blue workout cards: white outline icons. */
 .workout-add-on-card [data-addon-help],
 .workout-add-on-card [data-addon-timer],
 .add-on-exercise-actions [data-addon-help],
@@ -95,7 +94,6 @@
   color: #ffffff !important;
 }
 
-/* White workout overview popup: black outline help icon. */
 .generated-workout-modal .preview-help-btn,
 .generated-workout-modal .exercise-help-btn {
   color: #111111 !important;
@@ -120,58 +118,177 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Activity counter keeps the current form logic and matches Recovery selections. */
-.activity-quick-choices {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 0 0 12px;
+/* Account main menu: preserve the validated design, but allow comfortable scrolling. */
+.account-panel.account-modal.account-main-mode {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
 }
 
-.activity-quick-option,
-.custom-type-row label,
-.settings-sound-option {
+.account-panel.account-modal.account-main-mode .account-modal-content {
+  min-height: 100dvh;
+  overflow-y: visible !important;
+  padding-bottom: calc(44px + env(safe-area-inset-bottom)) !important;
+}
+
+.account-panel.account-modal.account-main-mode #accountMainView {
+  min-height: auto !important;
+  padding-bottom: 0 !important;
+}
+
+.account-panel.account-modal.account-main-mode .account-menu-footer {
+  position: static !important;
+  margin-top: 72px !important;
+  padding-bottom: 0 !important;
+}
+
+/* Sound follows the exact layout rules used by the other account submenus. */
+.account-submenu-panel #accountSettingsView {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  column-gap: 20px;
+  row-gap: 19px;
+  color: #ffffff;
+}
+
+.account-submenu-panel #accountSettingsView.hidden {
+  display: none !important;
+}
+
+.account-submenu-panel #accountSettingsView > .muted {
+  flex: 0 0 100%;
+  width: 100%;
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 400;
+}
+
+.account-submenu-panel #accountSettingsView .settings-sound-option {
+  width: auto;
+  min-width: 0;
+  height: 46px;
+  margin: 0;
+  padding: 0 21px;
+  border: 1px solid #ffffff !important;
+  border-radius: 20px !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.account-submenu-panel #accountSettingsView .settings-sound-option:has(input:checked) {
+  background: #ffffff !important;
+  color: var(--main) !important;
+}
+
+/* Activity counter: one dropdown, one target field and two aligned type chips. */
+.activity-select {
+  width: 100%;
+  height: 46px;
+  padding: 0 21px;
+  margin: 0 0 12px;
+  border: 1px solid var(--main);
+  border-radius: 20px;
+  background: #ffffff;
+  color: var(--main);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  appearance: none;
+}
+
+.activity-select option {
+  background: #ffffff;
+  color: var(--main);
+}
+
+.custom-type-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 19px !important;
+}
+
+.custom-type-row label {
+  width: 100%;
   min-height: 46px;
   margin: 0;
   padding: 10px 14px;
   border: 1px solid var(--main) !important;
-  border-radius: 23px !important;
+  border-radius: 20px !important;
   background: #ffffff !important;
   color: var(--main) !important;
   font-weight: 500;
 }
 
-.activity-quick-option input,
 .custom-type-row input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.activity-quick-option:has(input:checked),
 .custom-type-row label:has(input:checked) {
   background: var(--main) !important;
   color: #ffffff !important;
 }
 
+/* Activity popup matches the existing timer hierarchy. */
+.custom-checklist-modal h2 {
+  margin-bottom: 44px !important;
+}
+
 .activity-timer {
   display: grid;
-  gap: 20px;
-  padding: 24px 0 8px;
-  text-align: center;
+  gap: 24px;
+  padding: 22px 0 8px;
 }
 
 .activity-timer-count {
   margin: 0;
-  color: var(--heading);
-  font-size: clamp(38px, 12vw, 54px);
-  font-weight: 700;
+  color: #000000;
+  font-size: clamp(88px, 29vw, 126px);
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-timer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 36px;
+}
+
+.activity-timer-target {
+  color: #000000;
+  font-size: 20px;
+  font-weight: 500;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-.activity-timer .primary-btn {
-  width: 100%;
+.activity-timer-toggle {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  background: #000000;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  -webkit-mask: url("play.svg") center / 24px 24px no-repeat;
+  mask: url("play.svg") center / 24px 24px no-repeat;
+}
+
+.activity-timer-toggle[data-state="running"] {
+  -webkit-mask-image: url("pause.svg");
+  mask-image: url("pause.svg");
 }
 
 /* Mobile uses selected states only: no delayed transition, hover fill or tap flash. */
