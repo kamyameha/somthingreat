@@ -36,6 +36,8 @@ const APP_SHELL = [
   './check.svg',
   './arrow-left.svg',
   './arrow-right.svg',
+  './play.svg',
+  './pause.svg',
   './apple-touch-icon.png',
   './192x192-PWA.png',
   './512x512-regular.png',
@@ -50,63 +52,41 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cacheAppShell(cache))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cacheAppShell(cache)));
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      ))
+      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Never cache Supabase/API calls or browser-extension requests.
-  if (url.origin !== self.location.origin || request.method !== 'GET') {
-    return;
-  }
+  if (url.origin !== self.location.origin || request.method !== 'GET') return;
 
   const isNavigation = request.mode === 'navigate';
-  const isVersionedAppAsset = url.searchParams.get('v') === APP_VERSION &&
-    /\.(?:css|js)$/.test(url.pathname);
+  const isVersionedAppAsset = url.searchParams.get('v') === APP_VERSION && /\.(?:css|js)$/.test(url.pathname);
   const isFreshCoreFile = /\/(?:supabase-config\.js|manifest\.json|version\.json)$/.test(url.pathname);
 
   if (isNavigation) {
-    event.respondWith(appShellFirst(request));
+    event.respondWith(navigationNetworkFirst(request));
     return;
   }
 
-  // Always revalidate application CSS and JavaScript. The cache remains the
-  // offline fallback, but a normal deployment no longer requires manually
-  // changing every asset URL just to receive the latest file.
-  if (isVersionedAppAsset) {
+  if (isVersionedAppAsset || isFreshCoreFile) {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  if (isFreshCoreFile) {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  // Static images/icons can be cache-first, with a network fallback.
   event.respondWith(cacheFirst(request));
 });
 
@@ -123,46 +103,41 @@ async function networkFirst(request) {
   }
 }
 
+async function navigationNetworkFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const freshResponse = await fetch(request, { cache: 'no-store' });
+    if (freshResponse.ok) await cache.put(request, freshResponse.clone());
+    return freshResponse;
+  } catch (error) {
+    const exact = await cache.match(request, { ignoreSearch: true });
+    if (exact) return exact;
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/privacy')) {
+      const privacy = await cache.match('./privacy/index.html') || await cache.match('./privacy/');
+      if (privacy) return privacy;
+    }
+    const app = await cache.match('./index.html') || await cache.match('./');
+    if (app) return app;
+    throw error;
+  }
+}
+
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   const cachedResponse = await cache.match(request);
   if (cachedResponse) return cachedResponse;
-
   const freshResponse = await fetch(request);
   await cache.put(request, freshResponse.clone());
   return freshResponse;
-}
-
-async function appShellFirst(request) {
-  const cache = await caches.open(CACHE_NAME);
-  const cachedResponse = await cache.match('./index.html') || await cache.match('./');
-  const refresh = fetch(request, { cache: 'no-store' })
-    .then(async response => {
-      if (response.ok) await cache.put('./index.html', response.clone());
-      return response;
-    })
-    .catch(error => {
-      if (!cachedResponse) throw error;
-      return null;
-    });
-
-  if (cachedResponse) {
-    refresh.catch(() => {});
-    return cachedResponse;
-  }
-
-  return refresh;
 }
 
 async function cacheAppShell(cache) {
   await Promise.all(APP_SHELL.map(async asset => {
     try {
       const response = await fetch(asset, { cache: 'no-store' });
-      if (response.ok) {
-        await cache.put(asset, response);
-      } else {
-        console.warn('Skipped app shell asset:', asset, response.status);
-      }
+      if (response.ok) await cache.put(asset, response);
+      else console.warn('Skipped app shell asset:', asset, response.status);
     } catch (error) {
       console.warn('Skipped app shell asset:', asset, error);
     }
