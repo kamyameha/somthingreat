@@ -1,5 +1,5 @@
 (function (scope) {
-  const APP_VERSION = '2026.07.18.190500';
+  const APP_VERSION = '2026.07.18.203000';
 
   scope.APP_VERSION = APP_VERSION;
   scope.SOMTHINGREAT_VERSION = APP_VERSION;
@@ -109,66 +109,6 @@
       });
       return exercises.length ? { ...sanitized, exercises } : null;
     };
-  }
-
-  if (typeof document !== 'undefined') {
-    const syncSvgImages = (root = document) => {
-      root.querySelectorAll?.('img[src$=".svg"]').forEach(image => {
-        const current = image.getAttribute('src') || '';
-        if (current.startsWith('Assets/')) return;
-        const filename = current.split('/').pop();
-        if (filename) image.setAttribute('src', `Assets/${filename}`);
-      });
-    };
-
-    const assetPaths = document.createElement('style');
-    assetPaths.textContent = `
-      .account-panel.account-modal.account-main-mode #accountModalTitle,
-      .account-submenu-panel #accountSubmenuTitle {
-        mask-image: url("Assets/somthingreat.svg") !important;
-        -webkit-mask-image: url("Assets/somthingreat.svg") !important;
-      }
-      .account-panel.account-modal.account-main-mode #closeAccountModalBtn::before,
-      .account-submenu-panel #closeAccountSubmenuBtn::before,
-      .today-empty-close::before {
-        mask-image: url("Assets/x.svg") !important;
-        -webkit-mask-image: url("Assets/x.svg") !important;
-      }
-      .account-submenu-panel .account-view > .text-btn {
-        mask-image: url("Assets/arrow-left.svg") !important;
-        -webkit-mask-image: url("Assets/arrow-left.svg") !important;
-      }
-      .account-submenu-panel #accountEquipmentView .option-row::after {
-        mask-image: url("Assets/plus.svg") !important;
-        -webkit-mask-image: url("Assets/plus.svg") !important;
-      }
-      .account-submenu-panel #accountEquipmentView .option-row:has(input:checked)::after {
-        mask-image: url("Assets/x.svg") !important;
-        -webkit-mask-image: url("Assets/x.svg") !important;
-      }
-    `;
-    document.head.appendChild(assetPaths);
-    syncSvgImages();
-    new MutationObserver(records => {
-      records.forEach(record => record.addedNodes.forEach(node => {
-        if (node.nodeType === 1) syncSvgImages(node);
-      }));
-    }).observe(document.documentElement, { childList: true, subtree: true });
-
-    ['preview-actions.css', 'bottom-nav-polish.css', 'polish-ui.css', 'ios-tabbar.css', 'quality-audit.css'].forEach(href => {
-      const style = document.createElement('link');
-      style.rel = 'stylesheet';
-      style.href = `${href}?v=${APP_VERSION}`;
-      document.head.appendChild(style);
-    });
-
-    scope.addEventListener('load', () => {
-      ['preview-actions.js', 'quality-audit.js'].forEach(src => {
-        const script = document.createElement('script');
-        script.src = `${src}?v=${APP_VERSION}`;
-        document.body.appendChild(script);
-      });
-    }, { once: true });
   }
 
   if (typeof module !== 'undefined' && module.exports) {
