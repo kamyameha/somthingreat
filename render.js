@@ -293,3 +293,157 @@
   window.SomthingreatRender = { setButtonLoading, setMessage, focusFirstInteractive, trapTabKey, installActivityCounter };
   window.addEventListener('load', installActivityCounter, { once: true });
 })();
+
+(function () {
+  const SOUND_KEY = 'somthingreat-timer-sound';
+
+  function soundEnabled() {
+    return localStorage.getItem(SOUND_KEY) !== 'off';
+  }
+
+  function playCompletionSound() {
+    if (!soundEnabled()) return;
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const context = new AudioContextClass();
+      const now = context.currentTime;
+      [659.25, 880].forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.0001, now + index * 0.16);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + index * 0.16 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.16 + 0.24);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(now + index * 0.16);
+        oscillator.stop(now + index * 0.16 + 0.26);
+      });
+      window.setTimeout(() => context.close().catch(() => {}), 800);
+    } catch (error) {
+      console.warn('Timer sound unavailable:', error);
+    }
+  }
+
+  function normalise(value = '') {
+    return String(value).toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  function reorderAddOnActions(root = document) {
+    root.querySelectorAll?.('button').forEach(button => {
+      const label = normalise(button.getAttribute('aria-label') || button.title || button.textContent);
+      if (!label) return;
+      const isHelp = label.includes('how to') || label.includes('instruction') || label === 'help' || label === '?';
+      const isTimer = label.includes('timer') || label.includes('start 30') || label.includes('start timer');
+      if (isHelp) button.dataset.addonHelp = 'true';
+      if (isTimer) button.dataset.addonTimer = 'true';
+    });
+    root.querySelectorAll?.('[data-addon-help]').forEach(help => {
+      const container = help.parentElement;
+      if (!container) return;
+      const timer = Array.from(container.children).find(child => child.matches?.('[data-addon-timer]'));
+      if (timer && timer.previousElementSibling !== help) container.insertBefore(help, timer);
+    });
+  }
+
+  window.SomthingreatTimerSound = { enabled: soundEnabled, playCompletion: playCompletionSound };
+
+  const observer = new MutationObserver(records => {
+    records.forEach(record => record.addedNodes.forEach(node => {
+      if (node.nodeType === 1) reorderAddOnActions(node);
+    }));
+  });
+  reorderAddOnActions();
+  observer.observe(document.body, { childList: true, subtree: true });
+})();
+
+(function () {
+  if (typeof renderGeneratedWorkout !== 'function' || typeof getTracks !== 'function') return;
+
+  function prescriptionType(exercise) {
+    const text = `${exercise?.prescription || ''} ${exercise?.basePrescription || ''}`.toLowerCase();
+    return /\b(?:s|sec|secs|second|seconds|min|mins|minute|minutes)\b/.test(text) ? 'time' : 'reps';
+  }
+
+  function swapCandidates(exercise) {
+    if (!exercise || exercise.isAddOn) return [];
+    const tracks = getTracks();
+    const trackKey = exercise.progressionTrackKey || exercise.trackKey;
+    const sourceTrack = tracks[trackKey] || [];
+    const recovery = typeof getActiveRecovery === 'function' ? getActiveRecovery() : null;
+    const usedIds = new Set((state.generated?.exercises || []).map(item => item?.id).filter(Boolean));
+    const allowed = sourceTrack.filter(candidate => {
+      if (!candidate || candidate.id === exercise.id || usedIds.has(candidate.id)) return false;
+      if (recovery && !workoutModule.isExerciseAllowedForRecovery(candidate, recovery)) return false;
+      return true;
+    });
+    const sameType = allowed.filter(candidate => prescriptionType(candidate) === prescriptionType(exercise));
+    const pool = sameType.length ? sameType : allowed;
+    return pool.sort((a, b) =>
+      Math.abs((a.difficulty || 1) - (exercise.difficulty || 1)) -
+      Math.abs((b.difficulty || 1) - (exercise.difficulty || 1))
+    );
+  }
+
+  function swapExercise(index) {
+    const current = state.generated?.exercises?.[index];
+    if (!current) return;
+    const candidates = swapCandidates(current);
+    if (!candidates.length) return;
+    const previousIds = Array.isArray(current.previewSwapIds) ? current.previewSwapIds : [];
+    const next = candidates.find(candidate => !previousIds.includes(candidate.id)) || candidates[0];
+    state.generated.exercises[index] = {
+      ...next,
+      trackKey: current.trackKey || next.trackKey,
+      progressionTrackKey: current.progressionTrackKey || current.trackKey || next.progressionTrackKey || next.trackKey,
+      prescription: current.prescription || next.prescription,
+      basePrescription: next.prescription,
+      setCount: current.setCount || next.setCount || 1,
+      previewSwapIds: [...previousIds, current.id].filter(Boolean)
+    };
+    saveState();
+    renderGeneratedWorkout();
+  }
+
+  function enhancePreview() {
+    const generated = state.generated;
+    const preview = document.getElementById('previewList');
+    if (!generated || !preview) return;
+    preview.innerHTML = '';
+    (generated.exercises || []).filter(Boolean).forEach((exercise, index) => {
+      const name = exerciseDisplayName(exercise);
+      const hasHelp = Boolean(getExerciseHelp(name));
+      const canSwap = swapCandidates(exercise).length > 0;
+      const row = document.createElement('div');
+      row.className = 'preview-row preview-action-row';
+      row.innerHTML = `
+        <div class="preview-exercise-copy">
+          <strong>${escapeHTML(name)}</strong>
+          <span>${escapeHTML(exercise.prescription)}</span>
+        </div>
+        <div class="preview-exercise-actions">
+          ${canSwap ? `<button class="preview-icon-btn preview-swap-btn" type="button" data-preview-index="${index}" aria-label="Change ${escapeHTML(name)}"></button>` : ''}
+          ${hasHelp ? `<button class="preview-icon-btn preview-help-btn exercise-help-btn" type="button" data-exercise-name="${escapeHTML(name)}" aria-label="How to do ${escapeHTML(name)}">?</button>` : ''}
+        </div>`;
+      preview.appendChild(row);
+    });
+  }
+
+  const originalRenderGeneratedWorkout = renderGeneratedWorkout;
+  window.renderGeneratedWorkout = renderGeneratedWorkout = function () {
+    originalRenderGeneratedWorkout.apply(this, arguments);
+    enhancePreview();
+  };
+
+  document.addEventListener('click', event => {
+    const swapButton = event.target.closest('.preview-swap-btn');
+    if (!swapButton) return;
+    event.preventDefault();
+    event.stopPropagation();
+    swapExercise(Number(swapButton.dataset.previewIndex));
+  }, true);
+
+  if (!document.getElementById('generatedWorkoutCard')?.classList.contains('hidden')) enhancePreview();
+})();
