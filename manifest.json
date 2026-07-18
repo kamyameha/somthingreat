@@ -7,17 +7,17 @@
   "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "192x192-PWA.png",
+      "src": "Assets/192x192-PWA.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "512x512-regular.png",
+      "src": "Assets/512x512-regular.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "512x512-maskable.png",
+      "src": "Assets/512x512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

@@ -64,8 +64,8 @@
   width: 26px;
   height: 26px;
   background: #ffffff;
-  -webkit-mask: url("x.svg") center / 26px 26px no-repeat;
-  mask: url("x.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("Assets/x.svg") center / 26px 26px no-repeat;
+  mask: url("Assets/x.svg") center / 26px 26px no-repeat;
 }
 
 .energy-grid {
@@ -617,8 +617,8 @@ body.workout-active .bottom-nav {
   width: 18px;
   height: 18px;
   background: currentColor;
-  -webkit-mask: url("check.svg") center / contain no-repeat;
-  mask: url("check.svg") center / contain no-repeat;
+  -webkit-mask: url("Assets/check.svg") center / contain no-repeat;
+  mask: url("Assets/check.svg") center / contain no-repeat;
 }
 
 .workout-accordion-card.completed .exercise-chip-toggle {
@@ -746,18 +746,18 @@ body.workout-active .bottom-nav {
 }
 
 .set-control.is-square {
-  -webkit-mask: url("square.svg") center / contain no-repeat;
-  mask: url("square.svg") center / contain no-repeat;
+  -webkit-mask: url("Assets/square.svg") center / contain no-repeat;
+  mask: url("Assets/square.svg") center / contain no-repeat;
 }
 
 .set-control.is-timer {
-  -webkit-mask: url("clock.svg") center / contain no-repeat;
-  mask: url("clock.svg") center / contain no-repeat;
+  -webkit-mask: url("Assets/clock.svg") center / contain no-repeat;
+  mask: url("Assets/clock.svg") center / contain no-repeat;
 }
 
 .set-control.is-check {
-  -webkit-mask: url("check.svg") center / contain no-repeat;
-  mask: url("check.svg") center / contain no-repeat;
+  -webkit-mask: url("Assets/check.svg") center / contain no-repeat;
+  mask: url("Assets/check.svg") center / contain no-repeat;
 }
 
 .workout-accordion-card .rating-label {
@@ -1118,8 +1118,8 @@ body.workout-active .bottom-nav {
   height: 18px;
   flex: 0 0 auto;
   background: currentColor;
-  -webkit-mask: url("plus.svg") center / contain no-repeat;
-  mask: url("plus.svg") center / contain no-repeat;
+  -webkit-mask: url("Assets/plus.svg") center / contain no-repeat;
+  mask: url("Assets/plus.svg") center / contain no-repeat;
 }
 
 .add-on-row:has(input:checked) {
@@ -1128,8 +1128,8 @@ body.workout-active .bottom-nav {
 }
 
 .add-on-row:has(input:checked) i {
-  -webkit-mask-image: url("x.svg");
-  mask-image: url("x.svg");
+  -webkit-mask-image: url("Assets/x.svg");
+  mask-image: url("Assets/x.svg");
 }
 
 .selected-actions {
@@ -1205,8 +1205,8 @@ body.workout-active .bottom-nav {
   width: 24px;
   height: 24px;
   background: #ffffff;
-  -webkit-mask: url("x.svg") center / contain no-repeat;
-  mask: url("x.svg") center / contain no-repeat;
+  -webkit-mask: url("Assets/x.svg") center / contain no-repeat;
+  mask: url("Assets/x.svg") center / contain no-repeat;
 }
 
 .generated-workout-modal h2 {
@@ -1349,8 +1349,8 @@ body.workout-active .bottom-nav {
   height: 18px;
   flex: 0 0 auto;
   background: currentColor;
-  -webkit-mask: url("square.svg") center / contain no-repeat;
-  mask: url("square.svg") center / contain no-repeat;
+  -webkit-mask: url("Assets/square.svg") center / contain no-repeat;
+  mask: url("Assets/square.svg") center / contain no-repeat;
 }
 
 .custom-checklist-row.completed {
@@ -1360,8 +1360,8 @@ body.workout-active .bottom-nav {
 }
 
 .custom-checklist-row.completed i {
-  -webkit-mask-image: url("check.svg");
-  mask-image: url("check.svg");
+  -webkit-mask-image: url("Assets/check.svg");
+  mask-image: url("Assets/check.svg");
 }
 
 .custom-checklist-actions {

@@ -293,3 +293,241 @@
   window.SomthingreatRender = { setButtonLoading, setMessage, focusFirstInteractive, trapTabKey, installActivityCounter };
   window.addEventListener('load', installActivityCounter, { once: true });
 })();
+
+/* Consolidated from quality-audit.js */
+(function () {
+  const AUDIT_KEY = 'somthingreat-quality-audit-2026-07-18';
+  const SOUND_KEY = 'somthingreat-timer-sound';
+
+  function normalise(value = '') {
+    return String(value).toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  function soundEnabled() {
+    return localStorage.getItem(SOUND_KEY) !== 'off';
+  }
+
+  function playCompletionSound() {
+    if (!soundEnabled()) return;
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const context = new AudioContextClass();
+      const now = context.currentTime;
+      [659.25, 880].forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.0001, now + index * 0.16);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + index * 0.16 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.16 + 0.24);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(now + index * 0.16);
+        oscillator.stop(now + index * 0.16 + 0.26);
+      });
+      window.setTimeout(() => context.close().catch(() => {}), 800);
+    } catch (error) {
+      console.warn('Timer sound unavailable:', error);
+    }
+  }
+
+  function reorderAddOnActions(root = document) {
+    root.querySelectorAll('button').forEach(button => {
+      const label = normalise(button.getAttribute('aria-label') || button.title || button.textContent);
+      if (!label) return;
+      const isHelp = label.includes('how to') || label.includes('instruction') || label === 'help' || label === '?';
+      const isTimer = label.includes('timer') || label.includes('start 30') || label.includes('start timer');
+      if (isHelp) button.dataset.addonHelp = 'true';
+      if (isTimer) button.dataset.addonTimer = 'true';
+    });
+
+    root.querySelectorAll('[data-addon-help]').forEach(help => {
+      const container = help.parentElement;
+      if (!container) return;
+      const timer = Array.from(container.children).find(child => child.matches?.('[data-addon-timer]'));
+      if (timer && timer.previousElementSibling !== help) container.insertBefore(help, timer);
+    });
+  }
+
+  function observedLevelForTrack(trackKey, track, history) {
+    if (!Array.isArray(track) || !track.length) return null;
+    const names = new Set();
+    (history || []).forEach(entry => {
+      (entry.exercises || []).forEach(exercise => {
+        if (exercise.isAddOn) return;
+        if (exercise.trackKey === trackKey || (trackKey === 'squat' && exercise.trackKey === 'legs') || (trackKey === 'antiExtension' && exercise.trackKey === 'core')) {
+          names.add(normalise(exercise.name));
+        }
+      });
+    });
+    let observed = null;
+    track.forEach((exercise, index) => {
+      if (names.has(normalise(exercise.name))) observed = Math.max(observed ?? 0, index);
+    });
+    return observed;
+  }
+
+  function resetTrackToEvidence(trackKey, observed) {
+    if (!state?.levels?.[trackKey] || observed === null) return false;
+    const current = Number(state.levels[trackKey].level || 0);
+    if (current <= observed) return false;
+    state.levels[trackKey] = {
+      ...state.levels[trackKey],
+      level: observed,
+      points: 0,
+      positiveExposures: 0,
+      difficultExposures: 0,
+      levelExposures: 0,
+      plateauCount: 0
+    };
+    return true;
+  }
+
+  function recalibrateLegacyLegsAndCore() {
+    try {
+      if (localStorage.getItem(AUDIT_KEY) === 'done') return;
+      if (typeof state === 'undefined' || !state?.levels || !window.SomthingreatWorkouts) return;
+      const tracks = window.SomthingreatWorkouts.getTracks(state.profile, state);
+      const squatLevel = observedLevelForTrack('squat', tracks.squat || [], state.history || []);
+      const coreLevel = observedLevelForTrack('antiExtension', tracks.antiExtension || [], state.history || []);
+      let changed = false;
+      changed = resetTrackToEvidence('squat', squatLevel) || changed;
+      changed = resetTrackToEvidence('antiExtension', coreLevel) || changed;
+      if (state.levels.legs && squatLevel !== null && Number(state.levels.legs.level || 0) > squatLevel) {
+        state.levels.legs = { ...state.levels.legs, level: squatLevel, points: 0, positiveExposures: 0, difficultExposures: 0, levelExposures: 0, plateauCount: 0 };
+        changed = true;
+      }
+      if (state.levels.core && coreLevel !== null && Number(state.levels.core.level || 0) > coreLevel) {
+        state.levels.core = { ...state.levels.core, level: coreLevel, points: 0, positiveExposures: 0, difficultExposures: 0, levelExposures: 0, plateauCount: 0 };
+        changed = true;
+      }
+      if (changed && typeof saveState === 'function') {
+        saveState();
+        if (typeof renderAll === 'function') renderAll();
+      }
+      localStorage.setItem(AUDIT_KEY, 'done');
+    } catch (error) {
+      console.warn('Progress recalibration skipped:', error);
+    }
+  }
+
+  function installWorkoutTimerSound() {
+    if (typeof tickWorkoutTimer !== 'function' || tickWorkoutTimer.__soundInstalled) return;
+    const originalTick = tickWorkoutTimer;
+    window.tickWorkoutTimer = tickWorkoutTimer = function () {
+      const before = activeTimer?.phase === 'active' ? Number(activeTimer.remainingSeconds || 0) : null;
+      originalTick();
+      const after = activeTimer?.phase === 'active' ? Number(activeTimer.remainingSeconds || 0) : null;
+      if (before !== null && before > 0 && after === 0) playCompletionSound();
+    };
+    tickWorkoutTimer.__soundInstalled = true;
+  }
+
+  window.SomthingreatTimerSound = {
+    enabled: soundEnabled,
+    playCompletion: playCompletionSound
+  };
+
+  const observer = new MutationObserver(records => {
+    records.forEach(record => record.addedNodes.forEach(node => {
+      if (node.nodeType === 1) reorderAddOnActions(node);
+    }));
+  });
+
+  reorderAddOnActions();
+  observer.observe(document.body, { childList: true, subtree: true });
+  installWorkoutTimerSound();
+  window.setTimeout(recalibrateLegacyLegsAndCore, 2500);
+})();
+
+/* Consolidated from preview-actions.js */
+(function () {
+  if (typeof renderGeneratedWorkout !== 'function' || typeof getTracks !== 'function') return;
+
+  function prescriptionType(exercise) {
+    const text = `${exercise?.prescription || ''} ${exercise?.basePrescription || ''}`.toLowerCase();
+    return /\b(?:s|sec|secs|second|seconds|min|mins|minute|minutes)\b/.test(text) ? 'time' : 'reps';
+  }
+
+  function swapCandidates(exercise) {
+    if (!exercise || exercise.isAddOn) return [];
+    const tracks = getTracks();
+    const trackKey = exercise.progressionTrackKey || exercise.trackKey;
+    const sourceTrack = tracks[trackKey] || [];
+    const recovery = typeof getActiveRecovery === 'function' ? getActiveRecovery() : null;
+    const usedIds = new Set((state.generated?.exercises || []).map(item => item?.id).filter(Boolean));
+    const allowed = sourceTrack.filter(candidate => {
+      if (!candidate || candidate.id === exercise.id || usedIds.has(candidate.id)) return false;
+      if (recovery && !workoutModule.isExerciseAllowedForRecovery(candidate, recovery)) return false;
+      return true;
+    });
+    const sameType = allowed.filter(candidate => prescriptionType(candidate) === prescriptionType(exercise));
+    const pool = sameType.length ? sameType : allowed;
+    return pool.sort((a, b) =>
+      Math.abs((a.difficulty || 1) - (exercise.difficulty || 1)) -
+      Math.abs((b.difficulty || 1) - (exercise.difficulty || 1))
+    );
+  }
+
+  function swapExercise(index) {
+    const current = state.generated?.exercises?.[index];
+    if (!current) return;
+    const candidates = swapCandidates(current);
+    if (!candidates.length) return;
+    const previousIds = Array.isArray(current.previewSwapIds) ? current.previewSwapIds : [];
+    const next = candidates.find(candidate => !previousIds.includes(candidate.id)) || candidates[0];
+    state.generated.exercises[index] = {
+      ...next,
+      trackKey: current.trackKey || next.trackKey,
+      progressionTrackKey: current.progressionTrackKey || current.trackKey || next.progressionTrackKey || next.trackKey,
+      prescription: current.prescription || next.prescription,
+      basePrescription: next.prescription,
+      setCount: current.setCount || next.setCount || 1,
+      previewSwapIds: [...previousIds, current.id].filter(Boolean)
+    };
+    saveState();
+    renderGeneratedWorkout();
+  }
+
+  function enhancePreview() {
+    const generated = state.generated;
+    const preview = document.getElementById('previewList');
+    if (!generated || !preview) return;
+    preview.innerHTML = '';
+    (generated.exercises || []).filter(Boolean).forEach((exercise, index) => {
+      const name = exerciseDisplayName(exercise);
+      const hasHelp = Boolean(getExerciseHelp(name));
+      const canSwap = swapCandidates(exercise).length > 0;
+      const row = document.createElement('div');
+      row.className = 'preview-row preview-action-row';
+      row.innerHTML = `
+        <div class="preview-exercise-copy">
+          <strong>${escapeHTML(name)}</strong>
+          <span>${escapeHTML(exercise.prescription)}</span>
+        </div>
+        <div class="preview-exercise-actions">
+          ${canSwap ? `<button class="preview-icon-btn preview-swap-btn" type="button" data-preview-index="${index}" aria-label="Change ${escapeHTML(name)}"></button>` : ''}
+          ${hasHelp ? `<button class="preview-icon-btn preview-help-btn exercise-help-btn" type="button" data-exercise-name="${escapeHTML(name)}" aria-label="How to do ${escapeHTML(name)}">?</button>` : ''}
+        </div>`;
+      preview.appendChild(row);
+    });
+  }
+
+  const originalRenderGeneratedWorkout = renderGeneratedWorkout;
+  renderGeneratedWorkout = function () {
+    originalRenderGeneratedWorkout.apply(this, arguments);
+    enhancePreview();
+  };
+
+  document.addEventListener('click', event => {
+    const swapButton = event.target.closest('.preview-swap-btn');
+    if (!swapButton) return;
+    event.preventDefault();
+    event.stopPropagation();
+    swapExercise(Number(swapButton.dataset.previewIndex));
+  }, true);
+
+  if (!document.getElementById('generatedWorkoutCard')?.classList.contains('hidden')) enhancePreview();
+})();
