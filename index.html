@@ -26,14 +26,14 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.17.092359" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.17.092359" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.17.092359" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.17.092359" />
-  <link rel="stylesheet" href="account.css?v=2026.07.17.092359" />
+  <link rel="stylesheet" href="style.css?v=2026.07.18.203000" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.18.203000" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.18.203000" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.18.203000" />
+  <link rel="stylesheet" href="account.css?v=2026.07.18.203000" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
 </head>
 <body>
   <section id="welcomeScreen" class="welcome-screen">
@@ -57,7 +57,7 @@
   <main class="app">
     <header class="topbar">
       <div class="brand-block">
-        <img src="somthingreat.svg" alt="Somthingreat" class="brand-logo" />
+        <img src="Assets/somthingreat.svg" alt="Somthingreat" class="brand-logo" />
       </div>
       <button id="accountBtn" class="ghost-btn compact" type="button">Account</button>
     </header>
@@ -79,7 +79,7 @@
           </div>
           <button id="signupBtn" class="primary-btn account-submit" type="button">Create account</button>
           <button class="google-auth-btn" type="button" data-google-auth>
-            <img src="google-signin.svg" alt="Continue with Google" />
+            <img src="Assets/google-signin.svg" alt="Continue with Google" />
           </button>
           <p class="auth-switch">Already have an account ? <button id="showLoginBtn" class="inline-link" type="button">Log in</button></p>
         </div>
@@ -95,7 +95,7 @@
           </div>
           <button id="loginBtn" class="primary-btn account-submit" type="button">Log in</button>
           <button class="google-auth-btn" type="button" data-google-auth>
-            <img src="google-signin.svg" alt="Continue with Google" />
+            <img src="Assets/google-signin.svg" alt="Continue with Google" />
           </button>
           <p class="auth-switch">Forgot your password? <button id="forgotPasswordBtn" class="inline-link" type="button">Click here</button></p>
         </div>
@@ -120,8 +120,8 @@
       </div>
       <div id="loggedInAccount" class="hidden account-modal-content">
         <div class="account-modal-header">
-            <div>
-	            <h2 id="accountModalTitle" class="account-main-heading account-heading-focus-target" tabindex="-1">Account</h2>
+          <div>
+            <h2 id="accountModalTitle" class="account-main-heading account-heading-focus-target" tabindex="-1">Account</h2>
           </div>
           <button id="closeAccountModalBtn" class="ghost-btn compact" type="button" aria-label="Close account">×</button>
         </div>
@@ -158,22 +158,19 @@
             <button class="account-list-btn" type="button" data-account-view="admin">Dashboard <span id="accountAdminSummary">Users</span></button>
           </div>
         </div>
-
       </div>
     </section>
 
     <section id="accountSubmenuPanel" class="account-submenu-panel hidden" role="dialog" aria-modal="true" aria-labelledby="accountSubmenuTitle" aria-hidden="true">
       <div id="accountSubmenuContent" class="account-submenu-panel__content account-modal-content">
         <div class="account-modal-header">
-          <div>
-            <h2 id="accountSubmenuTitle">somthingreat</h2>
-          </div>
+          <div><h2 id="accountSubmenuTitle">somthingreat</h2></div>
           <button id="closeAccountSubmenuBtn" class="ghost-btn compact" type="button" aria-label="Close account">×</button>
         </div>
 
         <div id="accountGoalView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Focus</h2>
+          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Focus</h2>
           <p class="muted">Choose the main goal your workouts should prioritize.</p>
           <label class="option-row"><input type="radio" name="accountGoal" value="pullup"> <span>Pull-up</span></label>
           <label class="option-row"><input type="radio" name="accountGoal" value="muscleup"> <span>Muscle-up</span></label>
@@ -186,7 +183,7 @@
 
         <div id="accountEquipmentView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Equipment</h2>
+          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Equipment</h2>
           <p class="muted">Update the equipment you can use right now.</p>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="none"> <span>No equipment</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="pullupBar"> <span>Pull-up bar</span></label>
@@ -199,7 +196,7 @@
 
         <div id="accountRecoveryView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Recovery</h2>
+          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Recovery</h2>
           <p class="muted">Give your body the time it needs. We’ll adjust your workouts so you can keep moving safely.</p>
           <select id="recoveryAreaInput" class="recovery-select" aria-label="Select an area">
             <option value="">Select an area</option>
@@ -242,7 +239,7 @@
 
         <div id="accountPasswordView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Password</h2>
+          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Password</h2>
           <p class="muted">We will email you a secure reset link so you can choose a new password.</p>
           <button id="saveAccountPasswordBtn" class="primary-btn account-full-btn" type="button">Send reset link</button>
           <p id="accountPasswordMessage" class="auth-message" aria-live="polite"></p>
@@ -250,7 +247,7 @@
 
         <div id="accountSupportView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Support</h2>
+          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Support</h2>
           <p class="muted">Send us a message and we’ll get back to you as soon as possible.</p>
           <input id="supportSubjectInput" class="text-input support-input" type="text" maxlength="120" placeholder="Subject *" autocomplete="off" />
           <textarea id="supportMessageInput" class="text-input support-input support-message-input" maxlength="1500" placeholder="Tell us what happened *"></textarea>
@@ -260,7 +257,7 @@
 
         <div id="accountAdminView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Dashboard</h2>
+          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Dashboard</h2>
           <p id="adminDashboardSummary" class="muted">Loading dashboard...</p>
           <button id="toggleAdminUsersBtn" class="admin-users-toggle" type="button" aria-expanded="false">Users list</button>
           <p id="adminDashboardMessage" class="sync-status">Loading users...</p>
@@ -271,11 +268,7 @@
 
     <section id="onboarding" class="onboarding-panel hidden">
       <div id="onboardingStepOne" class="onboarding-step">
-        <div class="onboarding-step-head">
-          <p>Build your workout plan</p>
-          <p>1/2</p>
-        </div>
-
+        <div class="onboarding-step-head"><p>Build your workout plan</p><p>1/2</p></div>
         <div class="setup-block focus-block">
           <h2>Focus</h2>
           <div class="onboarding-chip-grid focus-chip-grid">
@@ -286,7 +279,6 @@
             <label class="onboarding-chip wide-chip"><input type="radio" name="goal" value="general"> <span>General fitness</span></label>
           </div>
         </div>
-
         <div class="setup-block equipment-block">
           <h2>Equipment</h2>
           <div class="onboarding-chip-grid equipment-chip-grid">
@@ -297,16 +289,11 @@
             <label class="onboarding-chip equipment-chip"><input type="checkbox" name="equipment" value="jumpRope"> <span>Jump rope</span></label>
           </div>
         </div>
-
         <button id="onboardingNextBtn" class="primary-btn onboarding-primary" type="button">Next</button>
       </div>
 
       <div id="onboardingStepTwo" class="onboarding-step hidden">
-        <div class="onboarding-step-head">
-          <p>Build your workout plan</p>
-          <p>2/2</p>
-        </div>
-
+        <div class="onboarding-step-head"><p>Build your workout plan</p><p>2/2</p></div>
         <div class="setup-block level-block">
           <h2>Current level</h2>
           <p class="field-label">How many clean push-ups can you do?</p>
@@ -315,7 +302,6 @@
             <label class="onboarding-chip"><input type="radio" name="pushups" value="sixTen"> <span>6-10</span></label>
             <label class="onboarding-chip"><input type="radio" name="pushups" value="tenPlus"> <span>10 +</span></label>
           </div>
-
           <p class="field-label">How many bodyweight squats can you do?</p>
           <div class="onboarding-chip-grid level-chip-grid">
             <label class="onboarding-chip"><input type="radio" name="squats" value="zeroFive"> <span>0-5</span></label>
@@ -323,7 +309,6 @@
             <label class="onboarding-chip"><input type="radio" name="squats" value="tenPlus"> <span>10 +</span></label>
           </div>
         </div>
-
         <div id="pullupAssessment" class="setup-block conditional-block hidden">
           <p class="field-label">Can you dead hang for 10 seconds?</p>
           <div class="onboarding-chip-grid yes-no-chip-grid">
@@ -336,7 +321,6 @@
             <label class="onboarding-chip"><input type="radio" name="negativePullup" value="no"> <span>No</span></label>
           </div>
         </div>
-
         <div id="dipAssessment" class="setup-block conditional-block hidden">
           <p class="field-label">Can you do one dip?</p>
           <div class="onboarding-chip-grid yes-no-chip-grid">
@@ -344,7 +328,6 @@
             <label class="onboarding-chip"><input type="radio" name="dip" value="no"> <span>No</span></label>
           </div>
         </div>
-
         <button id="saveProfileBtn" class="primary-btn onboarding-primary" type="button">Create plan</button>
       </div>
 
@@ -384,7 +367,6 @@
         <h2>Custom checklist</h2>
         <p class="muted">Use rounds or minutes for stairs, walks, circuits, mobility, or whatever you want to count.</p>
       </section>
-
       <section id="customChecklistForm" class="custom-checklist-form">
         <textarea id="customChecklistNameInput" class="text-input custom-checklist-name-input" placeholder="Activity" maxlength="40" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" rows="1" name="sg-activity-label"></textarea>
         <input id="customChecklistTargetInput" class="text-input" type="number" inputmode="numeric" min="1" max="240" placeholder="How many?" autocomplete="new-password" enterkeyhint="done" name="sg-activity-count">
@@ -430,14 +412,9 @@
       </section>
 
       <section id="selectedEnergyCard" class="selected-energy-stack hidden">
-        <div class="selected-energy-mascot-card">
-          <img id="selectedEnergyMascot" class="selected-energy-mascot" src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" />
-        </div>
+        <div class="selected-energy-mascot-card"><img id="selectedEnergyMascot" class="selected-energy-mascot" src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" /></div>
         <div class="selected-energy-meta">
-          <div>
-            <div id="selectedEnergyStars" class="energy-stars" aria-hidden="true"></div>
-            <p id="selectedEnergyPill" class="energy-pill">Normal</p>
-          </div>
+          <div><div id="selectedEnergyStars" class="energy-stars" aria-hidden="true"></div><p id="selectedEnergyPill" class="energy-pill">Normal</p></div>
           <p id="selectedWorkoutMeta" class="selected-workout-meta">Pull: reduced volume<br>4 exercises</p>
         </div>
         <div class="selected-workout-preview">
@@ -449,10 +426,7 @@
             <label class="add-on-row"><input id="includeRestTimer" type="checkbox"> <span>Rest timer</span><i aria-hidden="true"></i></label>
             <p id="sessionTotalPreview" class="add-on-summary hidden">Workout only</p>
           </div>
-          <div class="selected-actions">
-            <button class="primary-btn" id="generateWorkoutBtn" type="button">Generate</button>
-            <button class="secondary-btn" id="changeEnergyBtn" type="button">Go back</button>
-          </div>
+          <div class="selected-actions"><button class="primary-btn" id="generateWorkoutBtn" type="button">Generate</button><button class="secondary-btn" id="changeEnergyBtn" type="button">Go back</button></div>
         </div>
       </section>
 
@@ -465,100 +439,40 @@
           <button class="primary-btn" id="startWorkoutBtn" type="button">Start</button>
         </div>
       </section>
-
-      <section id="exercisePreview" class="card hidden">
-        <h3>Checklist</h3>
-        <div id="legacyPreviewList"></div>
-      </section>
-
+      <section id="exercisePreview" class="card hidden"><h3>Checklist</h3><div id="legacyPreviewList"></div></section>
       <section id="exerciseList"></section>
       <button id="completeBtn" class="primary-btn hidden">Complete Workout</button>
     </section>
 
     <section id="progress" class="screen progress-screen">
-      <section class="hero-card goal-hero">
-        <p class="muted-light">Main focus</p>
-        <h2 id="goalHeroTitle">Pull-up</h2>
-        <div class="progress-bar"><span id="pullupProgressBar"></span></div>
-      </section>
-
-      <section class="card">
-        <p class="eyebrow">Current levels</p>
-        <div id="levelsList"></div>
-      </section>
+      <section class="hero-card goal-hero"><p class="muted-light">Main focus</p><h2 id="goalHeroTitle">Pull-up</h2><div class="progress-bar"><span id="pullupProgressBar"></span></div></section>
+      <section class="card"><p class="eyebrow">Current levels</p><div id="levelsList"></div></section>
     </section>
 
     <section id="activity" class="screen activity-screen">
-      <section class="card activity-summary-card">
-        <h3 id="historyYearSummary">This year: 0 workouts</h3>
-        <h3 id="historyMonthSummary">This month: 0 workouts</h3>
-      </section>
-
+      <section class="card activity-summary-card"><h3 id="historyYearSummary">This year: 0 workouts</h3><h3 id="historyMonthSummary">This month: 0 workouts</h3></section>
       <section class="card activity-calendar-card">
-        <div class="history-header">
-          <div>
-            <p id="historyYearTitle">2026</p>
-            <h3 id="historyMonthTitle">June</h3>
-          </div>
-          <div class="history-month-controls">
-            <button id="historyPrevMonthBtn" class="history-arrow-btn history-arrow-prev" type="button" aria-label="Previous month"></button>
-            <button id="historyNextMonthBtn" class="history-arrow-btn history-arrow-next" type="button" aria-label="Next month"></button>
-          </div>
-        </div>
+        <div class="history-header"><div><p id="historyYearTitle">2026</p><h3 id="historyMonthTitle">June</h3></div><div class="history-month-controls"><button id="historyPrevMonthBtn" class="history-arrow-btn history-arrow-prev" type="button" aria-label="Previous month"></button><button id="historyNextMonthBtn" class="history-arrow-btn history-arrow-next" type="button" aria-label="Next month"></button></div></div>
         <div class="history-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
-        <div id="historyCalendar" class="history-calendar"></div>
-        <div id="historyList" class="history-list"></div>
+        <div id="historyCalendar" class="history-calendar"></div><div id="historyList" class="history-list"></div>
       </section>
     </section>
   </main>
 
-  <nav class="bottom-nav hidden">
-    <button class="nav-btn active" data-screen="today" aria-current="page">Today</button>
-    <button class="nav-btn" data-screen="progress">Progress</button>
-    <button class="nav-btn" data-screen="activity">Activity</button>
-  </nav>
+  <nav class="bottom-nav hidden"><button class="nav-btn active" data-screen="today" aria-current="page">Today</button><button class="nav-btn" data-screen="progress">Progress</button><button class="nav-btn" data-screen="activity">Activity</button></nav>
+  <div id="updateBanner" class="update-banner hidden" role="status" aria-live="polite"><span>Update ready</span><button id="applyUpdateBtn" type="button">Refresh</button></div>
 
-  <div id="updateBanner" class="update-banner hidden" role="status" aria-live="polite">
-    <span>Update ready</span>
-    <button id="applyUpdateBtn" type="button">Refresh</button>
-  </div>
+  <div id="confirmPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="confirmTitle"><div class="confirm-card"><h2 id="confirmTitle">Complete workout?</h2><p id="confirmMessage">Some exercises are not rated yet.</p><div class="confirm-actions"><button id="confirmActionBtn" class="primary-btn" type="button">Complete</button><button id="confirmCancelBtn" class="ghost-btn" type="button">Go back</button></div></div></div>
+  <div id="exerciseHelpPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="exerciseHelpTitle"><div class="confirm-card exercise-help-card"><button id="closeExerciseHelpBtn" class="generated-close-btn help-close" type="button" aria-label="Close">×</button><h2 id="exerciseHelpTitle">Exercise</h2><p id="exerciseHelpPurpose"></p><ul id="exerciseHelpCues" class="exercise-help-cues"></ul><p id="exerciseHelpSafety" class="exercise-help-safety"></p></div></div>
+  <div id="timerPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="timerTitle"><div class="confirm-card timer-card"><button id="skipTimerBtn" class="generated-close-btn timer-close-btn" type="button" aria-label="Close timer">×</button><h2 id="timerTitle" class="sr-only">Timer</h2><p id="timerCount" class="timer-count">0:30</p></div></div>
 
-  <div id="confirmPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <div class="confirm-card">
-      <h2 id="confirmTitle">Complete workout?</h2>
-      <p id="confirmMessage">Some exercises are not rated yet.</p>
-      <div class="confirm-actions">
-        <button id="confirmActionBtn" class="primary-btn" type="button">Complete</button>
-        <button id="confirmCancelBtn" class="ghost-btn" type="button">Go back</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="exerciseHelpPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="exerciseHelpTitle">
-    <div class="confirm-card exercise-help-card">
-      <button id="closeExerciseHelpBtn" class="generated-close-btn help-close" type="button" aria-label="Close">×</button>
-      <h2 id="exerciseHelpTitle">Exercise</h2>
-      <p id="exerciseHelpPurpose"></p>
-      <ul id="exerciseHelpCues" class="exercise-help-cues"></ul>
-      <p id="exerciseHelpSafety" class="exercise-help-safety"></p>
-    </div>
-  </div>
-
-  <div id="timerPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="timerTitle">
-    <div class="confirm-card timer-card">
-      <button id="skipTimerBtn" class="generated-close-btn timer-close-btn" type="button" aria-label="Close timer">×</button>
-      <h2 id="timerTitle" class="sr-only">Timer</h2>
-      <p id="timerCount" class="timer-count">0:30</p>
-    </div>
-  </div>
-
-  <script src="auth.js?v=2026.07.17.092359"></script>
-  <script src="workouts.js?v=2026.07.17.092359"></script>
-  <script src="state.js?v=2026.07.17.092359"></script>
-  <script src="account.js?v=2026.07.17.092359"></script>
-  <script src="admin.js?v=2026.07.17.092359"></script>
-  <script src="render.js?v=2026.07.17.092359"></script>
-  <script src="app-version.js?v=2026.07.17.092359"></script>
-  <script src="app.js?v=2026.07.17.092359"></script>
+  <script src="auth.js?v=2026.07.18.203000"></script>
+  <script src="workouts.js?v=2026.07.18.203000"></script>
+  <script src="state.js?v=2026.07.18.203000"></script>
+  <script src="account.js?v=2026.07.18.203000"></script>
+  <script src="admin.js?v=2026.07.18.203000"></script>
+  <script src="render.js?v=2026.07.18.203000"></script>
+  <script src="app-version.js?v=2026.07.18.203000"></script>
+  <script src="app.js?v=2026.07.18.203000"></script>
 </body>
 </html>
