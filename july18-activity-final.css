@@ -6,8 +6,7 @@
   display: none !important;
 }
 
-/* Activity uses the same native iOS select interaction as Recovery.
-   Hide only the browser arrow so the closed field matches Recovery exactly. */
+/* Activity uses the same native iOS select interaction as Recovery. */
 #activityQuickSelect {
   display: block !important;
   width: 100% !important;
@@ -55,11 +54,11 @@
   row-gap: var(--space-4) !important;
 }
 
+/* Match the validated login/password CTA spacing. */
 #createCustomChecklistBtn {
-  margin-top: var(--space-4) !important;
+  margin-top: var(--space-7) !important;
 }
 
-/* Centre the popup. The whole card scrolls, including actions. */
 .custom-checklist-overlay:not(.hidden) {
   display: flex !important;
   align-items: center !important;
@@ -85,20 +84,19 @@
 
 .custom-checklist-actions {
   position: static !important;
-  display: grid;
+  display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4) !important;
-  margin: 25px 0 0 !important;
+  margin: var(--space-7) 0 0 !important;
   padding: 0 !important;
   background: transparent !important;
 }
 
-/* Timer uses the established spacing scale. */
 .activity-timer {
   width: 100%;
   display: grid !important;
   place-items: center;
-  padding: var(--space-7) 0 !important;
+  padding: var(--space-7) 0 0 !important;
 }
 
 .activity-timer-count {
@@ -118,8 +116,6 @@
   display: none !important;
 }
 
-/* Minute counters: 68px play, 127px complete, 85px edit.
-   A 16px gap fits the existing 353px modal content width without overflow. */
 .custom-checklist-modal:has(.activity-timer) .custom-checklist-actions {
   grid-template-columns: 68px 127px 85px !important;
   gap: 16px !important;
@@ -144,7 +140,9 @@
   padding-right: 0 !important;
 }
 
-#toggleActivityTimerBtn.activity-timer-action {
+/* Target the ID directly: the timer renderer recreates this node, so styling
+   must not depend on a class being added later by the alignment helper. */
+#toggleActivityTimerBtn {
   position: static !important;
   display: grid !important;
   place-items: center !important;
@@ -164,27 +162,32 @@
   visibility: visible !important;
   box-shadow: none !important;
   transform: none !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
 }
 
-#toggleActivityTimerBtn.activity-timer-action > * {
+#toggleActivityTimerBtn > * {
   display: none !important;
 }
 
-#toggleActivityTimerBtn.activity-timer-action::before {
+#toggleActivityTimerBtn::before {
   content: "";
   display: block !important;
-  width: 0;
-  height: 0;
-  margin-left: 3px;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
-  border-left: 13px solid #ffffff;
+  width: 0 !important;
+  height: 0 !important;
+  margin-left: 3px !important;
+  border-top: 8px solid transparent !important;
+  border-bottom: 8px solid transparent !important;
+  border-left: 13px solid #ffffff !important;
+  background: transparent !important;
+  -webkit-mask: none !important;
+  mask: none !important;
 }
 
-#toggleActivityTimerBtn.activity-timer-action[data-state="running"]::before {
-  width: 14px;
-  height: 18px;
-  margin-left: 0;
-  border: 0;
-  background: linear-gradient(to right, #ffffff 0 5px, transparent 5px 9px, #ffffff 9px 14px);
+#toggleActivityTimerBtn[data-state="running"]::before {
+  width: 14px !important;
+  height: 18px !important;
+  margin-left: 0 !important;
+  border: 0 !important;
+  background: linear-gradient(to right, #ffffff 0 5px, transparent 5px 9px, #ffffff 9px 14px) !important;
 }
