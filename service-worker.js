@@ -30,7 +30,6 @@ const APP_SHELL = [
   'Assets/eye-off.svg',
   'Assets/plus.svg',
   'Assets/x.svg',
-  './star.svg',
   'Assets/clock.svg',
   'Assets/square.svg',
   'Assets/check.svg',
