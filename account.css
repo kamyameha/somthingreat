@@ -176,8 +176,8 @@ body.account-active .app {
   color: transparent;
   font-size: 0;
   line-height: 0;
-  mask: url("./somthingreat.svg") left center / 134px 18px no-repeat;
-  -webkit-mask: url("./somthingreat.svg") left center / 134px 18px no-repeat;
+  mask: url("Assets/somthingreat.svg") left center / 134px 18px no-repeat;
+  -webkit-mask: url("Assets/somthingreat.svg") left center / 134px 18px no-repeat;
 }
 
 .account-panel.account-modal.account-main-mode #closeAccountModalBtn {
@@ -200,8 +200,8 @@ body.account-active .app {
   width: 26px;
   height: 26px;
   background: #ffffff;
-  mask: url("./x.svg") center / 26px 26px no-repeat;
-  -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
+  mask: url("Assets/x.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("Assets/x.svg") center / 26px 26px no-repeat;
 }
 
 .account-panel.account-modal.account-main-mode #accountMainView {
@@ -335,8 +335,8 @@ body.account-active .app {
   color: transparent;
   font-size: 0;
   line-height: 0;
-  mask: url("./somthingreat.svg") left center / 134px 18px no-repeat;
-  -webkit-mask: url("./somthingreat.svg") left center / 134px 18px no-repeat;
+  mask: url("Assets/somthingreat.svg") left center / 134px 18px no-repeat;
+  -webkit-mask: url("Assets/somthingreat.svg") left center / 134px 18px no-repeat;
 }
 
 .account-submenu-panel #closeAccountSubmenuBtn {
@@ -359,8 +359,8 @@ body.account-active .app {
   width: 26px;
   height: 26px;
   background: #ffffff;
-  mask: url("./x.svg") center / 26px 26px no-repeat;
-  -webkit-mask: url("./x.svg") center / 26px 26px no-repeat;
+  mask: url("Assets/x.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("Assets/x.svg") center / 26px 26px no-repeat;
 }
 
 .account-submenu-panel #accountGoalView,
@@ -394,8 +394,8 @@ body.account-active .app {
   color: transparent;
   font-size: 0;
   line-height: 0;
-  mask: url("./arrow-left.svg") center / 26px 26px no-repeat;
-  -webkit-mask: url("./arrow-left.svg") center / 26px 26px no-repeat;
+  mask: url("Assets/arrow-left.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("Assets/arrow-left.svg") center / 26px 26px no-repeat;
 }
 
 .account-submenu-panel .account-view h2 {
@@ -458,13 +458,13 @@ body.account-active .app {
   height: 24px;
   flex: 0 0 auto;
   background: currentColor;
-  mask: url("./plus.svg") center / 24px 24px no-repeat;
-  -webkit-mask: url("./plus.svg") center / 24px 24px no-repeat;
+  mask: url("Assets/plus.svg") center / 24px 24px no-repeat;
+  -webkit-mask: url("Assets/plus.svg") center / 24px 24px no-repeat;
 }
 
 .account-submenu-panel #accountEquipmentView .option-row:has(input:checked)::after {
-  mask-image: url("./x.svg");
-  -webkit-mask-image: url("./x.svg");
+  mask-image: url("Assets/x.svg");
+  -webkit-mask-image: url("Assets/x.svg");
 }
 
 .account-submenu-panel #accountRecoveryView .muted {
@@ -1028,13 +1028,13 @@ body.account-active .app {
   font-size: 0;
   line-height: 0;
   font-weight: 400;
-  mask: url("./arrow-left.svg") center / 26px 26px no-repeat;
-  -webkit-mask: url("./arrow-left.svg") center / 26px 26px no-repeat;
+  mask: url("Assets/arrow-left.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("Assets/arrow-left.svg") center / 26px 26px no-repeat;
 }
 
 .activity-screen .history-month-controls .history-arrow-next {
-  mask-image: url("./arrow-right.svg");
-  -webkit-mask-image: url("./arrow-right.svg");
+  mask-image: url("Assets/arrow-right.svg");
+  -webkit-mask-image: url("Assets/arrow-right.svg");
 }
 
 .activity-screen .history-weekdays,

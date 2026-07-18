@@ -775,8 +775,8 @@ body.onboarding-active .app {
   display: inline-block;
   flex: 0 0 auto;
   background: currentColor;
-  -webkit-mask: url("plus.svg") center / 24px 24px no-repeat;
-  mask: url("plus.svg") center / 24px 24px no-repeat;
+  -webkit-mask: url("Assets/plus.svg") center / 24px 24px no-repeat;
+  mask: url("Assets/plus.svg") center / 24px 24px no-repeat;
 }
 
 .onboarding-chip:has(input:checked) {
@@ -785,8 +785,8 @@ body.onboarding-active .app {
 }
 
 .equipment-chip:has(input:checked) span::after {
-  -webkit-mask-image: url("x.svg");
-  mask-image: url("x.svg");
+  -webkit-mask-image: url("Assets/x.svg");
+  mask-image: url("Assets/x.svg");
 }
 
 .onboarding-primary {
@@ -1175,4 +1175,754 @@ body.onboarding-active .app {
   #levelsList {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* Consolidated from preview-actions.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap');
+
+.generated-preview-list .preview-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+}
+
+.preview-exercise-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.generated-preview-list .preview-action-row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #000000;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.generated-preview-list .preview-action-row .preview-exercise-copy > span {
+  color: #989898;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.preview-exercise-actions {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.preview-icon-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #000000;
+  color: #000000;
+}
+
+.preview-swap-btn {
+  -webkit-mask: url("Assets/repeat.svg") center / 24px 24px no-repeat;
+  mask: url("Assets/repeat.svg") center / 24px 24px no-repeat;
+}
+
+.generated-preview-list .preview-help-btn {
+  display: grid;
+  place-items: center;
+  border: 1px solid #000000;
+  border-radius: 50%;
+  background: transparent;
+  color: #000000;
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* Consolidated from bottom-nav-polish.css */
+/* Floating bottom navigation */
+.bottom-nav {
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: min(353px, calc(100% - 40px));
+  height: 46px;
+  min-height: 46px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.bottom-nav .nav-btn {
+  min-height: 46px;
+  height: 46px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.update-banner {
+  bottom: calc(78px + env(safe-area-inset-bottom));
+}
+
+.app {
+  padding-bottom: calc(90px + env(safe-area-inset-bottom));
+}
+
+
+/* Consolidated from polish-ui.css */
+/* Low-risk visual polish shared across the app. */
+
+/* Regular app screens use a slightly calmer display size than onboarding. */
+#today #energyCard > h1 {
+  margin-bottom: 32px;
+  font-size: 36px;
+  line-height: 1.08;
+}
+
+/* Keep every secondary CTA on the same established value. */
+.secondary-btn {
+  background-color: var(--auth-secondary);
+}
+
+/* Energy and other outlined choices should remain transparent when inactive. */
+.feel-btn:not(.selected),
+.energy-option:not(.selected) {
+  background-color: transparent;
+}
+
+/* Preserve only the very subtle tint on non-energy selection controls. */
+.custom-type-row label:not(:has(input:checked)),
+.onboarding-chip:not(:has(input:checked)) {
+  background-color: rgba(1, 45, 237, 0.025);
+}
+
+/* Improve form legibility while keeping placeholders visibly secondary. */
+input::placeholder,
+textarea::placeholder {
+  color: rgba(1, 45, 237, 0.48);
+  opacity: 1;
+}
+
+/* A slightly distinct CTA silhouette gives primary actions more hierarchy. */
+.primary-btn {
+  border-radius: 23px;
+}
+
+/* Keep chips and secondary controls on the core 20px radius. */
+.secondary-btn,
+.feel-btn,
+.custom-type-row label,
+.onboarding-chip {
+  border-radius: 20px;
+}
+
+/* Consistent, restrained interaction feedback. */
+.primary-btn,
+.secondary-btn,
+.feel-btn,
+.custom-type-row label,
+.onboarding-chip,
+.nav-btn,
+.preview-icon-btn {
+  transition:
+    background-color 200ms ease-out,
+    border-color 200ms ease-out,
+    color 200ms ease-out,
+    opacity 200ms ease-out,
+    transform 160ms ease-out;
+}
+
+.primary-btn:active,
+.secondary-btn:active,
+.feel-btn:active,
+.custom-type-row label:active,
+.onboarding-chip:active,
+.nav-btn:active,
+.preview-icon-btn:active {
+  transform: scale(0.985);
+}
+
+/* Refine the floating navigation: lower, lighter, and clearly one component. */
+.bottom-nav {
+  bottom: calc(6px + env(safe-area-inset-bottom));
+  height: 42px;
+  padding-top: 0;
+  padding-bottom: 0;
+  border: 1px solid rgba(1, 45, 237, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 24px rgba(17, 19, 24, 0.10);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.bottom-nav .nav-btn {
+  min-height: 42px;
+  height: 42px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Preserve breathing room above the floating navigation without over-padding. */
+.app {
+  padding-bottom: calc(70px + env(safe-area-inset-bottom));
+}
+
+.update-banner {
+  bottom: calc(62px + env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-btn,
+  .secondary-btn,
+  .feel-btn,
+  .custom-type-row label,
+  .onboarding-chip,
+  .nav-btn,
+  .preview-icon-btn {
+    transition: none !important;
+  }
+}
+
+/* Consolidated from ios-tabbar.css */
+/* Floating text-only tab bar */
+.app {
+  padding-bottom: calc(82px + env(safe-area-inset-bottom));
+}
+
+.bottom-nav {
+  bottom: calc(2px + env(safe-area-inset-bottom));
+  width: min(353px, calc(100% - 40px));
+  height: 50px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 25px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.98),
+    rgba(255, 255, 255, 0.91)
+  );
+  box-shadow:
+    0 10px 28px rgba(20, 25, 40, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  overflow: hidden;
+}
+
+.nav-btn {
+  min-width: 0;
+  min-height: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 21px;
+  background: transparent;
+  color: #8f9299;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  transition: color 180ms ease, background-color 180ms ease, transform 150ms ease;
+}
+
+.nav-btn::before {
+  content: none;
+}
+
+.nav-btn.active {
+  background: rgba(1, 45, 237, 0.1);
+  color: var(--main);
+}
+
+.nav-btn:active {
+  transform: scale(0.98);
+}
+
+.update-banner {
+  bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-btn {
+    transition: none;
+  }
+}
+
+
+/* Consolidated from quality-audit.css */
+/* Shared quality rules for reusable UI components. */
+:root {
+  --ui-space-1: 8px;
+  --ui-space-2: 12px;
+  --ui-space-3: 16px;
+  --ui-space-4: 24px;
+  --ui-space-5: 32px;
+  --ui-control-height: 46px;
+  --ui-modal-shadow: 0 18px 48px rgba(20, 25, 40, 0.14), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+/* Neutral popup material. Menu and submenu screens intentionally keep their own design. */
+.confirm-card,
+.exercise-help-card,
+.timer-card,
+.generated-workout-modal,
+.custom-checklist-modal {
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.99), rgba(255, 255, 255, 0.94)) !important;
+  box-shadow: var(--ui-modal-shadow) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+
+.confirm-card,
+.exercise-help-card,
+.timer-card {
+  padding: var(--ui-space-4) !important;
+}
+
+.exercise-help-card h2,
+.confirm-card h2 {
+  margin: 0 48px var(--ui-space-2) 0;
+  line-height: 1.15;
+}
+
+.exercise-help-card > p,
+.exercise-help-cues,
+.exercise-help-safety {
+  margin-top: 0;
+  margin-bottom: var(--ui-space-3);
+}
+
+.exercise-help-cues {
+  display: grid;
+  gap: var(--ui-space-2);
+  padding-left: 22px;
+}
+
+.confirm-actions button,
+.generated-workout-actions button {
+  min-height: var(--ui-control-height);
+  border-radius: 23px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Help always precedes timer. Icon colour follows its surface. */
+.add-on-exercise-actions,
+.warmup-exercise-actions,
+.stretch-exercise-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.add-on-help-btn,
+.add-on-timer-btn,
+.warmup-help-btn,
+.warmup-timer-btn,
+.stretch-help-btn,
+.stretch-timer-btn,
+[data-addon-help],
+[data-addon-timer] {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 !important;
+  border: 1px solid currentColor !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 0 !important;
+}
+
+.workout-add-on-card [data-addon-help],
+.workout-add-on-card [data-addon-timer],
+.add-on-exercise-actions [data-addon-help],
+.add-on-exercise-actions [data-addon-timer] {
+  color: #ffffff !important;
+}
+
+.generated-workout-modal .preview-help-btn,
+.generated-workout-modal .exercise-help-btn {
+  color: #111111 !important;
+  border-color: #111111 !important;
+  background: transparent !important;
+  opacity: 1 !important;
+}
+
+.add-on-help-btn::before,
+.warmup-help-btn::before,
+.stretch-help-btn::before,
+[data-addon-help]::before {
+  content: "?";
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.preview-exercise-copy span,
+.prescription,
+.workout-exercise-prescription {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Account main menu: preserve the validated design and allow scrolling. */
+.account-panel.account-modal.account-main-mode {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.account-panel.account-modal.account-main-mode .account-modal-content {
+  min-height: 100dvh;
+  overflow-y: visible !important;
+  padding-bottom: calc(44px + env(safe-area-inset-bottom)) !important;
+}
+
+.account-panel.account-modal.account-main-mode #accountMainView {
+  min-height: auto !important;
+  padding-bottom: 0 !important;
+}
+
+.account-panel.account-modal.account-main-mode .account-menu-footer {
+  position: static !important;
+  margin-top: 72px !important;
+  padding-bottom: 0 !important;
+}
+
+/* Sound follows the same layout rules as the other account submenus. */
+.account-submenu-panel #accountSettingsView {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  column-gap: 20px;
+  row-gap: 19px;
+  color: #ffffff;
+}
+
+.account-submenu-panel #accountSettingsView.hidden {
+  display: none !important;
+}
+
+.account-submenu-panel #accountSettingsView > .muted {
+  flex: 0 0 100%;
+  width: 100%;
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 400;
+}
+
+.account-submenu-panel #accountSettingsView .settings-sound-option {
+  display: none !important;
+}
+
+.account-submenu-panel #accountSettingsView .sound-state-row {
+  flex: 0 0 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+}
+
+.account-submenu-panel #accountSettingsView .sound-state-option {
+  width: 100%;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 21px;
+  border: 1px solid #ffffff;
+  border-radius: 20px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.account-submenu-panel #accountSettingsView .sound-state-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.account-submenu-panel #accountSettingsView .sound-state-option:has(input:checked) {
+  background: #ffffff;
+  color: var(--main);
+}
+
+/* Activity counter: one source of truth for form, popup and timer controls. */
+#customChecklistForm {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  column-gap: 19px !important;
+  row-gap: 19px !important;
+}
+
+#customChecklistForm.hidden,
+#customChecklistNameInput.hidden,
+#customChecklistActive.hidden {
+  display: none !important;
+}
+
+.activity-select,
+#customChecklistTargetInput {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 46px !important;
+  margin: 0 !important;
+  padding: 0 21px !important;
+  border: 1px solid var(--main) !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  color: var(--main) !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+.activity-select {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.activity-select option {
+  background: #ffffff;
+  color: var(--main);
+}
+
+.custom-type-row,
+#customChecklistMessage,
+#createCustomChecklistBtn {
+  grid-column: 1 / -1;
+}
+
+.custom-type-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 19px !important;
+  margin: 0 !important;
+}
+
+.custom-type-row label {
+  width: 100%;
+  min-height: 46px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--main) !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  color: var(--main) !important;
+  font-weight: 500;
+}
+
+.custom-type-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.custom-type-row label:has(input:checked) {
+  background: var(--main) !important;
+  color: #ffffff !important;
+}
+
+#createCustomChecklistBtn {
+  margin-top: 19px !important;
+}
+
+.custom-checklist-overlay:not(.hidden) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  padding: var(--screen-x) !important;
+}
+
+.custom-checklist-modal {
+  width: min(100%, 353px) !important;
+  max-height: calc(100dvh - (2 * var(--screen-x))) !important;
+  display: block !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.custom-checklist-modal h2 {
+  margin-bottom: 44px !important;
+}
+
+.custom-checklist-items {
+  min-height: 0 !important;
+  overflow: visible !important;
+  margin: 24px 0 0 !important;
+}
+
+.custom-checklist-actions {
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px !important;
+  margin: 19px 0 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.activity-timer {
+  width: 100%;
+  display: grid !important;
+  place-items: center;
+  padding: 22px 0 8px !important;
+}
+
+.activity-timer-count {
+  width: 100%;
+  margin: 0 !important;
+  color: #000000;
+  font-size: clamp(88px, 29vw, 126px);
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.custom-checklist-modal:has(.activity-timer) .custom-checklist-actions {
+  grid-template-columns: 68px 127px 85px !important;
+  gap: 16px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.custom-checklist-modal:has(.activity-timer) .custom-checklist-actions > button {
+  min-width: 0 !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  margin: 0 !important;
+}
+
+.custom-checklist-modal:has(.activity-timer) #completeCustomChecklistBtn {
+  width: 127px !important;
+}
+
+.custom-checklist-modal:has(.activity-timer) #editCustomChecklistBtn {
+  width: 85px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+#toggleActivityTimerBtn.activity-timer-action {
+  position: static !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid var(--main) !important;
+  border-radius: 20px !important;
+  background: var(--main) !important;
+  color: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: none !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+}
+
+#toggleActivityTimerBtn.activity-timer-action::before {
+  content: "";
+  display: block;
+  width: 0;
+  height: 0;
+  margin-left: 3px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 13px solid #ffffff;
+}
+
+#toggleActivityTimerBtn.activity-timer-action[data-state="running"]::before {
+  width: 14px;
+  height: 18px;
+  margin-left: 0;
+  border: 0;
+  background: linear-gradient(to right, #ffffff 0 5px, transparent 5px 9px, #ffffff 9px 14px);
+}
+
+/* Mobile uses explicit selected states without delayed tap transitions. */
+button,
+label,
+.nav-btn,
+.onboarding-chip,
+.option-row,
+.custom-type-row label,
+.energy-option,
+.primary-btn,
+.secondary-btn,
+.ghost-btn {
+  transition: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active,
+label:active,
+.nav-btn:active,
+.onboarding-chip:active,
+.option-row:active,
+.custom-type-row label:active,
+.energy-option:active,
+.primary-btn:active,
+.secondary-btn:active,
+.ghost-btn:active {
+  transform: none !important;
+}
+
+.nav-btn:not(.active):hover,
+.nav-btn:not(.active):focus,
+.nav-btn:not(.active):focus-visible,
+.nav-btn:not(.active):active {
+  background: transparent !important;
+  color: #8f9299 !important;
+  box-shadow: none !important;
+}
+
+.nav-btn.active,
+.nav-btn.active:hover,
+.nav-btn.active:focus,
+.nav-btn.active:active {
+  background: rgba(1, 45, 237, 0.1) !important;
+  color: var(--main) !important;
 }
