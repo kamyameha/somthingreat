@@ -6,7 +6,8 @@
   display: none !important;
 }
 
-/* Activity uses the same native iOS select presentation as Recovery. */
+/* Activity uses the same native iOS select interaction as Recovery.
+   Hide only the browser arrow so the closed field matches Recovery exactly. */
 #activityQuickSelect {
   display: block !important;
   width: 100% !important;
@@ -16,15 +17,16 @@
   padding: 0 21px !important;
   border: 1px solid var(--main) !important;
   border-radius: var(--radius) !important;
-  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
   color: var(--main) !important;
   font: inherit !important;
   font-size: var(--text-md) !important;
   font-weight: 400 !important;
   line-height: 1 !important;
   text-align: left !important;
-  appearance: auto !important;
-  -webkit-appearance: menulist !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
   box-shadow: none !important;
 }
 
@@ -116,24 +118,39 @@
   display: none !important;
 }
 
-/* Only minute counters have the third play/pause action. */
+/* Minute counters: 68px play, 127px complete, 85px edit.
+   A 16px gap fits the existing 353px modal content width without overflow. */
 .custom-checklist-modal:has(.activity-timer) .custom-checklist-actions {
-  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 0.68fr) !important;
-  gap: var(--space-4) !important;
+  grid-template-columns: 68px 127px 85px !important;
+  gap: 16px !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .custom-checklist-modal:has(.activity-timer) .custom-checklist-actions > button {
-  width: 100% !important;
   min-width: 0 !important;
+  height: 46px !important;
+  min-height: 46px !important;
   margin: 0 !important;
+}
+
+.custom-checklist-modal:has(.activity-timer) #completeCustomChecklistBtn {
+  width: 127px !important;
+}
+
+.custom-checklist-modal:has(.activity-timer) #editCustomChecklistBtn {
+  width: 85px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 
 #toggleActivityTimerBtn.activity-timer-action {
   position: static !important;
   display: grid !important;
   place-items: center !important;
-  width: 56px !important;
-  min-width: 56px !important;
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
   height: 46px !important;
   min-height: 46px !important;
   margin: 0 !important;
@@ -141,6 +158,7 @@
   border: 1px solid var(--main) !important;
   border-radius: var(--radius) !important;
   background: var(--main) !important;
+  background-color: var(--main) !important;
   color: transparent !important;
   opacity: 1 !important;
   visibility: visible !important;
