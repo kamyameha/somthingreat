@@ -41,66 +41,19 @@
     sync();
   }
 
-  function installActivityDropdown() {
+  function useRecoveryStyleActivitySelect() {
     const select = document.getElementById('activityQuickSelect');
-    if (!select || document.getElementById('activityDropdown')) return;
-
-    const wrapper = document.createElement('div');
-    wrapper.id = 'activityDropdown';
-    wrapper.className = 'activity-dropdown';
-    wrapper.innerHTML = `
-      <button id="activityDropdownButton" class="activity-dropdown-button" type="button" aria-haspopup="listbox" aria-expanded="false">Select an activity</button>
-      <div id="activityDropdownMenu" class="activity-dropdown-menu hidden" role="listbox">
-        ${Array.from(select.options).filter(option => option.value).map(option => `<button class="activity-dropdown-option" type="button" role="option" data-value="${option.value}">${option.textContent}</button>`).join('')}
-      </div>`;
-    select.insertAdjacentElement('beforebegin', wrapper);
-
-    const button = wrapper.querySelector('#activityDropdownButton');
-    const menu = wrapper.querySelector('#activityDropdownMenu');
-    const setOpen = open => {
-      menu.classList.toggle('hidden', !open);
-      button.setAttribute('aria-expanded', String(open));
-    };
-    button.addEventListener('click', event => {
-      event.stopPropagation();
-      setOpen(menu.classList.contains('hidden'));
-    });
-    menu.addEventListener('click', event => {
-      const option = event.target.closest('.activity-dropdown-option');
-      if (!option) return;
-      select.value = option.dataset.value;
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-      button.textContent = option.textContent;
-      setOpen(false);
-    });
-    document.addEventListener('click', event => {
-      if (!wrapper.contains(event.target)) setOpen(false);
-    });
-
-    const originalReset = window.resetCustomChecklistForm;
-    if (typeof originalReset === 'function') {
-      window.resetCustomChecklistForm = resetCustomChecklistForm = function () {
-        originalReset();
-        select.value = '';
-        button.textContent = 'Select an activity';
-        setOpen(false);
-      };
-    }
-
-    document.addEventListener('click', event => {
-      if (event.target.id !== 'editCustomChecklistBtn') return;
-      window.setTimeout(() => {
-        const value = document.getElementById('customChecklistNameInput')?.value || '';
-        select.value = value;
-        button.textContent = value || 'Select an activity';
-      }, 0);
-    }, true);
+    if (!select) return;
+    document.getElementById('activityDropdown')?.remove();
+    select.classList.add('recovery-select', 'activity-select');
+    select.hidden = false;
+    select.removeAttribute('aria-hidden');
   }
 
   function install() {
     placeAccountFooterLast();
     installSoundStates();
-    installActivityDropdown();
+    useRecoveryStyleActivitySelect();
   }
 
   install();
