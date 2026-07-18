@@ -1,4 +1,4 @@
-/* Shared quality audit: only requested, reusable UI rules */
+/* Shared quality rules for reusable UI components. */
 :root {
   --ui-space-1: 8px;
   --ui-space-2: 12px;
@@ -9,7 +9,7 @@
   --ui-modal-shadow: 0 18px 48px rgba(20, 25, 40, 0.14), inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
-/* Neutral popup material. Validated menu and submenu screens are intentionally excluded. */
+/* Neutral popup material. Menu and submenu screens intentionally keep their own design. */
 .confirm-card,
 .exercise-help-card,
 .timer-card,
@@ -118,7 +118,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Account main menu: preserve the validated design, but allow comfortable scrolling. */
+/* Account main menu: preserve the validated design and allow scrolling. */
 .account-panel.account-modal.account-main-mode {
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
@@ -141,7 +141,7 @@
   padding-bottom: 0 !important;
 }
 
-/* Sound follows the exact layout rules used by the other account submenus. */
+/* Sound follows the same layout rules as the other account submenus. */
 .account-submenu-panel #accountSettingsView {
   display: flex;
   flex-wrap: wrap;
@@ -166,39 +166,79 @@
 }
 
 .account-submenu-panel #accountSettingsView .settings-sound-option {
-  width: auto;
-  min-width: 0;
-  height: 46px;
-  margin: 0;
-  padding: 0 21px;
-  border: 1px solid #ffffff !important;
-  border-radius: 20px !important;
-  background: transparent !important;
-  color: #ffffff !important;
-  font-size: 18px;
-  line-height: 1;
-  font-weight: 400;
+  display: none !important;
 }
 
-.account-submenu-panel #accountSettingsView .settings-sound-option:has(input:checked) {
-  background: #ffffff !important;
-  color: var(--main) !important;
+.account-submenu-panel #accountSettingsView .sound-state-row {
+  flex: 0 0 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
 }
 
-/* Activity counter: one dropdown, one target field and two aligned type chips. */
-.activity-select {
+.account-submenu-panel #accountSettingsView .sound-state-option {
   width: 100%;
   height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
   padding: 0 21px;
-  margin: 0 0 12px;
-  border: 1px solid var(--main);
+  border: 1px solid #ffffff;
   border-radius: 20px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.account-submenu-panel #accountSettingsView .sound-state-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.account-submenu-panel #accountSettingsView .sound-state-option:has(input:checked) {
   background: #ffffff;
   color: var(--main);
-  font: inherit;
-  font-size: 16px;
-  line-height: 1;
+}
+
+/* Activity counter: one source of truth for form, popup and timer controls. */
+#customChecklistForm {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  column-gap: 19px !important;
+  row-gap: 19px !important;
+}
+
+#customChecklistForm.hidden,
+#customChecklistNameInput.hidden,
+#customChecklistActive.hidden {
+  display: none !important;
+}
+
+.activity-select,
+#customChecklistTargetInput {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 46px !important;
+  margin: 0 !important;
+  padding: 0 21px !important;
+  border: 1px solid var(--main) !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  color: var(--main) !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+.activity-select {
   appearance: none;
+  -webkit-appearance: none;
 }
 
 .activity-select option {
@@ -206,9 +246,16 @@
   color: var(--main);
 }
 
+.custom-type-row,
+#customChecklistMessage,
+#createCustomChecklistBtn {
+  grid-column: 1 / -1;
+}
+
 .custom-type-row {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 19px !important;
+  margin: 0 !important;
 }
 
 .custom-type-row label {
@@ -234,19 +281,57 @@
   color: #ffffff !important;
 }
 
-/* Activity popup matches the existing timer hierarchy. */
+#createCustomChecklistBtn {
+  margin-top: 19px !important;
+}
+
+.custom-checklist-overlay:not(.hidden) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  padding: var(--screen-x) !important;
+}
+
+.custom-checklist-modal {
+  width: min(100%, 353px) !important;
+  max-height: calc(100dvh - (2 * var(--screen-x))) !important;
+  display: block !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .custom-checklist-modal h2 {
   margin-bottom: 44px !important;
 }
 
+.custom-checklist-items {
+  min-height: 0 !important;
+  overflow: visible !important;
+  margin: 24px 0 0 !important;
+}
+
+.custom-checklist-actions {
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px !important;
+  margin: 19px 0 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
 .activity-timer {
-  display: grid;
-  gap: 24px;
-  padding: 22px 0 8px;
+  width: 100%;
+  display: grid !important;
+  place-items: center;
+  padding: 22px 0 8px !important;
 }
 
 .activity-timer-count {
-  margin: 0;
+  width: 100%;
+  margin: 0 !important;
   color: #000000;
   font-size: clamp(88px, 29vw, 126px);
   font-weight: 500;
@@ -256,42 +341,72 @@
   font-variant-numeric: tabular-nums;
 }
 
-.activity-timer-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 36px;
+.custom-checklist-modal:has(.activity-timer) .custom-checklist-actions {
+  grid-template-columns: 68px 127px 85px !important;
+  gap: 16px !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.activity-timer-target {
-  color: #000000;
-  font-size: 20px;
-  font-weight: 500;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
+.custom-checklist-modal:has(.activity-timer) .custom-checklist-actions > button {
+  min-width: 0 !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  margin: 0 !important;
 }
 
-.activity-timer-toggle {
-  width: 30px;
-  min-width: 30px;
-  height: 30px;
-  min-height: 30px;
-  padding: 0;
+.custom-checklist-modal:has(.activity-timer) #completeCustomChecklistBtn {
+  width: 127px !important;
+}
+
+.custom-checklist-modal:has(.activity-timer) #editCustomChecklistBtn {
+  width: 85px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+#toggleActivityTimerBtn.activity-timer-action {
+  position: static !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid var(--main) !important;
+  border-radius: 20px !important;
+  background: var(--main) !important;
+  color: transparent !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: none !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+}
+
+#toggleActivityTimerBtn.activity-timer-action::before {
+  content: "";
+  display: block;
+  width: 0;
+  height: 0;
+  margin-left: 3px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 13px solid #ffffff;
+}
+
+#toggleActivityTimerBtn.activity-timer-action[data-state="running"]::before {
+  width: 14px;
+  height: 18px;
+  margin-left: 0;
   border: 0;
-  background: #000000;
-  color: transparent;
-  font-size: 0;
-  line-height: 0;
-  -webkit-mask: url("play.svg") center / 24px 24px no-repeat;
-  mask: url("play.svg") center / 24px 24px no-repeat;
+  background: linear-gradient(to right, #ffffff 0 5px, transparent 5px 9px, #ffffff 9px 14px);
 }
 
-.activity-timer-toggle[data-state="running"] {
-  -webkit-mask-image: url("pause.svg");
-  mask-image: url("pause.svg");
-}
-
-/* Mobile uses selected states only: no delayed transition, hover fill or tap flash. */
+/* Mobile uses explicit selected states without delayed tap transitions. */
 button,
 label,
 .nav-btn,
