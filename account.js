@@ -102,7 +102,7 @@
       const view = document.createElement('div');
       view.id = 'accountSettingsView';
       view.className = 'account-view hidden';
-      view.innerHTML = '<button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button><h2 class="account-view-title account-heading-focus-target" tabindex="-1">Sound</h2><p class="muted">Play a sound when an exercise, rest or activity timer finishes.</p><label class="option-row settings-sound-option"><input id="timerSoundSetting" type="checkbox"><span>Timer sound</span></label><div class="sound-state-row" role="radiogroup" aria-label="Timer sound"><label class="sound-state-option"><input type="radio" name="timerSoundState" value="on"><span>On</span></label><label class="sound-state-option"><input type="radio" name="timerSoundState" value="off"><span>Off</span></label></div>';
+      view.innerHTML = '<button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button><h2 class="account-view-title account-heading-focus-target" tabindex="-1">Sound</h2><p class="muted">Play a sound when a timer ends. On iPhone, silent mode must be off.</p><label class="option-row settings-sound-option"><input id="timerSoundSetting" type="checkbox"><span>Timer sound</span></label><div class="sound-state-row" role="radiogroup" aria-label="Timer sound"><label class="sound-state-option"><input type="radio" name="timerSoundState" value="on"><span>On</span></label><label class="sound-state-option"><input type="radio" name="timerSoundState" value="off"><span>Off</span></label></div>';
       passwordView.parentElement.insertBefore(view, passwordView);
     }
 
