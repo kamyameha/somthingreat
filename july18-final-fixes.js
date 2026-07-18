@@ -1,6 +1,13 @@
 (function () {
   const SOUND_KEY = 'somthingreat-timer-sound';
 
+  function placeAccountFooterLast() {
+    const main = document.getElementById('accountMainView');
+    const footer = main?.querySelector('.account-menu-footer');
+    if (!main || !footer) return;
+    if (main.lastElementChild !== footer) main.appendChild(footer);
+  }
+
   function installSoundStates() {
     const view = document.getElementById('accountSettingsView');
     const legacy = document.getElementById('timerSoundSetting');
@@ -91,6 +98,7 @@
   }
 
   function install() {
+    placeAccountFooterLast();
     installSoundStates();
     installActivityDropdown();
   }
