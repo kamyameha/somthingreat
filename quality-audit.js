@@ -80,8 +80,13 @@
     const current = Number(state.levels[trackKey].level || 0);
     if (current <= observed) return false;
     state.levels[trackKey] = {
-      ...state.levels[trackKey], level: observed, points: 0, positiveExposures: 0,
-      difficultExposures: 0, levelExposures: 0, plateauCount: 0
+      ...state.levels[trackKey],
+      level: observed,
+      points: 0,
+      positiveExposures: 0,
+      difficultExposures: 0,
+      levelExposures: 0,
+      plateauCount: 0
     };
     return true;
   }
@@ -120,34 +125,33 @@
       const heading = card.querySelector('h2');
       const copy = card.querySelector('p');
       if (heading) heading.textContent = 'Activity counter';
-      if (copy) copy.textContent = 'Keep count of rounds, or run a timer for a timed activity.';
+      if (copy) copy.remove();
     }
+
     const form = document.getElementById('customChecklistForm');
     const nameInput = document.getElementById('customChecklistNameInput');
     const targetInput = document.getElementById('customChecklistTargetInput');
     const createButton = document.getElementById('createCustomChecklistBtn');
-    if (nameInput) nameInput.placeholder = 'What are you doing?';
+    if (!form || !nameInput) return;
+
+    nameInput.classList.add('hidden');
     if (targetInput) targetInput.placeholder = 'Target';
     if (createButton) createButton.textContent = 'Create counter';
-    if (form && nameInput && !document.getElementById('activityQuickChoices')) {
-      const choices = document.createElement('div');
-      choices.id = 'activityQuickChoices';
-      choices.className = 'activity-quick-choices recovery-mode-row';
-      choices.setAttribute('role', 'radiogroup');
-      choices.setAttribute('aria-label', 'Quick activity selection');
-      choices.innerHTML = ['Stairs', 'Walking', 'Mobility', 'Cycling'].map(label =>
-        `<label class="option-row activity-quick-option"><input type="radio" name="activityQuickChoice" value="${label}"><span>${label}</span></label>`
-      ).join('');
-      form.insertBefore(choices, nameInput);
-      choices.addEventListener('change', event => {
-        if (!event.target.matches('input[name="activityQuickChoice"]')) return;
-        nameInput.value = event.target.value;
-        nameInput.focus({ preventScroll: true });
-        nameInput.setSelectionRange(nameInput.value.length, nameInput.value.length);
-      });
-      nameInput.addEventListener('input', () => {
-        const selected = choices.querySelector('input:checked');
-        if (selected && selected.value !== nameInput.value.trim()) selected.checked = false;
+
+    if (!document.getElementById('activityQuickSelect')) {
+      const select = document.createElement('select');
+      select.id = 'activityQuickSelect';
+      select.className = 'recovery-select activity-select';
+      select.setAttribute('aria-label', 'Select an activity');
+      select.innerHTML = `
+        <option value="">Select an activity</option>
+        <option value="Stairs">Stairs</option>
+        <option value="Walking">Walking</option>
+        <option value="Mobility">Mobility</option>
+        <option value="Cycling">Cycling</option>`;
+      form.insertBefore(select, nameInput);
+      select.addEventListener('change', () => {
+        nameInput.value = select.value;
       });
     }
   }
@@ -188,10 +192,14 @@
       timer = { name: checklist.name, target: checklist.target, elapsedSeconds: 0, running: false, startedAt: null, completedSoundPlayed: false };
       saveActivityTimer(timer);
     }
+
     items.innerHTML = `
       <div class="activity-timer" aria-live="polite">
-        <p id="activityTimerCount" class="activity-timer-count">0:00 / ${formatClock(checklist.target * 60)}</p>
-        <button id="toggleActivityTimerBtn" class="primary-btn" type="button">Start</button>
+        <p id="activityTimerCount" class="activity-timer-count">0:00</p>
+        <div class="activity-timer-controls">
+          <span id="activityTimerTarget" class="activity-timer-target">/ ${formatClock(checklist.target * 60)}</span>
+          <button id="toggleActivityTimerBtn" class="activity-timer-toggle" type="button" aria-label="Start timer" data-state="paused"></button>
+        </div>
       </div>`;
 
     const update = () => {
@@ -199,8 +207,11 @@
       const elapsed = Math.min(checklist.target * 60, currentElapsed(latest));
       const count = document.getElementById('activityTimerCount');
       const toggle = document.getElementById('toggleActivityTimerBtn');
-      if (count) count.textContent = `${formatClock(elapsed)} / ${formatClock(checklist.target * 60)}`;
-      if (toggle) toggle.textContent = latest.running ? 'Pause' : elapsed > 0 ? 'Resume' : 'Start';
+      if (count) count.textContent = formatClock(elapsed);
+      if (toggle) {
+        toggle.dataset.state = latest.running ? 'running' : 'paused';
+        toggle.setAttribute('aria-label', latest.running ? 'Pause timer' : elapsed > 0 ? 'Resume timer' : 'Start timer');
+      }
       if (elapsed >= checklist.target * 60 && latest.running) {
         latest.elapsedSeconds = checklist.target * 60;
         latest.running = false;
@@ -211,14 +222,18 @@
         }
         saveActivityTimer(latest);
         stopActivityTimerInterval();
+        if (toggle) {
+          toggle.dataset.state = 'paused';
+          toggle.setAttribute('aria-label', 'Timer completed');
+        }
       }
     };
+
     update();
     stopActivityTimerInterval();
     activityTimerInterval = window.setInterval(update, 500);
   }
 
-  const originalRenderCustomChecklist = window.renderCustomChecklist;
   window.renderCustomChecklist = renderCustomChecklist = function () {
     const checklist = state.customChecklist;
     if (!checklist) return;
@@ -228,12 +243,12 @@
     const items = document.getElementById('customChecklistItems');
     const complete = document.getElementById('completeCustomChecklistBtn');
     if (!active || !title || !meta || !items || !complete) return;
+
     active.classList.remove('hidden');
-    title.textContent = checklist.name;
-    meta.classList.remove('hidden');
-    meta.textContent = checklist.type === 'minutes'
-      ? `${checklist.target} minute timer`
-      : `${checklist.items.filter(Boolean).length} of ${checklist.target} rounds completed`;
+    title.textContent = `${checklist.name} - ${checklist.target} ${checklist.type === 'minutes' ? `minute${checklist.target === 1 ? '' : 's'}` : `round${checklist.target === 1 ? '' : 's'}`}`;
+    meta.classList.add('hidden');
+    meta.textContent = '';
+
     if (checklist.type === 'minutes') {
       renderMinuteCounter(checklist, items);
     } else {
@@ -249,10 +264,16 @@
   };
 
   window.createCustomChecklist = createCustomChecklist = function () {
-    const name = document.getElementById('customChecklistNameInput')?.value.trim() || 'Activity';
+    const select = document.getElementById('activityQuickSelect');
+    const name = select?.value || document.getElementById('customChecklistNameInput')?.value.trim() || '';
     const type = document.querySelector('input[name="customChecklistType"]:checked')?.value || 'rounds';
     const target = Math.round(Number(document.getElementById('customChecklistTargetInput')?.value || 0));
     const max = type === 'minutes' ? 240 : 120;
+
+    if (!name) {
+      setCustomChecklistMessage('Select an activity first.', 'error');
+      return;
+    }
     if (!target || target < 1) {
       setCustomChecklistMessage(type === 'minutes' ? 'Enter the timer length in minutes.' : 'Enter how many rounds to count.', 'error');
       return;
@@ -261,20 +282,26 @@
       setCustomChecklistMessage(type === 'minutes' ? 'Keep it to 240 minutes or less.' : 'Keep it to 120 rounds or less.', 'error');
       return;
     }
+
     const previous = editingActivityCounter ? state.customChecklist : null;
     state.customChecklist = {
-      name: name.slice(0, 40), type, target,
+      name,
+      type,
+      target,
       items: type === 'rounds' ? Array.from({ length: target }, (_, index) => Boolean(previous?.type === 'rounds' && previous.items?.[index])) : []
     };
+
     if (type === 'minutes') {
       const oldTimer = activityTimerState();
       saveActivityTimer(previous?.type === 'minutes' && oldTimer
-        ? { ...oldTimer, name: name.slice(0, 40), target, completedSoundPlayed: false }
-        : { name: name.slice(0, 40), target, elapsedSeconds: 0, running: false, startedAt: null, completedSoundPlayed: false });
+        ? { ...oldTimer, name, target, completedSoundPlayed: false }
+        : { name, target, elapsedSeconds: 0, running: false, startedAt: null, completedSoundPlayed: false });
     } else {
       saveActivityTimer(null);
     }
+
     editingActivityCounter = false;
+    if (select) select.value = '';
     const button = document.getElementById('createCustomChecklistBtn');
     if (button) button.textContent = 'Create counter';
     resetCustomChecklistForm();
@@ -290,9 +317,11 @@
     document.getElementById('energyCard')?.classList.remove('hidden');
     document.getElementById('customChecklistCard')?.classList.remove('hidden');
     document.getElementById('customChecklistForm')?.classList.remove('hidden');
+    const select = document.getElementById('activityQuickSelect');
     const name = document.getElementById('customChecklistNameInput');
     const target = document.getElementById('customChecklistTargetInput');
     const type = document.querySelector(`input[name="customChecklistType"][value="${checklist.type}"]`);
+    if (select) select.value = checklist.name;
     if (name) name.value = checklist.name;
     if (target) target.value = checklist.target;
     if (type) type.checked = true;
@@ -320,7 +349,8 @@
         showCompletionScreen({
           title: 'Almost there!',
           message: 'Some rounds are unfinished and won’t be counted. Save this progress or go back to finish more.',
-          actionLabel: 'Save progress', cancelLabel: 'Go back',
+          actionLabel: 'Save progress',
+          cancelLabel: 'Go back',
           onConfirm: () => completeCustomChecklist(true)
         });
         return;
@@ -330,36 +360,43 @@
       const timer = activityTimerState();
       countedTarget = Math.max(1, Math.min(checklist.target, Math.ceil(currentElapsed(timer) / 60)));
     }
+
     const prescription = customChecklistUnitLabel(checklist.type, countedTarget);
     state.history.push({
-      type: 'custom', date: new Date().toISOString(), workout: checklist.name, mode: 'custom',
-      customType: checklist.type, target: countedTarget,
+      type: 'custom',
+      date: new Date().toISOString(),
+      workout: checklist.name,
+      mode: 'custom',
+      customType: checklist.type,
+      target: countedTarget,
       exercises: [{ name: checklist.name, prescription, trackKey: 'custom', isAddOn: false }]
     });
     stopActivityTimerInterval();
     saveActivityTimer(null);
     state.customChecklist = null;
     saveState();
-    renderToday(); renderProgress(); renderActivity(); renderAccount();
+    renderToday();
+    renderProgress();
+    renderActivity();
+    renderAccount();
     showWorkoutStatus('Activity saved.', 'Your activity counter is saved in your history.');
     updateUpdateBanner();
   };
 
   document.addEventListener('click', event => {
-    if (event.target.id === 'toggleActivityTimerBtn') {
-      const timer = activityTimerState();
-      if (!timer) return;
-      if (timer.running) {
-        timer.elapsedSeconds = currentElapsed(timer);
-        timer.running = false;
-        timer.startedAt = null;
-      } else if (timer.elapsedSeconds < timer.target * 60) {
-        timer.running = true;
-        timer.startedAt = Date.now();
-      }
-      saveActivityTimer(timer);
-      renderCustomChecklist();
+    if (event.target.id !== 'toggleActivityTimerBtn') return;
+    const timer = activityTimerState();
+    if (!timer) return;
+    if (timer.running) {
+      timer.elapsedSeconds = currentElapsed(timer);
+      timer.running = false;
+      timer.startedAt = null;
+    } else if (timer.elapsedSeconds < timer.target * 60) {
+      timer.running = true;
+      timer.startedAt = Date.now();
     }
+    saveActivityTimer(timer);
+    renderCustomChecklist();
   }, true);
 
   function installTimerSound() {
@@ -400,6 +437,7 @@
       section.innerHTML = '<h3>Settings</h3><button class="account-list-btn" type="button" data-account-view="settings">Sound <span id="accountSoundSummary">On</span></button>';
       security.parentElement.insertBefore(section, security);
     }
+
     const passwordView = document.getElementById('accountPasswordView');
     if (passwordView && !document.getElementById('accountSettingsView')) {
       const view = document.createElement('div');
@@ -419,6 +457,7 @@
         if (summary) summary.textContent = input.checked ? 'On' : 'Off';
       });
     }
+
     const summary = document.getElementById('accountSoundSummary');
     if (summary) summary.textContent = soundEnabled() ? 'On' : 'Off';
   }
