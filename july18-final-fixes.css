@@ -1,0 +1,151 @@
+/* Targeted corrections from the 18 July mobile review. */
+
+/* Restore the validated account footer below the menu content. */
+.account-panel.account-modal.account-main-mode .account-modal-content {
+  overflow-y: auto !important;
+  padding-bottom: calc(50px + env(safe-area-inset-bottom)) !important;
+}
+.account-panel.account-modal.account-main-mode #accountMainView {
+  min-height: auto !important;
+  padding-bottom: 0 !important;
+}
+.account-panel.account-modal.account-main-mode .account-menu-footer {
+  position: static !important;
+  margin-top: 64px !important;
+  padding-top: 20px !important;
+  padding-bottom: 0 !important;
+  order: 99;
+}
+
+/* Sound: two explicit states, following the submenu chip system. */
+.account-submenu-panel #accountSettingsView .sound-state-row {
+  flex: 0 0 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 19px;
+}
+.account-submenu-panel #accountSettingsView .sound-state-option {
+  width: 100%;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 21px;
+  border: 1px solid #fff;
+  border-radius: 20px;
+  background: transparent;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+}
+.account-submenu-panel #accountSettingsView .sound-state-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.account-submenu-panel #accountSettingsView .sound-state-option:has(input:checked) {
+  background: #fff;
+  color: var(--main);
+}
+.account-submenu-panel #accountSettingsView .settings-sound-option { display: none !important; }
+
+/* Activity form: selector and target are equal columns. */
+#customChecklistForm {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  column-gap: 19px !important;
+  row-gap: 19px !important;
+}
+#customChecklistNameInput.hidden { display: none !important; }
+#activityQuickSelect { display: none !important; }
+.activity-dropdown { position: relative; width: 100%; min-width: 0; }
+.activity-dropdown-button,
+#customChecklistTargetInput {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 46px !important;
+  margin: 0 !important;
+  padding: 0 21px !important;
+  border: 1px solid var(--main) !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  color: var(--main) !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  text-align: left;
+}
+.activity-dropdown-button[aria-expanded="true"] { border-color: var(--main) !important; }
+.activity-dropdown-menu {
+  position: absolute;
+  z-index: 120;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  padding: 8px;
+  border: 1px solid rgba(1,45,237,.18);
+  border-radius: 20px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 18px 40px rgba(20,25,40,.16);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+.activity-dropdown-menu.hidden { display: none !important; }
+.activity-dropdown-option {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #000;
+  text-align: left;
+  font-size: 16px;
+}
+.custom-type-row,
+#customChecklistMessage,
+#createCustomChecklistBtn { grid-column: 1 / -1; }
+.custom-type-row { margin: 0 !important; }
+
+/* Activity timer: same 128px hierarchy as the workout timer. */
+.activity-timer {
+  width: 100%;
+  display: grid;
+  gap: 26px !important;
+  padding: 22px 0 8px !important;
+  text-align: center;
+}
+.activity-timer-count {
+  width: 100%;
+  margin: 0 !important;
+  font-size: 128px !important;
+  font-weight: 500 !important;
+  line-height: .9 !important;
+  letter-spacing: -.055em !important;
+  text-align: center !important;
+}
+.activity-timer-controls {
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 36px !important;
+}
+.activity-timer-target {
+  grid-column: 2;
+  justify-self: center;
+  font-size: 20px !important;
+}
+.activity-timer-toggle {
+  grid-column: 3;
+  justify-self: end;
+  display: block !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
