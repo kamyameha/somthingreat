@@ -1176,6 +1176,51 @@ function generateWorkout() {
   renderGeneratedWorkout();
 }
 
+function previewPrescriptionType(exercise) {
+  const text = `${exercise?.prescription || ''} ${exercise?.basePrescription || ''}`.toLowerCase();
+  return /\b(?:s|sec|secs|second|seconds|min|mins|minute|minutes)\b/.test(text) ? 'time' : 'reps';
+}
+
+function previewSwapCandidates(exercise) {
+  if (!exercise || exercise.isAddOn) return [];
+  const tracks = getTracks();
+  const trackKey = exercise.progressionTrackKey || exercise.trackKey;
+  const sourceTrack = tracks[trackKey] || [];
+  const recovery = typeof getActiveRecovery === 'function' ? getActiveRecovery() : null;
+  const usedIds = new Set((state.generated?.exercises || []).map(item => item?.id).filter(Boolean));
+  const allowed = sourceTrack.filter(candidate => {
+    if (!candidate || candidate.id === exercise.id || usedIds.has(candidate.id)) return false;
+    if (recovery && !workoutModule.isExerciseAllowedForRecovery(candidate, recovery)) return false;
+    return true;
+  });
+  const sameType = allowed.filter(candidate => previewPrescriptionType(candidate) === previewPrescriptionType(exercise));
+  const pool = sameType.length ? sameType : allowed;
+  return pool.sort((a, b) =>
+    Math.abs((a.difficulty || 1) - (exercise.difficulty || 1)) -
+    Math.abs((b.difficulty || 1) - (exercise.difficulty || 1))
+  );
+}
+
+function swapPreviewExercise(index) {
+  const current = state.generated?.exercises?.[index];
+  if (!current) return;
+  const candidates = previewSwapCandidates(current);
+  if (!candidates.length) return;
+  const previousIds = Array.isArray(current.previewSwapIds) ? current.previewSwapIds : [];
+  const next = candidates.find(candidate => !previousIds.includes(candidate.id)) || candidates[0];
+  state.generated.exercises[index] = {
+    ...next,
+    trackKey: current.trackKey || next.trackKey,
+    progressionTrackKey: current.progressionTrackKey || current.trackKey || next.progressionTrackKey || next.trackKey,
+    prescription: current.prescription || next.prescription,
+    basePrescription: next.prescription,
+    setCount: current.setCount || next.setCount || 1,
+    previewSwapIds: [...previousIds, current.id].filter(Boolean)
+  };
+  saveState();
+  renderGeneratedWorkout();
+}
+
 function renderGeneratedWorkout() {
   const generated = state.generated || getTodayWorkout('normal');
   hideCustomChecklistViews();
@@ -1188,13 +1233,32 @@ function renderGeneratedWorkout() {
 
   const preview = document.getElementById('previewList');
   preview.innerHTML = '';
-  (generated.exercises || []).filter(Boolean).forEach(exercise => {
+  (generated.exercises || []).filter(Boolean).forEach((exercise, index) => {
+    const name = exerciseDisplayName(exercise);
+    const hasHelp = !exercise.isAddOn && Boolean(getExerciseHelp(name));
+    const canSwap = previewSwapCandidates(exercise).length > 0;
     const row = document.createElement('div');
-    row.className = 'preview-row';
-    row.innerHTML = `<strong>${escapeHTML(exerciseDisplayName(exercise))}</strong><span>${escapeHTML(exercise.prescription)}</span>`;
+    row.className = 'preview-row preview-action-row';
+    row.innerHTML = `
+      <div class="preview-exercise-copy">
+        <strong>${escapeHTML(name)}</strong>
+        <span>${escapeHTML(exercise.prescription)}</span>
+      </div>
+      <div class="preview-exercise-actions">
+        ${canSwap ? `<button class="preview-icon-btn preview-swap-btn" type="button" data-preview-index="${index}" aria-label="Change ${escapeHTML(name)}"></button>` : ''}
+        ${hasHelp ? `<button class="preview-icon-btn preview-help-btn exercise-help-btn" type="button" data-exercise-name="${escapeHTML(name)}" aria-label="How to do ${escapeHTML(name)}">?</button>` : ''}
+      </div>`;
     preview.appendChild(row);
   });
 }
+
+document.addEventListener('click', event => {
+  const swapButton = event.target.closest('.preview-swap-btn');
+  if (!swapButton) return;
+  event.preventDefault();
+  event.stopPropagation();
+  swapPreviewExercise(Number(swapButton.dataset.previewIndex));
+});
 
 function startWorkout() {
   if (!state.generated) generateWorkout();
