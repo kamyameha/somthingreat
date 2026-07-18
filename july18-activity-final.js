@@ -95,17 +95,22 @@
 
   function alignActivityTimerActions() {
     const timer = document.querySelector('#customChecklistItems .activity-timer');
-    const toggle = document.getElementById('toggleActivityTimerBtn');
     const complete = document.getElementById('completeCustomChecklistBtn');
     const actions = complete?.closest('.custom-checklist-actions');
     if (!actions) return;
 
+    const toggles = Array.from(document.querySelectorAll('#toggleActivityTimerBtn'));
     if (!timer) {
-      toggle?.remove();
+      toggles.forEach(toggle => toggle.remove());
       return;
     }
 
+    const toggle = toggles.find(button => button.closest('.activity-timer')) || toggles[0];
     if (!toggle) return;
+    toggles.forEach(button => {
+      if (button !== toggle) button.remove();
+    });
+
     document.getElementById('activityTimerTarget')?.remove();
     toggle.classList.add('activity-timer-action');
     toggle.textContent = '';
