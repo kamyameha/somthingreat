@@ -85,57 +85,67 @@
 
   function installActivityDropdown() {
     const select = document.getElementById('activityQuickSelect');
-    if (!select || document.getElementById('activityDropdownFinal')) return;
+    if (!select) return;
 
     document.getElementById('activityDropdown')?.remove();
-    const wrapper = document.createElement('div');
-    wrapper.id = 'activityDropdownFinal';
-    wrapper.className = 'activity-dropdown-final';
-    wrapper.innerHTML = `
-      <button class="activity-dropdown-final__trigger" type="button" aria-haspopup="listbox" aria-expanded="false">Select an activity</button>
-      <div class="activity-dropdown-final__menu hidden" role="listbox">
-        ${Array.from(select.options).filter(option => option.value).map(option => `<button class="activity-dropdown-final__option" type="button" role="option" data-value="${option.value}">${option.textContent}</button>`).join('')}
-      </div>`;
-    select.insertAdjacentElement('beforebegin', wrapper);
+    let wrapper = document.getElementById('activityDropdownFinal');
+    if (!wrapper) {
+      wrapper = document.createElement('div');
+      wrapper.id = 'activityDropdownFinal';
+      wrapper.className = 'activity-dropdown-final';
+      wrapper.innerHTML = `
+        <button class="activity-dropdown-final__trigger" type="button" aria-haspopup="listbox" aria-expanded="false">Select an activity</button>
+        <div class="activity-dropdown-final__menu hidden" role="listbox">
+          ${Array.from(select.options).filter(option => option.value).map(option => `<button class="activity-dropdown-final__option" type="button" role="option" aria-selected="false" data-value="${option.value}">${option.textContent}</button>`).join('')}
+        </div>`;
+      select.insertAdjacentElement('beforebegin', wrapper);
 
-    const trigger = wrapper.querySelector('.activity-dropdown-final__trigger');
-    const menu = wrapper.querySelector('.activity-dropdown-final__menu');
-    const setOpen = open => {
-      menu.classList.toggle('hidden', !open);
-      trigger.setAttribute('aria-expanded', String(open));
-    };
-    trigger.addEventListener('click', event => {
-      event.stopPropagation();
-      setOpen(menu.classList.contains('hidden'));
-    });
-    menu.addEventListener('click', event => {
-      const option = event.target.closest('.activity-dropdown-final__option');
-      if (!option) return;
-      select.value = option.dataset.value;
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-      trigger.textContent = option.textContent;
-      setOpen(false);
-    });
-    document.addEventListener('click', event => {
-      if (!wrapper.contains(event.target)) setOpen(false);
-    });
+      const trigger = wrapper.querySelector('.activity-dropdown-final__trigger');
+      const menu = wrapper.querySelector('.activity-dropdown-final__menu');
+      const syncSelection = value => {
+        trigger.textContent = value || 'Select an activity';
+        wrapper.querySelectorAll('.activity-dropdown-final__option').forEach(option => {
+          option.setAttribute('aria-selected', String(option.dataset.value === value));
+        });
+      };
+      const setOpen = open => {
+        menu.classList.toggle('hidden', !open);
+        trigger.setAttribute('aria-expanded', String(open));
+      };
 
-    document.addEventListener('click', event => {
-      if (event.target.id !== 'editCustomChecklistBtn') return;
-      window.setTimeout(() => {
-        trigger.textContent = select.value || 'Select an activity';
-      }, 0);
-    }, true);
+      trigger.addEventListener('click', event => {
+        event.stopPropagation();
+        setOpen(menu.classList.contains('hidden'));
+      });
+      menu.addEventListener('click', event => {
+        const option = event.target.closest('.activity-dropdown-final__option');
+        if (!option) return;
+        select.value = option.dataset.value;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        syncSelection(option.dataset.value);
+        setOpen(false);
+      });
+      document.addEventListener('click', event => {
+        if (!wrapper.contains(event.target)) setOpen(false);
+      });
+      select.addEventListener('change', () => syncSelection(select.value));
+      syncSelection(select.value);
+    }
+
+    select.hidden = true;
+    select.setAttribute('aria-hidden', 'true');
   }
 
   function alignActivityTimerActions() {
     const toggle = document.getElementById('toggleActivityTimerBtn');
     const complete = document.getElementById('completeCustomChecklistBtn');
     const actions = complete?.closest('.custom-checklist-actions');
-    if (!toggle || !actions || toggle.parentElement === actions) return;
+    if (!toggle || !actions) return;
+
     document.getElementById('activityTimerTarget')?.remove();
     toggle.classList.add('activity-timer-action');
-    actions.insertBefore(toggle, complete);
+    toggle.textContent = '';
+    if (toggle.parentElement !== actions) actions.insertBefore(toggle, complete);
   }
 
   function readActivityTimer() {
