@@ -55,8 +55,8 @@
 }
 
 .preview-swap-btn {
-  -webkit-mask: url("repeat.svg") center / 24px 24px no-repeat;
-  mask: url("repeat.svg") center / 24px 24px no-repeat;
+  -webkit-mask: url("Assets/repeat.svg") center / 24px 24px no-repeat;
+  mask: url("Assets/repeat.svg") center / 24px 24px no-repeat;
 }
 
 .generated-preview-list .preview-help-btn {
