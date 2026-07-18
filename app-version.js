@@ -1,5 +1,5 @@
 (function (scope) {
-  const APP_VERSION = '2026.07.18.182500';
+  const APP_VERSION = '2026.07.18.190000';
 
   scope.APP_VERSION = APP_VERSION;
   scope.SOMTHINGREAT_VERSION = APP_VERSION;
@@ -112,7 +112,7 @@
   }
 
   if (typeof document !== 'undefined') {
-    ['preview-actions.css', 'bottom-nav-polish.css', 'polish-ui.css', 'ios-tabbar.css', 'quality-audit.css', 'july18-final-fixes.css', 'july18-activity-final.css'].forEach(href => {
+    ['preview-actions.css', 'bottom-nav-polish.css', 'polish-ui.css', 'ios-tabbar.css', 'quality-audit.css'].forEach(href => {
       const style = document.createElement('link');
       style.rel = 'stylesheet';
       style.href = `${href}?v=${APP_VERSION}`;
@@ -120,7 +120,7 @@
     });
 
     scope.addEventListener('load', () => {
-      ['preview-actions.js', 'quality-audit.js', 'july18-final-fixes.js', 'july18-activity-final.js'].forEach(src => {
+      ['preview-actions.js', 'quality-audit.js'].forEach(src => {
         const script = document.createElement('script');
         script.src = `${src}?v=${APP_VERSION}`;
         document.body.appendChild(script);
