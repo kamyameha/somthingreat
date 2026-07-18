@@ -93,8 +93,11 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Always revalidate application CSS and JavaScript. The cache remains the
+  // offline fallback, but a normal deployment no longer requires manually
+  // changing every asset URL just to receive the latest file.
   if (isVersionedAppAsset) {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(networkFirst(request));
     return;
   }
 
