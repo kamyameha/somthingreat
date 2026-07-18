@@ -80,7 +80,7 @@
 .custom-checklist-items {
   min-height: 0 !important;
   overflow: visible !important;
-  margin: var(--space-5) 0 !important;
+  margin: var(--space-5) 0 0 !important;
 }
 
 .custom-checklist-actions {
@@ -88,7 +88,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4) !important;
-  margin: var(--space-5) 0 0 !important;
+  margin: 25px 0 0 !important;
   padding: 0 !important;
   background: transparent !important;
 }
@@ -173,14 +173,18 @@
 #toggleActivityTimerBtn.activity-timer-action::before {
   content: "";
   display: block !important;
-  width: 24px;
-  height: 24px;
-  background: #ffffff !important;
-  -webkit-mask: url("play.svg") center / contain no-repeat;
-  mask: url("play.svg") center / contain no-repeat;
+  width: 0;
+  height: 0;
+  margin-left: 3px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 13px solid #ffffff;
 }
 
 #toggleActivityTimerBtn.activity-timer-action[data-state="running"]::before {
-  -webkit-mask-image: url("pause.svg");
-  mask-image: url("pause.svg");
+  width: 14px;
+  height: 18px;
+  margin-left: 0;
+  border: 0;
+  background: linear-gradient(to right, #ffffff 0 5px, transparent 5px 9px, #ffffff 9px 14px);
 }
