@@ -41,19 +41,9 @@
     sync();
   }
 
-  function useRecoveryStyleActivitySelect() {
-    const select = document.getElementById('activityQuickSelect');
-    if (!select) return;
-    document.getElementById('activityDropdown')?.remove();
-    select.classList.add('recovery-select', 'activity-select');
-    select.hidden = false;
-    select.removeAttribute('aria-hidden');
-  }
-
   function install() {
     placeAccountFooterLast();
     installSoundStates();
-    useRecoveryStyleActivitySelect();
   }
 
   install();
