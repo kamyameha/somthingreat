@@ -26,7 +26,6 @@
     view.setUint16(20, 1, true);
     view.setUint16(22, 1, true);
     view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
     view.setUint16(32, 2, true);
     view.setUint16(34, 16, true);
     writeString(36, 'data');
@@ -93,28 +92,64 @@
     select.classList.add('recovery-select', 'activity-select');
   }
 
+  function styleActivityToggle(toggle) {
+    toggle.className = 'activity-timer-toggle activity-timer-action';
+    toggle.textContent = '';
+    const styles = {
+      position: 'static',
+      display: 'grid',
+      placeItems: 'center',
+      width: '68px',
+      minWidth: '68px',
+      maxWidth: '68px',
+      height: '46px',
+      minHeight: '46px',
+      margin: '0',
+      padding: '0',
+      border: '1px solid #012ded',
+      borderRadius: '20px',
+      background: '#012ded',
+      backgroundColor: '#012ded',
+      color: 'transparent',
+      opacity: '1',
+      visibility: 'visible',
+      boxShadow: 'none',
+      transform: 'none'
+    };
+    Object.entries(styles).forEach(([property, value]) => {
+      const cssProperty = property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
+      toggle.style.setProperty(cssProperty, value, 'important');
+    });
+  }
+
   function alignActivityTimerActions() {
     const timer = document.querySelector('#customChecklistItems .activity-timer');
     const complete = document.getElementById('completeCustomChecklistBtn');
     const actions = complete?.closest('.custom-checklist-actions');
     if (!actions) return;
 
-    const toggles = Array.from(document.querySelectorAll('#toggleActivityTimerBtn'));
+    const toggles = Array.from(document.querySelectorAll('[id="toggleActivityTimerBtn"]'));
     if (!timer) {
       toggles.forEach(toggle => toggle.remove());
       return;
     }
 
-    const toggle = toggles.find(button => button.closest('.activity-timer')) || toggles[0];
+    const toggle = toggles.find(button => button.closest('#customChecklistItems .activity-timer')) || toggles[toggles.length - 1];
     if (!toggle) return;
     toggles.forEach(button => {
       if (button !== toggle) button.remove();
     });
 
-    document.getElementById('activityTimerTarget')?.remove();
-    toggle.classList.add('activity-timer-action');
-    toggle.textContent = '';
+    document.querySelectorAll('#activityTimerTarget').forEach(target => target.remove());
+    document.querySelectorAll('.activity-timer-controls').forEach(controls => {
+      controls.style.setProperty('display', 'none', 'important');
+    });
+    styleActivityToggle(toggle);
     if (toggle.parentElement !== actions) actions.insertBefore(toggle, complete);
+
+    const timerState = readActivityTimer();
+    toggle.dataset.state = timerState?.running ? 'running' : 'paused';
+    toggle.setAttribute('aria-label', timerState?.running ? 'Pause timer' : Number(timerState?.elapsedSeconds || 0) > 0 ? 'Resume timer' : 'Start timer');
   }
 
   function readActivityTimer() {
@@ -155,7 +190,14 @@
   }
 
   document.addEventListener('click', event => {
-    if (event.target.closest('#toggleActivityTimerBtn, [data-timer-seconds], .set-control.is-timer')) primeAudio();
+    const activityToggle = event.target.closest('#toggleActivityTimerBtn');
+    if (activityToggle) {
+      // quality-audit.js updates the timer first and re-renders its markup.
+      // Normalise the new markup immediately in the same click, before paint.
+      queueMicrotask(alignActivityTimerActions);
+      return;
+    }
+    if (event.target.closest('[data-timer-seconds], .set-control.is-timer')) primeAudio();
   }, true);
 
   function install() {
