@@ -16,7 +16,7 @@
   padding-bottom: 0 !important;
 }
 
-/* Sound: two explicit states, following the submenu chip system. */
+/* Sound: two explicit states, following the existing submenu chip system. */
 .account-submenu-panel #accountSettingsView .sound-state-row {
   flex: 0 0 100%;
   width: 100%;
@@ -50,21 +50,39 @@
 }
 .account-submenu-panel #accountSettingsView .settings-sound-option { display: none !important; }
 
-/* Activity form: selector and target are equal columns. */
+/* Activity form: reuse the same control geometry and spacing already used elsewhere. */
 #customChecklistForm {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   column-gap: 19px !important;
   row-gap: 19px !important;
 }
+#customChecklistForm.hidden { display: none !important; }
 #customChecklistNameInput.hidden { display: none !important; }
-#activityQuickSelect { display: none !important; }
-.activity-dropdown {
-  position: relative;
-  width: 100%;
-  min-width: 0;
+#activityDropdown { display: none !important; }
+#activityQuickSelect {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 46px !important;
+  margin: 0 !important;
+  padding: 0 21px !important;
+  border: 1px solid var(--main) !important;
+  border-radius: 20px !important;
+  background: transparent !important;
+  color: var(--main) !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  appearance: none;
+  -webkit-appearance: none;
 }
-.activity-dropdown-button,
+#activityQuickSelect option {
+  font-weight: 400;
+  background: #fff;
+  color: #000;
+}
 #customChecklistTargetInput {
   width: 100% !important;
   min-width: 0 !important;
@@ -77,49 +95,28 @@
   color: var(--main) !important;
   font-size: 16px !important;
   font-weight: 400 !important;
-  text-align: left;
-}
-.activity-dropdown-menu {
-  position: absolute;
-  z-index: 120;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 260px;
-  max-width: calc(100vw - 40px);
-  overflow: hidden;
-  padding: 8px 0;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 26px;
-  background: rgba(210, 224, 252, 0.96);
-  box-shadow: 0 18px 40px rgba(20, 25, 40, 0.16);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-}
-.activity-dropdown-menu.hidden { display: none !important; }
-.activity-dropdown-option {
-  width: 100%;
-  min-height: 46px;
-  padding: 0 28px;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: #000 !important;
-  text-align: left;
-  font-size: 16px !important;
-  font-weight: 400 !important;
 }
 .custom-type-row,
 #customChecklistMessage,
 #createCustomChecklistBtn { grid-column: 1 / -1; }
-.custom-type-row { margin: 0 !important; }
+.custom-type-row {
+  margin: 0 !important;
+  gap: 19px !important;
+}
+.custom-type-row label,
+#createCustomChecklistBtn {
+  font-weight: 500 !important;
+}
+#createCustomChecklistBtn {
+  margin-top: 25px !important;
+}
 
-/* Long round lists scroll inside the popup, while actions remain reachable. */
+/* Long round lists scroll inside the centered popup, while actions remain reachable. */
 .custom-checklist-overlay {
-  overflow-y: auto !important;
-  align-items: start !important;
-  justify-items: center !important;
-  padding-top: 20px !important;
-  padding-bottom: 20px !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+  padding: 20px !important;
 }
 .custom-checklist-modal {
   max-height: calc(100dvh - 40px) !important;
@@ -127,7 +124,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* Activity timer: same hierarchy and composition as the supplied reference. */
+/* Activity timer: follow the supplied reference exactly. */
 .custom-checklist-items:has(.activity-timer) {
   display: block !important;
 }
@@ -150,20 +147,17 @@
 }
 .activity-timer-controls {
   width: 100%;
-  display: grid !important;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex !important;
   align-items: center;
+  justify-content: space-between;
   padding: 0 36px !important;
 }
 .activity-timer-target {
-  grid-column: 2;
-  justify-self: center;
   font-size: 20px !important;
   font-weight: 500 !important;
+  text-align: left !important;
 }
 .activity-timer-toggle {
-  grid-column: 3;
-  justify-self: end;
   display: grid !important;
   place-items: center;
   width: 30px !important;
