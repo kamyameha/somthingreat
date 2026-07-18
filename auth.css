@@ -140,13 +140,13 @@ body.logged-out {
 }
 
 .password-toggle-hidden {
-  -webkit-mask-image: url("eye-off.svg");
-  mask-image: url("eye-off.svg");
+  -webkit-mask-image: url("Assets/eye-off.svg");
+  mask-image: url("Assets/eye-off.svg");
 }
 
 .password-toggle-visible {
-  -webkit-mask-image: url("eye.svg");
-  mask-image: url("eye.svg");
+  -webkit-mask-image: url("Assets/eye.svg");
+  mask-image: url("Assets/eye.svg");
 }
 
 #loggedOutAccount .account-submit,
