@@ -1,4 +1,4 @@
-/* Shared quality audit: spacing, modal material, buttons and icon controls */
+/* Shared quality audit: only requested, reusable UI rules */
 :root {
   --ui-space-1: 8px;
   --ui-space-2: 12px;
@@ -9,11 +9,12 @@
   --ui-modal-shadow: 0 18px 48px rgba(20, 25, 40, 0.14), inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
-/* Only transient popups use the neutral glass treatment. Account screens keep their validated blue design. */
+/* Neutral popup material. Validated menu and submenu screens are intentionally excluded. */
 .confirm-card,
 .exercise-help-card,
 .timer-card,
-.generated-workout-modal {
+.generated-workout-modal,
+.custom-checklist-modal {
   border: 1px solid rgba(255, 255, 255, 0.9) !important;
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.99), rgba(255, 255, 255, 0.94)) !important;
   box-shadow: var(--ui-modal-shadow) !important;
@@ -21,7 +22,6 @@
   backdrop-filter: blur(24px) saturate(180%);
 }
 
-/* Consistent modal rhythm. */
 .confirm-card,
 .exercise-help-card,
 .timer-card {
@@ -47,7 +47,6 @@
   padding-left: 22px;
 }
 
-/* Shared button geometry for equivalent popup/workout controls only. */
 .confirm-actions button,
 .generated-workout-actions button {
   min-height: var(--ui-control-height);
@@ -56,7 +55,7 @@
   line-height: 1;
 }
 
-/* Warm-up/stretch actions: help first, timer second, both outline-only. */
+/* Help always precedes timer. Icon colour follows its surface. */
 .add-on-exercise-actions,
 .warmup-exercise-actions,
 .stretch-exercise-actions {
@@ -81,12 +80,28 @@
   border: 1px solid currentColor !important;
   border-radius: 50% !important;
   background: transparent !important;
-  color: #ffffff !important;
   box-shadow: none !important;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
   font-size: 0 !important;
+}
+
+/* Blue workout cards: white outline icons. */
+.workout-add-on-card [data-addon-help],
+.workout-add-on-card [data-addon-timer],
+.add-on-exercise-actions [data-addon-help],
+.add-on-exercise-actions [data-addon-timer] {
+  color: #ffffff !important;
+}
+
+/* White workout overview popup: black outline help icon. */
+.generated-workout-modal .preview-help-btn,
+.generated-workout-modal .exercise-help-btn {
+  color: #111111 !important;
+  border-color: #111111 !important;
+  background: transparent !important;
+  opacity: 1 !important;
 }
 
 .add-on-help-btn::before,
@@ -99,9 +114,107 @@
   line-height: 1;
 }
 
-/* Keep all exercise prescriptions visually consistent after ranges become targets. */
 .preview-exercise-copy span,
 .prescription,
 .workout-exercise-prescription {
   font-variant-numeric: tabular-nums;
+}
+
+/* Activity counter keeps the current form logic and matches Recovery selections. */
+.activity-quick-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.activity-quick-option,
+.custom-type-row label,
+.settings-sound-option {
+  min-height: 46px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--main) !important;
+  border-radius: 23px !important;
+  background: #ffffff !important;
+  color: var(--main) !important;
+  font-weight: 500;
+}
+
+.activity-quick-option input,
+.custom-type-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.activity-quick-option:has(input:checked),
+.custom-type-row label:has(input:checked) {
+  background: var(--main) !important;
+  color: #ffffff !important;
+}
+
+.activity-timer {
+  display: grid;
+  gap: 20px;
+  padding: 24px 0 8px;
+  text-align: center;
+}
+
+.activity-timer-count {
+  margin: 0;
+  color: var(--heading);
+  font-size: clamp(38px, 12vw, 54px);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-timer .primary-btn {
+  width: 100%;
+}
+
+/* Mobile uses selected states only: no delayed transition, hover fill or tap flash. */
+button,
+label,
+.nav-btn,
+.onboarding-chip,
+.option-row,
+.custom-type-row label,
+.energy-option,
+.primary-btn,
+.secondary-btn,
+.ghost-btn {
+  transition: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active,
+label:active,
+.nav-btn:active,
+.onboarding-chip:active,
+.option-row:active,
+.custom-type-row label:active,
+.energy-option:active,
+.primary-btn:active,
+.secondary-btn:active,
+.ghost-btn:active {
+  transform: none !important;
+}
+
+.nav-btn:not(.active):hover,
+.nav-btn:not(.active):focus,
+.nav-btn:not(.active):focus-visible,
+.nav-btn:not(.active):active {
+  background: transparent !important;
+  color: #8f9299 !important;
+  box-shadow: none !important;
+}
+
+.nav-btn.active,
+.nav-btn.active:hover,
+.nav-btn.active:focus,
+.nav-btn.active:active {
+  background: rgba(1, 45, 237, 0.1) !important;
+  color: var(--main) !important;
 }
