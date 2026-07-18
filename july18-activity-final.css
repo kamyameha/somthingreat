@@ -1,4 +1,4 @@
-/* Activity-counter fixes: reuse the existing visual system and change only placement/layout. */
+/* Activity counter: reuse existing controls and spacing tokens only. */
 
 #customChecklistCard.hidden,
 #customChecklistForm.hidden,
@@ -6,18 +6,28 @@
   display: none !important;
 }
 
-/* Keep the native value source hidden; the controlled menu is anchored below the field. */
+/* Activity uses the same native iOS select presentation as Recovery. */
 #activityQuickSelect {
-  display: none !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 46px !important;
+  margin: 0 !important;
+  padding: 0 21px !important;
+  border: 1px solid var(--main) !important;
+  border-radius: var(--radius) !important;
+  background: #ffffff !important;
+  color: var(--main) !important;
+  font: inherit !important;
+  font-size: var(--text-md) !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  text-align: left !important;
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  box-shadow: none !important;
 }
 
-.activity-dropdown-final {
-  position: relative;
-  width: 100%;
-  min-width: 0;
-}
-
-.activity-dropdown-final__trigger,
 #customChecklistTargetInput {
   width: 100% !important;
   min-width: 0 !important;
@@ -25,77 +35,12 @@
   margin: 0 !important;
   padding: 0 21px !important;
   border: 1px solid var(--main) !important;
-  border-radius: 20px !important;
+  border-radius: var(--radius) !important;
   background: #ffffff !important;
   color: var(--main) !important;
   font: inherit !important;
-  font-size: 16px !important;
+  font-size: var(--text-md) !important;
   font-weight: 400 !important;
-  line-height: 1 !important;
-  text-align: left !important;
-  box-shadow: none !important;
-  transform: none !important;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.activity-dropdown-final__trigger[aria-expanded="true"],
-.activity-dropdown-final__trigger:focus,
-.activity-dropdown-final__trigger:active {
-  background: #ffffff !important;
-  color: var(--main) !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-/* Same translucent iOS-style menu as Recovery, but explicitly placed below. */
-.activity-dropdown-final__menu {
-  position: absolute;
-  z-index: 500;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 264px;
-  max-width: calc(100vw - 40px);
-  padding: 10px 0;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.86);
-  border-radius: 27px;
-  background: rgba(222, 234, 255, 0.88);
-  box-shadow: 0 18px 40px rgba(20, 25, 40, 0.15);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-}
-
-.activity-dropdown-final__menu.hidden {
-  display: none !important;
-}
-
-.activity-dropdown-final__option {
-  position: relative;
-  width: 100%;
-  min-height: 46px;
-  margin: 0;
-  padding: 0 28px 0 46px;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: #000000 !important;
-  font: inherit !important;
-  font-size: 16px !important;
-  font-weight: 400 !important;
-  line-height: 1 !important;
-  text-align: left !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-.activity-dropdown-final__option[aria-selected="true"]::before {
-  content: "✓";
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 18px;
-  line-height: 1;
 }
 
 .custom-type-row label,
@@ -105,68 +50,53 @@
 }
 
 #customChecklistForm {
-  row-gap: 19px !important;
+  row-gap: var(--space-4) !important;
 }
 
 #createCustomChecklistBtn {
-  margin-top: 13px !important;
+  margin-top: var(--space-4) !important;
 }
 
-/* Centre the popup itself. Long round lists scroll inside it. */
+/* Centre the popup. The whole card scrolls, including actions. */
 .custom-checklist-overlay:not(.hidden) {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden !important;
-  padding: 20px !important;
+  padding: var(--screen-x) !important;
 }
 
 .custom-checklist-modal {
   width: min(100%, 353px) !important;
-  max-height: calc(100dvh - 40px) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-}
-
-.custom-checklist-modal h2,
-.custom-checklist-close,
-.custom-checklist-actions {
-  flex: 0 0 auto;
-}
-
-.custom-checklist-items {
-  min-height: 0 !important;
+  max-height: calc(100dvh - (2 * var(--screen-x))) !important;
+  display: block !important;
   overflow-y: auto !important;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 
+.custom-checklist-items {
+  min-height: 0 !important;
+  overflow: visible !important;
+  margin: var(--space-5) 0 !important;
+}
+
 .custom-checklist-actions {
-  position: relative;
-  z-index: 2;
-  background: #ffffff;
+  position: static !important;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) !important;
+  margin: var(--space-5) 0 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
 }
 
-/* Timer popup: vertically and horizontally centred like the supplied reference. */
-.custom-checklist-modal:has(.activity-timer) {
-  height: min(470px, calc(100dvh - 40px)) !important;
-}
-
-.custom-checklist-items:has(.activity-timer) {
-  flex: 1 1 auto !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: hidden !important;
-}
-
+/* Timer uses the established spacing scale. */
 .activity-timer {
   width: 100%;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
+  display: grid !important;
+  place-items: center;
+  padding: var(--space-7) 0 !important;
 }
 
 .activity-timer-count {
@@ -186,16 +116,16 @@
   display: none !important;
 }
 
+/* Only minute counters have the third play/pause action. */
 .custom-checklist-modal:has(.activity-timer) .custom-checklist-actions {
-  display: grid !important;
-  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 0.7fr) !important;
-  gap: 15px !important;
-  align-items: center !important;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 0.68fr) !important;
+  gap: var(--space-4) !important;
 }
 
 .custom-checklist-modal:has(.activity-timer) .custom-checklist-actions > button {
   width: 100% !important;
   min-width: 0 !important;
+  margin: 0 !important;
 }
 
 #toggleActivityTimerBtn.activity-timer-action {
@@ -208,8 +138,8 @@
   min-height: 46px !important;
   margin: 0 !important;
   padding: 0 !important;
-  border: 0 !important;
-  border-radius: 16px !important;
+  border: 1px solid var(--main) !important;
+  border-radius: var(--radius) !important;
   background: var(--main) !important;
   color: transparent !important;
   opacity: 1 !important;
