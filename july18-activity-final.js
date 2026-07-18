@@ -83,65 +83,29 @@
     }
   }
 
-  function installActivityDropdown() {
+  function restoreNativeActivitySelect() {
+    document.getElementById('activityDropdownFinal')?.remove();
+    document.getElementById('activityDropdown')?.remove();
     const select = document.getElementById('activityQuickSelect');
     if (!select) return;
-
-    document.getElementById('activityDropdown')?.remove();
-    let wrapper = document.getElementById('activityDropdownFinal');
-    if (!wrapper) {
-      wrapper = document.createElement('div');
-      wrapper.id = 'activityDropdownFinal';
-      wrapper.className = 'activity-dropdown-final';
-      wrapper.innerHTML = `
-        <button class="activity-dropdown-final__trigger" type="button" aria-haspopup="listbox" aria-expanded="false">Select an activity</button>
-        <div class="activity-dropdown-final__menu hidden" role="listbox">
-          ${Array.from(select.options).filter(option => option.value).map(option => `<button class="activity-dropdown-final__option" type="button" role="option" aria-selected="false" data-value="${option.value}">${option.textContent}</button>`).join('')}
-        </div>`;
-      select.insertAdjacentElement('beforebegin', wrapper);
-
-      const trigger = wrapper.querySelector('.activity-dropdown-final__trigger');
-      const menu = wrapper.querySelector('.activity-dropdown-final__menu');
-      const syncSelection = value => {
-        trigger.textContent = value || 'Select an activity';
-        wrapper.querySelectorAll('.activity-dropdown-final__option').forEach(option => {
-          option.setAttribute('aria-selected', String(option.dataset.value === value));
-        });
-      };
-      const setOpen = open => {
-        menu.classList.toggle('hidden', !open);
-        trigger.setAttribute('aria-expanded', String(open));
-      };
-
-      trigger.addEventListener('click', event => {
-        event.stopPropagation();
-        setOpen(menu.classList.contains('hidden'));
-      });
-      menu.addEventListener('click', event => {
-        const option = event.target.closest('.activity-dropdown-final__option');
-        if (!option) return;
-        select.value = option.dataset.value;
-        select.dispatchEvent(new Event('change', { bubbles: true }));
-        syncSelection(option.dataset.value);
-        setOpen(false);
-      });
-      document.addEventListener('click', event => {
-        if (!wrapper.contains(event.target)) setOpen(false);
-      });
-      select.addEventListener('change', () => syncSelection(select.value));
-      syncSelection(select.value);
-    }
-
-    select.hidden = true;
-    select.setAttribute('aria-hidden', 'true');
+    select.hidden = false;
+    select.removeAttribute('aria-hidden');
+    select.classList.add('recovery-select', 'activity-select');
   }
 
   function alignActivityTimerActions() {
+    const timer = document.querySelector('#customChecklistItems .activity-timer');
     const toggle = document.getElementById('toggleActivityTimerBtn');
     const complete = document.getElementById('completeCustomChecklistBtn');
     const actions = complete?.closest('.custom-checklist-actions');
-    if (!toggle || !actions) return;
+    if (!actions) return;
 
+    if (!timer) {
+      toggle?.remove();
+      return;
+    }
+
+    if (!toggle) return;
     document.getElementById('activityTimerTarget')?.remove();
     toggle.classList.add('activity-timer-action');
     toggle.textContent = '';
@@ -190,7 +154,7 @@
   }, true);
 
   function install() {
-    installActivityDropdown();
+    restoreNativeActivitySelect();
     alignActivityTimerActions();
   }
 
