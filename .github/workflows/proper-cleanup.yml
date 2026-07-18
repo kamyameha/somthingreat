@@ -1,0 +1,139 @@
+name: Proper repository cleanup
+
+on:
+  push:
+    branches:
+      - cleanup/proper-consolidation
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup/proper-consolidation
+          fetch-depth: 0
+
+      - name: Consolidate patch files and assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="2026.07.18.204500"
+
+          # Preserve the current cascade order while moving all late patch CSS
+          # into the existing main stylesheet.
+          for file in preview-actions.css bottom-nav-polish.css polish-ui.css ios-tabbar.css quality-audit.css; do
+            if [ -f "$file" ]; then
+              printf '\n\n/* Consolidated from %s */\n' "$file" >> style.css
+              cat "$file" >> style.css
+            fi
+          done
+
+          # Move patch behaviour into the existing render module. Each file is
+          # already isolated in an IIFE, so concatenation preserves behaviour.
+          for file in quality-audit.js preview-actions.js; do
+            if [ -f "$file" ]; then
+              printf '\n\n/* Consolidated from %s */\n' "$file" >> render.js
+              cat "$file" >> render.js
+            fi
+          done
+
+          rm -f preview-actions.css bottom-nav-polish.css polish-ui.css ios-tabbar.css quality-audit.css
+          rm -f quality-audit.js preview-actions.js
+          rm -rf docs test tests
+
+          mkdir -p Assets
+          shopt -s nullglob
+          for file in *.svg *.png; do
+            git mv "$file" "Assets/$file"
+          done
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+
+          version = "2026.07.18.204500"
+          root = Path('.')
+          asset_names = {p.name for p in (root / 'Assets').iterdir() if p.suffix.lower() in {'.svg', '.png'}}
+
+          text_suffixes = {'.html', '.css', '.js', '.json', '.webmanifest', '.md'}
+          for path in root.rglob('*'):
+              if not path.is_file() or '.git' in path.parts or path.suffix.lower() not in text_suffixes:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              original = text
+              for name in sorted(asset_names, key=len, reverse=True):
+                  # Rewrite only references that are not already inside Assets/.
+                  text = re.sub(rf'(?<!Assets/)(?<!Assets\\/)(["\'(])(?:\./)?{re.escape(name)}', rf'\1Assets/{name}', text)
+                  text = re.sub(rf'(?<!Assets/)(?<!Assets\\/)url\((["\']?)(?:\./)?{re.escape(name)}\1\)', rf'url(\1Assets/{name}\1)', text)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+
+          manifest_path = root / 'manifest.json'
+          if manifest_path.exists():
+              data = json.loads(manifest_path.read_text(encoding='utf-8'))
+              for icon in data.get('icons', []):
+                  src = Path(icon.get('src', '')).name
+                  if src in asset_names:
+                      icon['src'] = f'Assets/{src}'
+              manifest_path.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
+
+          version_path = root / 'version.json'
+          version_path.write_text(json.dumps({'version': version}, indent=2) + '\n', encoding='utf-8')
+
+          app_version = root / 'app-version.js'
+          if app_version.exists():
+              text = app_version.read_text(encoding='utf-8')
+              text = re.sub(r"const APP_VERSION = '[^']+';", f"const APP_VERSION = '{version}';", text, count=1)
+              # Remove the late-loader block entirely: CSS and JS now live in
+              # the normal core files loaded by index.html.
+              text = re.sub(
+                  r"\n  if \(typeof document !== 'undefined'\) \{.*?\n  \}\n\n  if \(typeof module",
+                  "\n\n  if (typeof module",
+                  text,
+                  flags=re.S,
+              )
+              app_version.write_text(text, encoding='utf-8')
+
+          index_path = root / 'index.html'
+          if index_path.exists():
+              text = index_path.read_text(encoding='utf-8')
+              text = re.sub(r'([.]css|[.]js)\?v=[0-9.]+', lambda m: f"{m.group(1)}?v={version}", text)
+              index_path.write_text(text, encoding='utf-8')
+
+          # Ensure service-worker assets use their new paths and no deleted
+          # patch file remains in the app shell.
+          sw_path = root / 'service-worker.js'
+          if sw_path.exists():
+              text = sw_path.read_text(encoding='utf-8')
+              for name in asset_names:
+                  text = re.sub(rf"(['\"])(?:\./)?{re.escape(name)}\1", rf"\1./Assets/{name}\1", text)
+              for deleted in [
+                  'preview-actions.css', 'bottom-nav-polish.css', 'polish-ui.css',
+                  'ios-tabbar.css', 'quality-audit.css', 'quality-audit.js',
+                  'preview-actions.js'
+              ]:
+                  text = re.sub(rf"^.*{re.escape(deleted)}.*\n?", '', text, flags=re.M)
+              sw_path.write_text(text, encoding='utf-8')
+          PY
+
+          # The workflow is one-time infrastructure and must not remain in the
+          # cleaned repository.
+          rm -f .github/workflows/proper-cleanup.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+
+      - name: Commit consolidated repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Consolidate UI files and centralize assets"
+          git push origin HEAD:cleanup/proper-consolidation
