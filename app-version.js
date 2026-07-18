@@ -112,7 +112,7 @@
   }
 
   if (typeof document !== 'undefined') {
-    ['preview-actions.css', 'bottom-nav-polish.css', 'polish-ui.css', 'ios-tabbar.css', 'quality-audit.css', 'july18-final-fixes.css'].forEach(href => {
+    ['preview-actions.css', 'bottom-nav-polish.css', 'polish-ui.css', 'ios-tabbar.css', 'quality-audit.css', 'july18-final-fixes.css', 'july18-activity-final.css'].forEach(href => {
       const style = document.createElement('link');
       style.rel = 'stylesheet';
       style.href = `${href}?v=${APP_VERSION}`;
@@ -120,7 +120,7 @@
     });
 
     scope.addEventListener('load', () => {
-      ['preview-actions.js', 'quality-audit.js', 'july18-final-fixes.js'].forEach(src => {
+      ['preview-actions.js', 'quality-audit.js', 'july18-final-fixes.js', 'july18-activity-final.js'].forEach(src => {
         const script = document.createElement('script');
         script.src = `${src}?v=${APP_VERSION}`;
         document.body.appendChild(script);
