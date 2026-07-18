@@ -1,14 +1,12 @@
-/* Final activity-counter alignment: reuse the established mobile component rules. */
+/* Activity-counter fixes: reuse the existing visual system and change only placement/layout. */
 
-/* The form must disappear completely once another Today state is active. */
 #customChecklistCard.hidden,
 #customChecklistForm.hidden,
 #customChecklistActive.hidden {
   display: none !important;
 }
 
-/* Custom activity menu: same translucent mobile menu language as Recovery,
-   but anchored below its trigger instead of relying on native placement. */
+/* Keep the native value source hidden; the controlled menu is anchored below the field. */
 #activityQuickSelect {
   display: none !important;
 }
@@ -35,21 +33,34 @@
   font-weight: 400 !important;
   line-height: 1 !important;
   text-align: left !important;
+  box-shadow: none !important;
+  transform: none !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
+.activity-dropdown-final__trigger[aria-expanded="true"],
+.activity-dropdown-final__trigger:focus,
+.activity-dropdown-final__trigger:active {
+  background: #ffffff !important;
+  color: var(--main) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Same translucent iOS-style menu as Recovery, but explicitly placed below. */
 .activity-dropdown-final__menu {
   position: absolute;
-  z-index: 300;
+  z-index: 500;
   top: calc(100% + 8px);
   left: 0;
-  width: 260px;
+  width: 264px;
   max-width: calc(100vw - 40px);
-  padding: 8px 0;
+  padding: 10px 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.82);
-  border-radius: 26px;
-  background: rgba(238, 244, 255, 0.94);
-  box-shadow: 0 18px 40px rgba(20, 25, 40, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 27px;
+  background: rgba(222, 234, 255, 0.88);
+  box-shadow: 0 18px 40px rgba(20, 25, 40, 0.15);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
 }
@@ -59,10 +70,11 @@
 }
 
 .activity-dropdown-final__option {
+  position: relative;
   width: 100%;
   min-height: 46px;
   margin: 0;
-  padding: 0 28px;
+  padding: 0 28px 0 46px;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -72,9 +84,20 @@
   font-weight: 400 !important;
   line-height: 1 !important;
   text-align: left !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
-/* Reuse the existing medium control weight and established spacing rhythm. */
+.activity-dropdown-final__option[aria-selected="true"]::before {
+  content: "✓";
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  line-height: 1;
+}
+
 .custom-type-row label,
 #createCustomChecklistBtn,
 .sound-state-option {
@@ -89,7 +112,7 @@
   margin-top: 13px !important;
 }
 
-/* Keep the popup centred. The content area scrolls; header/actions remain reachable. */
+/* Centre the popup itself. Long round lists scroll inside it. */
 .custom-checklist-overlay:not(.hidden) {
   display: flex !important;
   align-items: center !important;
@@ -125,15 +148,25 @@
   background: #ffffff;
 }
 
-/* Timer composition follows the supplied reference: count only, then play + actions. */
+/* Timer popup: vertically and horizontally centred like the supplied reference. */
+.custom-checklist-modal:has(.activity-timer) {
+  height: min(470px, calc(100dvh - 40px)) !important;
+}
+
 .custom-checklist-items:has(.activity-timer) {
-  overflow: visible !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
 }
 
 .activity-timer {
   width: 100%;
-  display: block !important;
-  padding: 28px 0 34px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
 }
 
 .activity-timer-count {
@@ -155,9 +188,9 @@
 
 .custom-checklist-modal:has(.activity-timer) .custom-checklist-actions {
   display: grid !important;
-  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 0.68fr) !important;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 0.7fr) !important;
   gap: 15px !important;
-  align-items: center;
+  align-items: center !important;
 }
 
 .custom-checklist-modal:has(.activity-timer) .custom-checklist-actions > button {
@@ -165,10 +198,10 @@
   min-width: 0 !important;
 }
 
-.activity-timer-toggle.activity-timer-action {
+#toggleActivityTimerBtn.activity-timer-action {
   position: static !important;
   display: grid !important;
-  place-items: center;
+  place-items: center !important;
   width: 56px !important;
   min-width: 56px !important;
   height: 46px !important;
@@ -178,21 +211,28 @@
   border: 0 !important;
   border-radius: 16px !important;
   background: var(--main) !important;
+  color: transparent !important;
   opacity: 1 !important;
   visibility: visible !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
-.activity-timer-toggle.activity-timer-action::before {
+#toggleActivityTimerBtn.activity-timer-action > * {
+  display: none !important;
+}
+
+#toggleActivityTimerBtn.activity-timer-action::before {
   content: "";
-  display: block;
+  display: block !important;
   width: 24px;
   height: 24px;
-  background: #ffffff;
+  background: #ffffff !important;
   -webkit-mask: url("play.svg") center / contain no-repeat;
   mask: url("play.svg") center / contain no-repeat;
 }
 
-.activity-timer-toggle.activity-timer-action[data-state="running"]::before {
+#toggleActivityTimerBtn.activity-timer-action[data-state="running"]::before {
   -webkit-mask-image: url("pause.svg");
   mask-image: url("pause.svg");
 }
