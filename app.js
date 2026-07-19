@@ -1968,7 +1968,10 @@ function getGoalJourneyTitle(goal) {
 function hasCountableWorkoutProgress(item) {
   if (!item) return false;
   if (item.customType) return true;
-  if (Number.isFinite(item.completedCount)) return item.completedCount > 0;
+  // Legacy workouts did not store completedCount. Earlier sanitization turned
+  // that missing value into 0, so a zero cannot be treated as definitive when
+  // the historical entry still contains performed exercises.
+  if (Number.isFinite(item.completedCount) && item.completedCount > 0) return true;
   const exercises = Array.isArray(item.exercises) ? item.exercises : [];
   if (exercises.some(exercise => !exercise.isAddOn)) return true;
   const date = new Date(item.date);
