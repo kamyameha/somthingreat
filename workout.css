@@ -7,6 +7,12 @@
   box-shadow: none;
 }
 
+.exercise-help-content { display: grid; gap: 14px; max-height: min(68vh, 560px); overflow-y: auto; }
+.exercise-help-section h3 { margin: 0 0 6px; font-size: .82rem; letter-spacing: .02em; }
+.exercise-help-section p, .exercise-help-section ul { margin: 0; }
+.exercise-help-section ul { padding-left: 18px; }
+.exercise-help-section li + li { margin-top: 5px; }
+
 .today-empty-state {
   position: relative;
   padding: 20px;

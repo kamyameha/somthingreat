@@ -48,8 +48,9 @@ let onboardingStep = 1;
 let onboardingConfirmationReady = false;
 let accountHistoryDismissedDayKey = null;
 let recoveryFormEditing = false;
+let detailedSessionFlushInProgress = false;
 
-const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support', 'admin']);
+const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support']);
 
 function clearLegacyPasswordSession() {
   try {
@@ -216,11 +217,9 @@ async function ensureRecoverySession() {
 let passwordRecoveryMode = isPasswordRecoveryUrl() || hasRecoveryBootFlag();
 let accountHistoryMonth = new Date();
 let accountHistorySelectedDay = null;
-const ADMIN_EMAILS = ['grascam@gmail.com'];
 const accountModule = window.SomthingreatAccount;
-const adminModule = window.SomthingreatAdmin;
 const renderModule = window.SomthingreatRender;
-if (!accountModule || !adminModule || !renderModule) throw new Error('Somthingreat UI modules missing.');
+if (!accountModule || !renderModule) throw new Error('Somthingreat UI modules missing.');
 
 function setWelcomeVisible(visible) {
   const welcome = document.getElementById('welcomeScreen');
@@ -396,6 +395,46 @@ function publicState() {
   return stateStore.publicState(state);
 }
 
+function createSessionId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, character => {
+    const random = Math.floor(Math.random() * 16);
+    const value = character === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+function queueDetailedSession(record) {
+  if (!record?.sessionId) return;
+  if (!Array.isArray(state.pendingSessionRecords)) state.pendingSessionRecords = [];
+  const existingIndex = state.pendingSessionRecords.findIndex(item => item.sessionId === record.sessionId);
+  if (existingIndex >= 0) state.pendingSessionRecords[existingIndex] = record;
+  else state.pendingSessionRecords.push(record);
+}
+
+async function flushPendingSessionRecords() {
+  if (detailedSessionFlushInProgress || !supabaseClient || !currentUser) return;
+  if (!Array.isArray(state.pendingSessionRecords) || !state.pendingSessionRecords.length) return;
+  const profileId = currentProfileId || await ensureWorkoutProfile();
+  if (!profileId) return;
+  detailedSessionFlushInProgress = true;
+  try {
+    for (const pending of [...state.pendingSessionRecords]) {
+      const { error } = await supabaseClient.rpc('record_workout_session', {
+        p_payload: { ...pending, profileId }
+      });
+      if (error) {
+        console.warn('Detailed workout history will retry later:', error.message);
+        break;
+      }
+      state.pendingSessionRecords = state.pendingSessionRecords.filter(item => item.sessionId !== pending.sessionId);
+      saveLocalStateOnly();
+    }
+  } finally {
+    detailedSessionFlushInProgress = false;
+  }
+}
+
 function queueCloudSave() {
   if (!supabaseClient || !currentUser || !currentProfileId) return;
   clearTimeout(syncTimer);
@@ -403,7 +442,7 @@ function queueCloudSave() {
 }
 
 function normaliseEmail(email = '') {
-  return adminModule.normaliseEmail(email);
+  return String(email).trim().toLowerCase();
 }
 
 function setMetaContent(name, content) {
@@ -492,10 +531,6 @@ function closeAccountModal() {
   syncBottomNavVisibility();
   updateUpdateBanner();
 }
-function isAdminUser() {
-  return adminModule.isAdminUser(currentUser, ADMIN_EMAILS);
-}
-
 function authProviders() {
   if (!currentUser) return [];
   const identities = Array.isArray(currentUser.identities) ? currentUser.identities : [];
@@ -523,20 +558,10 @@ function getAccountDisplayName() {
   return currentUser.email || '';
 }
 
-function getCompletedWorkoutCount(savedState) {
-  return adminModule.getCompletedWorkoutCount(savedState);
-}
-
-function formatAdminGoal(savedState) {
-  return adminModule.formatAdminGoal(savedState, goalLabels);
-}
-
-function formatAdminActive(profile, savedState, now = new Date()) {
-  return adminModule.formatAdminActive(profile, savedState, now);
-}
-
 function escapeHTML(value = '') {
-  return adminModule.escapeHTML(value);
+  return String(value).replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[character]));
 }
 
 
@@ -613,7 +638,12 @@ async function loadCloudState() {
   const cloudState = data?.state || legacyState;
 
   if (cloudState) {
+    const localPending = Array.isArray(state.pendingSessionRecords) ? state.pendingSessionRecords : [];
     state = sanitizeState({ ...defaultState(), ...cloudState });
+    const pendingById = new Map([...(state.pendingSessionRecords || []), ...localPending]
+      .filter(item => item?.sessionId)
+      .map(item => [item.sessionId, item]));
+    state.pendingSessionRecords = [...pendingById.values()];
     saveLocalStateOnly();
     if (legacyState) await saveCloudState();
     renderAll();
@@ -625,6 +655,7 @@ async function loadCloudState() {
     renderAll();
     setSyncStatus('New account ready.');
   }
+  flushPendingSessionRecords();
 }
 
 function setSyncStatus(message) {
@@ -1176,11 +1207,6 @@ function generateWorkout() {
   renderGeneratedWorkout();
 }
 
-function previewPrescriptionType(exercise) {
-  const text = `${exercise?.prescription || ''} ${exercise?.basePrescription || ''}`.toLowerCase();
-  return /\b(?:s|sec|secs|second|seconds|min|mins|minute|minutes)\b/.test(text) ? 'time' : 'reps';
-}
-
 function previewSwapCandidates(exercise) {
   if (!exercise || exercise.isAddOn) return [];
   const tracks = getTracks();
@@ -1191,11 +1217,10 @@ function previewSwapCandidates(exercise) {
   const allowed = sourceTrack.filter(candidate => {
     if (!candidate || candidate.id === exercise.id || usedIds.has(candidate.id)) return false;
     if (recovery && !workoutModule.isExerciseAllowedForRecovery(candidate, recovery)) return false;
+    if (!workoutModule.isExerciseEligibleForGeneration(candidate, getProfile(), state, recovery)) return false;
     return true;
   });
-  const sameType = allowed.filter(candidate => previewPrescriptionType(candidate) === previewPrescriptionType(exercise));
-  const pool = sameType.length ? sameType : allowed;
-  return pool.sort((a, b) =>
+  return allowed.sort((a, b) =>
     Math.abs((a.difficulty || 1) - (exercise.difficulty || 1)) -
     Math.abs((b.difficulty || 1) - (exercise.difficulty || 1))
   );
@@ -1208,15 +1233,13 @@ function swapPreviewExercise(index) {
   if (!candidates.length) return;
   const previousIds = Array.isArray(current.previewSwapIds) ? current.previewSwapIds : [];
   const next = candidates.find(candidate => !previousIds.includes(candidate.id)) || candidates[0];
-  state.generated.exercises[index] = {
-    ...next,
-    trackKey: current.trackKey || next.trackKey,
-    progressionTrackKey: current.progressionTrackKey || current.trackKey || next.progressionTrackKey || next.trackKey,
-    prescription: current.prescription || next.prescription,
-    basePrescription: next.prescription,
-    setCount: current.setCount || next.setCount || 1,
-    previewSwapIds: [...previousIds, current.id].filter(Boolean)
-  };
+  state.generated.exercises[index] = workoutModule.createSwapReplacement(
+    { ...current, previewSwapIds: previousIds },
+    next,
+    state.generated.mode,
+    typeof getActiveRecovery === 'function' ? getActiveRecovery() : null,
+    { profile: getProfile(), state }
+  );
   saveState();
   renderGeneratedWorkout();
 }
@@ -1271,6 +1294,8 @@ function startWorkout() {
   }
   state.current = {
     ...state.generated,
+    sessionId: state.generated.sessionId || createSessionId(),
+    startedAt: state.generated.startedAt || new Date().toISOString(),
     includeExerciseTimer: Boolean(state.generated.includeExerciseTimer),
     includeRestTimer: Boolean(state.generated.includeRestTimer),
     restTimerSeconds: 60,
@@ -1343,6 +1368,7 @@ function slugForKey(value = '') {
 function exerciseSessionKey(exercise, index = 0) {
   if (!exercise) return '';
   if (exercise.sessionKey) return exercise.sessionKey;
+  if (exercise.workoutExerciseId) return exercise.workoutExerciseId;
   return `${exercise.trackKey || 'exercise'}-${index}-${slugForKey(exercise.name || exerciseDisplayName(exercise))}`;
 }
 
@@ -1370,6 +1396,7 @@ async function releaseWorkoutWakeLock() {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && (state.current || activeTimer)) {
     requestWorkoutWakeLock();
+    restoreActiveWorkoutTimer();
   }
 });
 
@@ -1472,6 +1499,7 @@ function renderExercises() {
     list.appendChild(card);
   });
   document.getElementById('completeBtn').classList.remove('hidden');
+  restoreActiveWorkoutTimer();
 }
 function showConfirmPanel({ title, message, actionLabel, onConfirm }) {
   const panel = document.getElementById('confirmPanel');
@@ -1521,17 +1549,19 @@ function showExerciseHelp(exerciseName) {
 
   lastFocusedElement = document.activeElement;
   document.getElementById('exerciseHelpTitle').textContent = displayName;
-  document.getElementById('exerciseHelpPurpose').textContent = help.purpose || '';
-  const cues = document.getElementById('exerciseHelpCues');
-  if (cues) {
-    cues.innerHTML = '';
-    (help.cues || []).forEach(cue => {
-      const item = document.createElement('li');
-      item.textContent = cue;
-      cues.appendChild(item);
-    });
+  const content = document.getElementById('exerciseHelpContent');
+  if (content) {
+    const sections = [
+      ['Purpose', [help.purpose]],
+      ['Starting position', [help.startingPosition]],
+      ['Movement', help.movement],
+      ['Success looks like', help.successCriteria],
+      ['Focus', help.focus],
+      ['Common mistakes', help.commonMistakes],
+      ['Safety', [help.safety]]
+    ].filter(([, values]) => Array.isArray(values) && values.some(Boolean));
+    content.innerHTML = sections.map(([heading, values]) => `<section class="exercise-help-section"><h3>${escapeHTML(heading)}</h3>${values.length > 1 ? `<ul>${values.filter(Boolean).map(value => `<li>${escapeHTML(value)}</li>`).join('')}</ul>` : `<p>${escapeHTML(values.find(Boolean) || '')}</p>`}</section>`).join('');
   }
-  document.getElementById('exerciseHelpSafety').textContent = help.safety ? `Safety: ${help.safety}` : '';
   panel.classList.remove('hidden');
   renderModule.focusFirstInteractive(panel);
 }
@@ -1552,30 +1582,20 @@ function formatTimerDuration(seconds) {
 }
 
 function getTimedExerciseSeconds(exercise) {
-  if (!exercise?.prescription) return null;
-  const text = `${exercise.prescription} ${exercise.basePrescription || ''}`.toLowerCase();
-  const eachMatch = text.match(/(\d+)\s*s\s+each/);
-  if (eachMatch) return Number(eachMatch[1]);
-
-  const secondsMatch = text.match(/×\s*(\d+)\s*s\b/);
-  if (secondsMatch) return Number(secondsMatch[1]);
-
-  const minutesMatch = text.match(/×\s*(\d+)\s*min\b/) || text.match(/^(\d+)\s*min\b/) || text.match(/\b(\d+)\s*min\b/);
-  if (minutesMatch) return Number(minutesMatch[1]) * 60;
-
-  return null;
+  return Number.isFinite(Number(exercise?.secondsPerSet)) ? Number(exercise.secondsPerSet) : null;
 }
 
 function markWorkoutSetDone(trackKey, setIndex, done = true) {
   if (!state.current || !trackKey || !Number.isFinite(Number(setIndex))) return;
   if (!state.current.sets) state.current.sets = {};
-  if (!state.current.sets[trackKey]) {
-    const exercise = findCurrentExercise(trackKey);
-    state.current.sets[trackKey] = Array.from({ length: exercise?.setCount || 1 }, () => false);
-  }
-  const index = Number(setIndex);
-  state.current.sets[trackKey][index] = Boolean(done);
   const exercise = findCurrentExercise(trackKey);
+  const index = Number(setIndex);
+  state.current.sets[trackKey] = workoutModule.updateSetCompletion(
+    state.current.sets[trackKey],
+    index,
+    exercise?.setCount || 1,
+    done
+  );
   if (exercise && isExerciseComplete(exercise)) {
     openNextIncompleteExercise(trackKey);
   } else {
@@ -1589,45 +1609,47 @@ function renderWorkoutTimer() {
   if (!activeTimer) return;
   const title = document.getElementById('timerTitle');
   const count = document.getElementById('timerCount');
+  const snapshot = workoutModule.countdownTimerSnapshot(activeTimer);
+  if (!snapshot) return;
 
   if (title) title.textContent = activeTimer.title || 'Timer';
   if (count) {
-    if (activeTimer.phase === 'prep') {
-      count.textContent = activeTimer.prepSeconds;
-    } else if (activeTimer.remainingSeconds <= 0) {
+    if (snapshot.phase === 'prep') {
+      count.textContent = snapshot.prepSeconds;
+    } else if (snapshot.remainingSeconds <= 0) {
       count.textContent = '0';
     } else {
-      count.textContent = String(activeTimer.remainingSeconds);
+      count.textContent = String(snapshot.remainingSeconds);
     }
   }
 }
 
+function finishWorkoutTimer() {
+  if (!activeTimer) return;
+  const finishedTimer = activeTimer;
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  if (state.current) {
+    state.current.activeTimer = null;
+    saveLocalStateOnly();
+  }
+  window.navigator?.vibrate?.(120);
+  window.SomthingreatTimerSound?.playCompletion?.();
+  if (finishedTimer.completeOnFinish && finishedTimer.trackKey) {
+    markWorkoutSetDone(finishedTimer.trackKey, finishedTimer.setIndex, true);
+    finishedTimer.pendingRestTimer = shouldStartRestTimerAfterSet(finishedTimer.trackKey);
+  }
+  activeTimer = finishedTimer;
+  renderWorkoutTimer();
+  if (timerAutoClose) clearTimeout(timerAutoClose);
+  timerAutoClose = window.setTimeout(() => closeWorkoutTimer(false), 2500);
+}
+
 function tickWorkoutTimer() {
   if (!activeTimer) return;
-  if (activeTimer.phase === 'prep') {
-    activeTimer.prepSeconds -= 1;
-    if (activeTimer.prepSeconds <= 0) {
-      activeTimer.phase = 'active';
-    }
-    renderWorkoutTimer();
-    return;
-  }
-
-  activeTimer.remainingSeconds -= 1;
-  if (activeTimer.remainingSeconds <= 0) {
-    activeTimer.remainingSeconds = 0;
-    window.navigator?.vibrate?.(120);
-    window.SomthingreatTimerSound?.playCompletion?.();
-    clearInterval(timerInterval);
-    timerInterval = null;
-    if (activeTimer.completeOnFinish && activeTimer.trackKey) {
-      const completedTrackKey = activeTimer.trackKey;
-      markWorkoutSetDone(completedTrackKey, activeTimer.setIndex, true);
-      activeTimer.pendingRestTimer = shouldStartRestTimerAfterSet(completedTrackKey);
-    }
-    if (timerAutoClose) clearTimeout(timerAutoClose);
-    timerAutoClose = window.setTimeout(() => closeWorkoutTimer(false), 2500);
-  }
+  const snapshot = workoutModule.countdownTimerSnapshot(activeTimer);
+  if (!snapshot) return closeWorkoutTimer(false);
+  if (snapshot.finished) return finishWorkoutTimer();
   renderWorkoutTimer();
 }
 
@@ -1642,13 +1664,12 @@ function showWorkoutTimer({ title, subtitle, seconds, prepSeconds = 0, trackKey 
   activeTimer = {
     title,
     subtitle,
-    remainingSeconds: seconds,
-    prepSeconds,
-    phase: prepSeconds ? 'prep' : 'active',
-    trackKey,
-    setIndex,
-    completeOnFinish
+    ...workoutModule.createCountdownTimer({ seconds, prepSeconds, trackKey, setIndex, completeOnFinish })
   };
+  if (state.current) {
+    state.current.activeTimer = { ...activeTimer };
+    saveLocalStateOnly();
+  }
   renderWorkoutTimer();
   panel.classList.remove('hidden');
   renderModule.focusFirstInteractive(panel);
@@ -1662,6 +1683,10 @@ function closeWorkoutTimer(restoreFocus = true) {
   timerInterval = null;
   timerAutoClose = null;
   activeTimer = null;
+  if (state.current?.activeTimer) {
+    state.current.activeTimer = null;
+    saveLocalStateOnly();
+  }
   document.getElementById('timerPanel')?.classList.add('hidden');
   if (restoreFocus && lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
     lastFocusedElement.focus();
@@ -1676,6 +1701,23 @@ function closeWorkoutTimer(restoreFocus = true) {
       });
     }, 0);
   }
+}
+
+function restoreActiveWorkoutTimer() {
+  if (activeTimer || !state.current?.activeTimer) return;
+  const restored = workoutModule.sanitizeCountdownTimer(state.current.activeTimer);
+  if (!restored) {
+    state.current.activeTimer = null;
+    saveLocalStateOnly();
+    return;
+  }
+  activeTimer = restored;
+  const snapshot = workoutModule.countdownTimerSnapshot(activeTimer);
+  if (snapshot?.finished) return finishWorkoutTimer();
+  const panel = document.getElementById('timerPanel');
+  renderWorkoutTimer();
+  panel?.classList.remove('hidden');
+  timerInterval = setInterval(tickWorkoutTimer, 1000);
 }
 
 function hasRemainingWorkoutSets() {
@@ -1702,10 +1744,10 @@ function isWorkoutFullyComplete() {
 
 function completeWorkout(skipMissingRatingConfirm = false) {
   if (!state.current) return;
-  const completedMainExercises = (state.current.exercises || []).filter(exercise => {
-    return !exercise.isAddOn && areExerciseSetsComplete(exercise);
+  const hasCompletedSet = (state.current.exercises || []).some(exercise => {
+    return !exercise.isAddOn && (state.current.sets?.[exerciseSessionKey(exercise)] || []).some(Boolean);
   });
-  if (!completedMainExercises.length) {
+  if (!hasCompletedSet) {
     showCompletionScreen({
       title: 'Workout not completed',
       message: 'If you complete this workout, as no exercise was marked as done, it will not count in your progress.',
@@ -1779,29 +1821,92 @@ function showCompletionScreen({ title, message, actionLabel = '', cancelLabel = 
 
 function completeWorkoutNow(showFullConfirmation = true) {
   if (!state.current) return;
-  const completedExercises = (state.current.exercises || []).filter((exercise, index) => {
-    return areExerciseSetsComplete(exercise) && (!exercise.isAddOn || state.current.sets?.[exerciseSessionKey(exercise, index)]?.some(Boolean));
+  const performedExercises = (state.current.exercises || []).filter((exercise, index) => {
+    const completedSets = state.current.sets?.[exerciseSessionKey(exercise, index)] || [];
+    return !exercise.isAddOn || completedSets.some(Boolean);
   });
-  const completedMainExercises = completedExercises.filter(exercise => !exercise.isAddOn);
-  if (!completedMainExercises.length) return;
-
-  completedExercises.forEach((exercise, index) => {
-    const rating = state.current.ratings?.[exerciseSessionKey(exercise, index)];
-    const progressionTrackKey = exercise.progressionTrackKey || exercise.trackKey;
-    if (rating && state.levels[progressionTrackKey]) applyRating(progressionTrackKey, rating);
+  const completedMainExercises = performedExercises.filter(exercise => !exercise.isAddOn && areExerciseSetsComplete(exercise));
+  const levelBeforeByTrack = {};
+  performedExercises.forEach(exercise => {
+    const key = exercise.progressionTrackKey || exercise.trackKey;
+    if (key && state.levels[key]) levelBeforeByTrack[key] = state.levels[key].level;
   });
-  state.history.push({
-    date: new Date().toISOString(),
+  const completedAt = new Date().toISOString();
+  const sessionId = state.current.sessionId || createSessionId();
+  const exerciseResults = performedExercises.map((ex, index) => {
+    const exerciseKey = exerciseSessionKey(ex, index);
+    const rating = state.current.ratings?.[exerciseKey] || null;
+    return workoutModule.exerciseResult(ex, state.current.sets?.[exerciseKey] || [], rating);
+  });
+  if (!workoutModule.shouldRecordWorkoutResults(exerciseResults)) return;
+  exerciseResults.forEach(result => {
+    const decision = workoutModule.applyExerciseResultToProgression(state.levels, result, getProfile());
+    result.progressionApplied = decision.applied;
+    result.progressionDecision = decision.reason;
+  });
+  const historyEntry = {
+    sessionId,
+    startedAt: state.current.startedAt || new Date().toISOString(),
+    date: completedAt,
     workout: state.current.workoutName,
     mode: state.current.mode,
+    energy: state.current.mode,
     completedCount: completedMainExercises.length,
-    exercises: completedExercises.map(ex => ({
-      name: ex.name,
-      prescription: ex.prescription,
-      trackKey: ex.trackKey,
-      progressionTrackKey: ex.progressionTrackKey || null,
-      isAddOn: Boolean(ex.isAddOn)
-    }))
+    exercises: exerciseResults
+  };
+  state.history.push(historyEntry);
+  const progressionEvents = exerciseResults.flatMap((result, position) => {
+    const key = result.progressionTrackKey;
+    const before = levelBeforeByTrack[key];
+    const after = state.levels[key]?.level;
+    if (!Number.isFinite(before) || !Number.isFinite(after) || before === after) return [];
+    return [{
+      position,
+      eventType: after > before ? 'level_advanced' : 'level_regressed',
+      progressionTrackKey: key,
+      exerciseId: result.exerciseId,
+      exerciseName: result.name,
+      levelBefore: before,
+      levelAfter: after
+    }];
+  });
+  queueDetailedSession({
+    sessionId,
+    sessionType: 'workout',
+    startedAt: historyEntry.startedAt,
+    completedAt,
+    status: completedMainExercises.length === (state.current.exercises || []).filter(exercise => !exercise.isAddOn).length ? 'completed' : 'partial',
+    energySelection: state.current.mode,
+    workoutMode: state.current.mode,
+    workoutName: state.current.workoutName,
+    plannedExerciseCount: (state.current.exercises || []).filter(exercise => !exercise.isAddOn).length,
+    completedExerciseCount: completedMainExercises.length,
+    durationSeconds: Math.max(0, Math.round((Date.parse(completedAt) - Date.parse(historyEntry.startedAt)) / 1000)),
+    catalogVersion: APP_VERSION,
+    stateSchemaVersion: stateStore.schemaVersion,
+    exercises: exerciseResults.map((result, position) => ({
+      position,
+      exerciseId: result.exerciseId,
+      exerciseName: result.name,
+      recommendedExerciseId: result.swappedFromExerciseId || result.exerciseId,
+      recommendedExerciseName: result.swappedFromExerciseName || result.name,
+      wasSwapped: Boolean(result.swappedFromExerciseId),
+      trackKey: result.trackKey,
+      progressionTrackKey: result.progressionTrackKey,
+      prescribedData: result.prescriptionData,
+      prescribedText: result.prescription,
+      plannedSets: result.targetSets,
+      completedSets: result.completedSets,
+      completedSetIndexes: result.completedSetIndexes,
+      completionStatus: result.completionStatus,
+      rating: result.rating,
+      progressionApplied: result.progressionApplied,
+      progressionDecision: result.progressionDecision,
+      levelBefore: levelBeforeByTrack[result.progressionTrackKey] ?? null,
+      levelAfter: state.levels[result.progressionTrackKey]?.level ?? null,
+      isAddOn: result.isAddOn
+    })),
+    progressionEvents
   });
   state.rotationIndex = (state.rotationIndex + 1) % getRotation().length;
   state.current = null;
@@ -1810,6 +1915,7 @@ function completeWorkoutNow(showFullConfirmation = true) {
   openExerciseTrackKey = null;
   releaseWorkoutWakeLock();
   saveState();
+  flushPendingSessionRecords();
   renderToday();
   renderProgress();
   renderActivity();
@@ -1911,6 +2017,18 @@ function renderProgress() {
   const progress = document.getElementById('pullupProgressBar');
   if (progress) progress.style.width = `${percent}%`;
   if (goal === 'general') renderGeneralGoalProgress();
+
+  const readinessCard = document.getElementById('muscleUpReadinessCard');
+  if (readinessCard) {
+    readinessCard.classList.toggle('hidden', goal !== 'muscleup');
+    if (goal === 'muscleup') {
+      const readiness = workoutModule.evaluateAdvancedSkillEligibility('full-muscle-up', { profile, state, recovery: getActiveRecovery() });
+      const status = document.getElementById('muscleUpReadinessStatus');
+      const checks = document.getElementById('muscleUpReadinessChecks');
+      if (status) status.textContent = readiness.state === 'ready' ? 'Ready for workouts' : readiness.explanation;
+      if (checks) checks.innerHTML = readiness.checks.map(check => `<li>${check.met ? '✓' : '○'} ${escapeHTML(check.label)}</li>`).join('');
+    }
+  }
 
   const levels = document.getElementById('levelsList');
   if (!levels) return;
@@ -2094,6 +2212,20 @@ function saveProfileFromOnboarding() {
   setPanelMessage('onboardingMessage', 'Building your plan...', 'info');
   state.profile = { goal, equipment, pushups, squats, deadHang, negativePullup, dip, createdAt: new Date().toISOString() };
   state.levels = initialLevelsFromProfile(state.profile, state.levels);
+  if (!state.onboardingBaseline) {
+    state.onboardingBaseline = {
+      version: 1,
+      completedAt: state.profile.createdAt,
+      goal,
+      equipment: [...equipment],
+      pushups,
+      squats,
+      deadHang,
+      negativePullup,
+      dip,
+      initialLevels: Object.fromEntries(Object.entries(state.levels).map(([key, value]) => [key, value.level || 0]))
+    };
+  }
   state.rotationIndex = 0;
   state.current = null;
   state.generated = null;
@@ -2449,7 +2581,6 @@ function renderAccountView(view, { panel = null, content = null } = {}) {
     populateAccountRecovery();
   }
   if (view === 'support') resetSupportForm();
-  if (view === 'admin') renderAdminDashboard();
   setPanelMessage('accountGoalMessage', '');
   setPanelMessage('accountEquipmentMessage', '');
   setPanelMessage('accountRecoveryMessage', '');
@@ -2461,9 +2592,7 @@ function renderAccountMainSummary() {
   const goalSummary = document.getElementById('accountGoalSummary');
   const equipmentSummary = document.getElementById('accountEquipmentSummary');
   const recoverySummary = document.getElementById('accountRecoverySummary');
-  const adminSection = document.getElementById('adminAccountSection');
   const passwordSection = document.getElementById('passwordAccountSection');
-  if (adminSection) adminSection.classList.toggle('hidden', !isAdminUser());
   if (passwordSection) passwordSection.classList.toggle('hidden', !canChangePassword());
   if (goalSummary) goalSummary.textContent = goalLabels[profile.goal] || 'Not set';
   if (equipmentSummary) {
@@ -2766,88 +2895,6 @@ function renderActivity() {
       `;
     }).join('')
     : '';
-}
-
-async function renderAdminDashboard() {
-  const summary = document.getElementById('adminDashboardSummary');
-  const message = document.getElementById('adminDashboardMessage');
-  const list = document.getElementById('adminDashboardList');
-  const toggle = document.getElementById('toggleAdminUsersBtn');
-  const adminView = document.getElementById('accountAdminView');
-  if (!summary || !message || !list) return;
-
-  if (!isAdminUser()) {
-    summary.textContent = 'Admin access only.';
-    message.textContent = 'Admin access only.';
-    list.innerHTML = '';
-    return;
-  }
-
-  if (!supabaseClient) {
-    summary.textContent = 'Supabase is not configured.';
-    message.textContent = 'Supabase is not configured.';
-    list.innerHTML = '';
-    return;
-  }
-
-  summary.textContent = 'Loading dashboard...';
-  message.textContent = 'Loading users...';
-  list.innerHTML = '';
-  if (adminView) adminView.classList.remove('admin-users-open');
-  if (toggle) toggle.classList.remove('is-open');
-  if (toggle) toggle.setAttribute('aria-expanded', 'false');
-  list.classList.add('hidden');
-
-  const [{ data: profiles, error: profileError }, { data: savedStates, error: stateError }] = await Promise.all([
-    supabaseClient
-      .from('workout_profiles')
-      .select('id,email,current_auth_user_id,deleted_at,updated_at')
-      .order('updated_at', { ascending: false }),
-    supabaseClient
-      .from('workout_states_v2')
-      .select('profile_id,state,updated_at')
-  ]);
-
-  if (profileError || stateError) {
-    summary.textContent = 'Could not load dashboard.';
-    message.textContent = 'Could not load admin dashboard. Check Supabase admin policies.';
-    return;
-  }
-
-  const statesByProfile = new Map((savedStates || []).map(item => [item.profile_id, item]));
-  const now = new Date();
-  const rows = (profiles || []).filter(profile => !profile.deleted_at).map(profile => {
-    const stateRow = statesByProfile.get(profile.id);
-    const savedState = stateRow?.state || null;
-    return {
-      email: profile.email || 'Unknown',
-      active: formatAdminActive(profile, savedState, now),
-      goal: formatAdminGoal(savedState),
-      completed: getCompletedWorkoutCount(savedState),
-      updatedAt: stateRow?.updated_at || profile.updated_at
-    };
-  });
-
-  const activeCount = rows.filter(row => row.active === 'Y').length;
-  const goalCounts = rows.reduce((counts, row) => {
-    counts[row.goal] = (counts[row.goal] || 0) + 1;
-    return counts;
-  }, {});
-  const topGoal = Object.entries(goalCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Not set';
-  summary.innerHTML = [
-    `Total users: ${rows.length}`,
-    `Active users: ${activeCount}`,
-    `Most selected focus: ${escapeHTML(topGoal)}`
-  ].join('<br>');
-  message.textContent = '';
-  list.innerHTML = rows.length
-    ? rows.map(row => `
-      <div class="admin-user-row">
-        <span>${escapeHTML(row.email)}</span>
-        <strong>${row.completed}</strong>
-      </div>
-    `).join('')
-    : '<p class="muted">No active profiles found yet.</p>';
 }
 
 async function initCloudSync() {
@@ -3268,15 +3315,6 @@ document.addEventListener('click', event => {
     accountHistoryDismissedDayKey = null;
     renderActivity();
   }
-  if (event.target.id === 'toggleAdminUsersBtn') {
-    const list = document.getElementById('adminDashboardList');
-    const isOpen = !list?.classList.contains('hidden');
-    const adminView = document.getElementById('accountAdminView');
-    list?.classList.toggle('hidden', isOpen);
-    event.target.classList.toggle('is-open', !isOpen);
-    event.target.setAttribute('aria-expanded', String(!isOpen));
-    adminView?.classList.toggle('admin-users-open', !isOpen);
-  }
   const historyDayButton = event.target.closest('[data-history-day]');
   if (historyDayButton && !historyDayButton.disabled) {
     const selectedDay = Number(historyDayButton.dataset.historyDay);
@@ -3290,7 +3328,6 @@ document.addEventListener('click', event => {
     }
     renderActivity();
   }
-  if (event.target.id === 'refreshAdminDashboardBtn') renderAdminDashboard();
   const googleAuthButton = event.target.closest('[data-google-auth]');
   if (event.target.id === 'showLoginBtn') setAuthMode('login');
   if (event.target.id === 'backToAuthWelcomeFromLogin') setAuthMode('welcome');

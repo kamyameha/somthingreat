@@ -18,7 +18,6 @@ const APP_SHELL = [
   versionedAsset('./workouts.js'),
   versionedAsset('./state.js'),
   versionedAsset('./account.js'),
-  versionedAsset('./admin.js'),
   versionedAsset('./render.js'),
   versionedAsset('./app.js'),
   './version.json',

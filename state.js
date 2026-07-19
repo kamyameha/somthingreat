@@ -2,115 +2,12 @@
   const STORAGE_KEY = 'camille-calisthenics-v4';
   const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
   const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
-  const STATE_SCHEMA_VERSION = 1;
+  const STATE_SCHEMA_VERSION = 2;
 
   function applyWorkoutCatalogMigrations(workoutModule) {
     if (!workoutModule || workoutModule.catalogMigrationsApplied) return;
-
-    const removedExerciseIds = new Set([
-      'standing-towel-row-isometric',
-      'seated-towel-row-isometric',
-      'high-angle-table-row',
-      'bent-knee-inverted-row',
-      'straight-leg-inverted-row',
-      'feet-elevated-inverted-row'
-    ]);
-
-    const removeFromArray = items => {
-      if (!Array.isArray(items)) return;
-      for (let index = items.length - 1; index >= 0; index -= 1) {
-        if (removedExerciseIds.has(items[index]?.id)) items.splice(index, 1);
-      }
-    };
-
-    removeFromArray(workoutModule.exerciseCatalog);
-    Object.values(workoutModule.movementTracks || {}).forEach(removeFromArray);
-    Object.values(workoutModule.baseTracks || {}).forEach(removeFromArray);
-
-    const familyCues = {
-      'horizontal-push': 'Keep your body in one straight line, lower with control, and finish each repetition by pressing the surface away without shrugging.',
-      'vertical-push': 'Keep your ribs controlled, press through the full arm, and avoid letting your head or lower back move ahead of the rest of your body.',
-      'dip-strength': 'Keep the shoulders down, move only through a comfortable depth, and press evenly through both arms.',
-      'horizontal-pull': 'Start by drawing the shoulder blades back, pull the chest toward the support, and lower until the arms are long without losing body tension.',
-      'vertical-pull': 'Begin from active shoulders, lead the movement with the elbows, and lower under control instead of dropping into the bottom position.',
-      'scapular-pull': 'Keep the elbows straight and create the movement only by drawing the shoulder blades down and together.',
-      squat: 'Keep the whole foot planted, let the knees track in the same direction as the toes, and stand by pushing the floor away.',
-      unilateral: 'Keep most of your weight through the working foot, control the knee position, and use support before balance changes your technique.',
-      'posterior-chain': 'Brace gently before moving, drive through the heels, and finish by squeezing the glutes rather than arching the lower back.',
-      calves: 'Rise straight up through the big-toe side of the foot, pause briefly at the top, and lower without bouncing.',
-      'anti-extension': 'Keep the ribs drawn toward the pelvis, breathe without losing abdominal tension, and stop before the lower back changes position.',
-      compression: 'Stay tall through the spine, press the hands down, and lift from the lower abdomen rather than swinging the legs.',
-      'lateral-core': 'Keep the shoulder stacked, hips lifted, and head, ribs, and pelvis aligned while breathing normally.',
-      lsit: 'Press strongly through the hands, keep the shoulders away from the ears, and prioritise a clean short hold over a longer collapsed one.',
-      handstand: 'Push tall through the shoulders, keep the ribs controlled, and use the wall or floor exit before balance is lost.',
-      crow: 'Spread the fingers, shift weight gradually, and keep looking slightly forward instead of directly beneath you.',
-      'muscle-up': 'Keep the pull powerful and close to the body, then control the transition rather than forcing it with the wrists or shoulders.',
-      rope: 'Stay light on the feet, keep the elbows near the ribs, and turn the rope mainly from the wrists.'
-    };
-
-    const instructionOverrides = {
-      'paused-glute-bridge': {
-        purpose: 'Builds glute and hamstring strength while teaching you to hold full hip extension without using the lower back.',
-        setup: 'Lie on your back with knees bent, feet flat and hip-width apart, and heels close enough that your fingertips can nearly reach them. Keep your ribs relaxed and arms by your sides.',
-        execution: 'Press evenly through both heels and squeeze your glutes to lift the hips until your shoulders, hips, and knees form a straight line. Hold the top position for two full seconds without arching your back, then lower slowly until the hips lightly touch the floor.',
-        safety: 'You should feel the pause mainly in your glutes. Reduce the height if you feel pressure in the lower back or hamstring cramping. Stop if the movement causes pain. Persistent or significant pain should be assessed by a healthcare professional.'
-      },
-      plank: {
-        purpose: 'Builds whole-body core tension and teaches you to resist lower-back extension.',
-        setup: 'Place your hands directly beneath your shoulders, spread your fingers, and step both feet back until your body forms a straight line from head to heels.',
-        execution: 'Push the floor away, gently tuck your ribs toward your pelvis, squeeze your glutes, and keep your head in line with your spine. Hold while breathing slowly without letting the hips sag or rise.',
-        safety: 'Use a forearm plank if your wrists are uncomfortable. End the hold as soon as you cannot keep the lower back neutral. Stop if the movement causes pain. Persistent or significant pain should be assessed by a healthcare professional.'
-      },
-      'bodyweight-squat': {
-        purpose: 'Builds basic leg strength and control through the hips, knees, and ankles.',
-        setup: 'Stand with feet around shoulder-width apart and toes turned slightly outward. Keep the whole foot in contact with the floor and hold the arms forward if it helps your balance.',
-        execution: 'Sit the hips down between the heels while allowing the knees to travel in the same direction as the toes. Descend only as far as you can keep the heels down and torso controlled, then push through the whole foot to stand tall.',
-        safety: 'Use a smaller depth or a stable support if balance or knee comfort changes your form. Stop if the movement causes pain. Persistent or significant pain should be assessed by a healthcare professional.'
-      }
-    };
-
-    const singleTarget = item => {
-      const data = item?.prescriptionData;
-      if (!data || !data.repsMin || !data.repsMax) return;
-      const target = Math.max(1, Math.round((Number(data.repsMin) + Number(data.repsMax)) / 2));
-      item.prescriptionData = { ...data, reps: target };
-      delete item.prescriptionData.repsMin;
-      delete item.prescriptionData.repsMax;
-      item.prescription = `${data.sets || 1} × ${target}${data.perSide ? '/side' : ''}`;
-    };
-
-    workoutModule.exerciseCatalog.forEach(item => {
-      singleTarget(item);
-      const override = instructionOverrides[item.id];
-      if (override) {
-        item.instructions = { ...item.instructions, ...override };
-        return;
-      }
-      if (!item.instructions) return;
-      const familyCue = familyCues[item.movementFamily];
-      if (familyCue && !item.instructions.execution.includes(familyCue)) {
-        item.instructions.execution = `${item.instructions.execution} ${familyCue}`;
-      }
-      if (item.instructions.setup && item.instructions.setup.length < 55) {
-        item.instructions.setup = `${item.instructions.setup} Make sure the position is stable and that you can complete the full movement without rushing.`;
-      }
-    });
-
-    const originalSanitizeWorkout = workoutModule.sanitizeWorkout;
-    workoutModule.sanitizeWorkout = workout => {
-      const sanitized = originalSanitizeWorkout(workout);
-      if (!sanitized) return null;
-      const exercises = (sanitized.exercises || []).filter(exercise => !removedExerciseIds.has(exercise?.id));
-      exercises.forEach(exercise => {
-        const catalogMatch = workoutModule.exerciseCatalog.find(item => item.id === exercise.id || item.name === exercise.name);
-        if (!catalogMatch) return;
-        exercise.instructions = catalogMatch.instructions;
-        exercise.prescriptionData = catalogMatch.prescriptionData;
-        exercise.prescription = catalogMatch.prescription;
-      });
-      return exercises.length ? { ...sanitized, exercises } : null;
-    };
-
+    // Exercise instructions are authored in workouts.js. Keeping this migration
+    // marker preserves compatibility without silently rewriting catalog content.
     workoutModule.catalogMigrationsApplied = true;
   }
 
@@ -193,22 +90,60 @@
         .filter(item => item && typeof item === 'object' && !Number.isNaN(new Date(item.date).getTime()))
         .map(item => ({
           date: new Date(item.date).toISOString(),
+          startedAt: item.startedAt && !Number.isNaN(new Date(item.startedAt).getTime()) ? new Date(item.startedAt).toISOString() : null,
           workout: typeof item.workout === 'string' ? item.workout : 'Workout',
           mode: typeof item.mode === 'string' ? item.mode : 'normal',
           type: item.type === 'custom' ? 'custom' : 'workout',
           customType: ['rounds', 'minutes'].includes(item.customType) ? item.customType : null,
           target: Number.isFinite(Number(item.target)) ? Math.max(1, Math.round(Number(item.target))) : null,
+          completedCount: Number.isFinite(Number(item.completedCount)) ? Math.max(0, Math.round(Number(item.completedCount))) : null,
+          energy: ['great', 'normal', 'tired', 'exhausted'].includes(item.energy) ? item.energy : null,
+          sessionId: typeof item.sessionId === 'string' ? item.sessionId : '',
           exercises: Array.isArray(item.exercises)
             ? item.exercises
                 .filter(exercise => exercise && typeof exercise === 'object' && exercise.name)
                 .map(exercise => ({
+                  workoutExerciseId: typeof exercise.workoutExerciseId === 'string' ? exercise.workoutExerciseId : '',
+                  exerciseId: typeof exercise.exerciseId === 'string' ? exercise.exerciseId : (typeof exercise.id === 'string' ? exercise.id : ''),
                   name: String(exercise.name),
                   prescription: typeof exercise.prescription === 'string' ? exercise.prescription : '',
+                  prescriptionData: workoutModule.normalizePrescriptionData(
+                    exercise.prescriptionData,
+                    exercise.prescription,
+                    exercise.targetSets || exercise.setCount
+                  ),
+                  targetSets: exercise.targetSets !== null && exercise.targetSets !== undefined && Number.isInteger(Number(exercise.targetSets))
+                    ? Math.max(1, Number(exercise.targetSets))
+                    : null,
+                  completedSets: exercise.completedSets !== null && exercise.completedSets !== undefined && Number.isInteger(Number(exercise.completedSets))
+                    ? Math.max(0, Number(exercise.completedSets))
+                    : null,
+                  completedSetIndexes: Array.isArray(exercise.completedSetIndexes)
+                    ? exercise.completedSetIndexes.filter(value => Number.isInteger(Number(value))).map(Number)
+                    : [],
+                  completionStatus: ['completed', 'partial', 'skipped', 'failed'].includes(exercise.completionStatus)
+                    ? exercise.completionStatus
+                    : 'completed',
+                  rating: ['easy', 'good', 'hard', 'failed'].includes(exercise.rating) ? exercise.rating : null,
+                  progressionApplied: Boolean(exercise.progressionApplied),
+                  progressionDecision: typeof exercise.progressionDecision === 'string' ? exercise.progressionDecision : null,
                   trackKey: typeof exercise.trackKey === 'string' ? exercise.trackKey : '',
+                  progressionTrackKey: typeof exercise.progressionTrackKey === 'string' ? exercise.progressionTrackKey : '',
+                  progressionLevel: Number.isFinite(Number(exercise.progressionLevel)) ? Number(exercise.progressionLevel) : null,
+                  swappedFromExerciseId: typeof exercise.swappedFromExerciseId === 'string' ? exercise.swappedFromExerciseId : null,
+                  swappedFromExerciseName: typeof exercise.swappedFromExerciseName === 'string' ? exercise.swappedFromExerciseName : null,
                   isAddOn: Boolean(exercise.isAddOn)
                 }))
             : []
         }));
+    }
+
+    function sanitizePendingSessionRecords(records) {
+      if (!Array.isArray(records)) return [];
+      return records
+        .filter(record => record && typeof record === 'object' && typeof record.sessionId === 'string')
+        .slice(-100)
+        .map(record => JSON.parse(JSON.stringify(record)));
     }
 
     function sanitizeCustomChecklist(checklist) {
@@ -274,12 +209,14 @@
         generated: null,
         customChecklist: null,
         profile: null,
+        onboardingBaseline: null,
         includeWarmup: false,
         includeStretch: false,
         includeExerciseTimer: false,
         includeRestTimer: false,
         restTimerSeconds: 60,
         recovery: null,
+        pendingSessionRecords: [],
         todayEmptyStateDismissed: false
       };
     }
@@ -294,6 +231,9 @@
       nextState = migrateState(nextState);
 
       nextState.profile = sanitizeProfile(nextState.profile);
+      nextState.onboardingBaseline = nextState.onboardingBaseline && typeof nextState.onboardingBaseline === 'object'
+        ? JSON.parse(JSON.stringify(nextState.onboardingBaseline))
+        : null;
       nextState.levels = sanitizeLevels(nextState.levels, nextState.profile);
       nextState.history = sanitizeHistory(nextState.history);
       nextState.rotationIndex = Number.isFinite(Number(nextState.rotationIndex)) ? Math.max(0, Math.round(Number(nextState.rotationIndex))) : 0;
@@ -307,6 +247,7 @@
       nextState.includeRestTimer = Boolean(nextState.includeRestTimer);
       nextState.restTimerSeconds = 60;
       nextState.recovery = sanitizeRecovery(nextState.recovery);
+      nextState.pendingSessionRecords = sanitizePendingSessionRecords(nextState.pendingSessionRecords);
       nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
       nextState.schemaVersion = STATE_SCHEMA_VERSION;
 
@@ -357,12 +298,14 @@
         generated: state.generated,
         customChecklist: state.customChecklist,
         profile: state.profile,
+        onboardingBaseline: state.onboardingBaseline,
         includeWarmup: state.includeWarmup,
         includeStretch: state.includeStretch,
         includeExerciseTimer: state.includeExerciseTimer,
         includeRestTimer: state.includeRestTimer,
         restTimerSeconds: state.restTimerSeconds,
         recovery: state.recovery,
+        pendingSessionRecords: state.pendingSessionRecords,
         todayEmptyStateDismissed: state.todayEmptyStateDismissed
       };
     }

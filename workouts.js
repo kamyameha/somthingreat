@@ -175,12 +175,11 @@
   }
 
   function prescriptionToString(prescription) {
-    if (typeof prescription === 'string') return prescription;
     if (!prescription || typeof prescription !== 'object') return '';
     const sets = prescription.sets || 1;
     if (prescription.seconds) return `${sets} × ${prescription.seconds}s`;
     if (prescription.minutes) return `${prescription.minutes} min`;
-    if (prescription.attempts) return `${prescription.attempts} attempts${prescription.perSide ? '/side' : ''}`;
+    if (prescription.attempts) return `${sets} × ${prescription.attempts} attempt${prescription.attempts === 1 ? '' : 's'}${prescription.perSide ? '/side' : ''}`;
     if (prescription.repsMin && prescription.repsMax) {
       return `${sets} × ${prescription.repsMin}-${prescription.repsMax}${prescription.perSide ? '/side' : ''}`;
     }
@@ -188,7 +187,222 @@
     return '';
   }
 
+  function positiveInteger(value, fallback = null) {
+    const number = Number(value);
+    return Number.isInteger(number) && number > 0 ? number : fallback;
+  }
+
+  // Display strings are an output. This parser exists only to migrate workouts
+  // saved by releases that did not persist structured prescription data.
+  function legacyPrescriptionData(label = '', fallbackSets = null) {
+    const text = String(label).trim();
+    const sets = positiveInteger(fallbackSets, positiveInteger(text.match(/^(\d+)\s*[×x]/)?.[1], 1));
+    const seconds = positiveInteger(text.match(/[×x]\s*(\d+)\s*s\b/i)?.[1]);
+    if (seconds) return { sets, seconds };
+    const minutes = positiveInteger(text.match(/^(\d+)\s*min\b/i)?.[1]);
+    if (minutes) return { sets: 1, minutes };
+    const attempts = positiveInteger(text.match(/[×x]\s*(\d+)\s*attempt/i)?.[1] || text.match(/^(\d+)\s*attempt/i)?.[1]);
+    if (attempts) return { sets, attempts, perSide: /\/side/i.test(text) };
+    const range = text.match(/[×x]\s*(\d+)\s*-\s*(\d+)(\/side)?/i);
+    if (range) return { sets, repsMin: positiveInteger(range[1]), repsMax: positiveInteger(range[2]), perSide: Boolean(range[3]) };
+    const reps = positiveInteger(text.match(/[×x]\s*(\d+)(\/side)?/i)?.[1]);
+    if (reps) return { sets, reps, perSide: /\/side/i.test(text) };
+    return null;
+  }
+
+  function normalizePrescriptionData(value, legacyLabel = '', fallbackSets = null) {
+    const source = value && typeof value === 'object'
+      ? value
+      : legacyPrescriptionData(legacyLabel, fallbackSets);
+    if (!source) return null;
+    const sets = positiveInteger(source.sets, source.minutes ? 1 : positiveInteger(fallbackSets, 1));
+    const normalized = { sets, perSide: Boolean(source.perSide) };
+    if (positiveInteger(source.seconds)) normalized.seconds = positiveInteger(source.seconds);
+    else if (positiveInteger(source.minutes)) normalized.minutes = positiveInteger(source.minutes);
+    else if (positiveInteger(source.attempts)) normalized.attempts = positiveInteger(source.attempts);
+    else if (positiveInteger(source.repsMin) && positiveInteger(source.repsMax)) {
+      normalized.repsMin = positiveInteger(source.repsMin);
+      normalized.repsMax = Math.max(normalized.repsMin, positiveInteger(source.repsMax));
+    } else if (positiveInteger(source.reps)) normalized.reps = positiveInteger(source.reps);
+    else return null;
+    return normalized;
+  }
+
+  function prescriptionFields(data) {
+    const prescriptionData = normalizePrescriptionData(data);
+    if (!prescriptionData) return null;
+    const prescriptionType = prescriptionData.seconds || prescriptionData.minutes
+      ? 'time'
+      : prescriptionData.attempts
+        ? 'attempts'
+        : 'reps';
+    return {
+      prescriptionData,
+      prescriptionType,
+      setCount: prescriptionData.sets,
+      repsPerSet: prescriptionData.reps || null,
+      repsMin: prescriptionData.repsMin || null,
+      repsMax: prescriptionData.repsMax || null,
+      attemptsPerSet: prescriptionData.attempts || null,
+      secondsPerSet: prescriptionData.seconds || (prescriptionData.minutes ? prescriptionData.minutes * 60 : null),
+      perSide: Boolean(prescriptionData.perSide),
+      prescription: prescriptionToString(prescriptionData)
+    };
+  }
+
+  const successCriteriaById = Object.freeze({
+    'wall-push-up': ["Lower chest toward the wall, keep ribs tucked, then press the wall away."],
+    'high-incline-push-up': ["Hold a straight line from head to heels, lower under control, and press back up."],
+    'medium-incline-push-up': ["Lower the chest to the surface while keeping elbows controlled, then press up."],
+    'low-incline-push-up': ["Lower slowly with a straight body line and press up without letting hips drop."],
+    'eccentric-push-up': ["Lower for three to five seconds, set knees down, then reset to the top."],
+    'full-push-up-singles': ["Complete one clean rep, rest, and repeat for quality."],
+    'full-push-up': ["Lower under control and press the floor away as one piece."],
+    'tempo-push-up': ["Lower for three seconds, press smoothly, and keep the body quiet."],
+    'pause-push-up': ["Pause briefly near the bottom, stay tight, then press back up."],
+    'close-grip-push-up': ["Keep elbows near the body, lower with control, and press up strongly."],
+    'decline-push-up': ["Keep a straight line, lower calmly, and press up without piking hips."],
+    'close-grip-wall-push-up': ["Lower with elbows close to your sides and press back to straight arms."],
+    'close-grip-incline-push-up': ["Keep elbows close, lower under control, and press up tall."],
+    'close-grip-push-up-dip-prep': ["Keep elbows close to your sides and press the floor away strongly."],
+    'top-support-hold': ["Push tall through the bars, keep shoulders down, and hold a quiet position.","The required position or movement continues until the timer reaches zero."],
+    'scapular-support-movement': ["Keep elbows straight, let shoulders rise slightly, then press tall again."],
+    'feet-assisted-dip': ["Lower a small controlled range, use legs only as much as needed, then press up."],
+    'negative-dip': ["Lower slowly, then use feet or a step to return to the top."],
+    'partial-dip': ["Use a controlled partial range and press back to straight arms."],
+    'full-dip-singles': ["Perform one clean dip, rest, and repeat for quality."],
+    'full-dip': ["Lower under control, keep shoulders down, and press back to the top."],
+    'tempo-dip': ["Lower for three seconds and press up smoothly without bouncing."],
+    'standing-towel-row-isometric': ["Lean back slightly and pull the towel as if rowing while the body stays still.","The required position or movement continues until the timer reaches zero."],
+    'seated-towel-row-isometric': ["Pull elbows back and hold shoulder blades gently together.","The required position or movement continues until the timer reaches zero."],
+    'high-angle-table-row': ["Keep knees bent, pull chest toward the edge, and lower slowly."],
+    'bent-knee-inverted-row': ["Pull chest up, keep body from shoulders to knees straight, and lower with control."],
+    'straight-leg-inverted-row': ["Keep the body long, pull chest toward the anchor, and lower slowly."],
+    'feet-elevated-inverted-row': ["Pull with a quiet body and pause briefly near the top."],
+    'active-hang-preparation': ["Gently pull shoulders down away from ears and hold a quiet active hang.","The required position or movement continues until the timer reaches zero."],
+    'scapular-pull-up': ["Without bending elbows, pull shoulders down, rise slightly, then relax with control."],
+    'assisted-pull-up': ["Pull chest toward the bar and use only enough help to move smoothly."],
+    'flexed-arm-hang': ["Hold chin near the bar with shoulders active, then step down safely.","The required position or movement continues until the timer reaches zero."],
+    'negative-pull-up': ["Lower as slowly as you can while keeping shoulders active."],
+    'partial-pull-up': ["Pull through the range you control, pause briefly, and lower calmly."],
+    'strict-pull-up-singles': ["Perform one strict pull-up, rest fully, and repeat."],
+    'strict-pull-up': ["Pull chin over the bar, keep body quiet, and lower with control."],
+    'chest-to-bar-pull-up': ["Pull higher than a normal pull-up, aiming chest toward the bar."],
+    'high-pull-up': ["Pull explosively but under control, trying to bring the bar lower on the chest."],
+    'supported-chair-squat': ["Sit back to touch the chair, then stand by pressing through the feet."],
+    'chair-squat': ["Tap the chair with control and stand without rocking."],
+    'bodyweight-squat': ["Sit hips down and back, keep knees tracking with toes, and stand tall."],
+    'tempo-squat': ["Lower for three seconds, stand smoothly, and keep balance centered."],
+    'pause-squat': ["Pause briefly at a comfortable bottom position, then stand with control."],
+    'narrow-squat': ["Squat with control while knees continue to track with toes."],
+    'assisted-split-squat': ["Lower straight down in a comfortable range and stand through the front foot.","The prescribed work is completed separately on each side."],
+    'split-squat': ["Lower vertically, keep front foot planted, and drive up with control.","The prescribed work is completed separately on each side."],
+    'bulgarian-split-squat': ["Lower in control and stand through the front leg.","The prescribed work is completed separately on each side."],
+    'assisted-shrimp-squat': ["Bend the standing knee, lightly use the support, and return with control.","The prescribed work is completed separately on each side."],
+    'shrimp-squat': ["Lower in a small controlled range and stand without bouncing.","The prescribed work is completed separately on each side."],
+    'glute-bridge': ["Press through heels, lift hips by squeezing glutes, then lower slowly."],
+    'paused-glute-bridge': ["Pause for two seconds at the top before lowering."],
+    'single-leg-assisted-glute-bridge': ["Lift hips evenly, pause briefly, and lower with control.","The prescribed work is completed separately on each side."],
+    'single-leg-glute-bridge': ["Drive through the planted foot and lift hips without twisting.","The prescribed work is completed separately on each side."],
+    'hip-hinge-drill': ["Push hips back, keep spine neutral, then stand by squeezing glutes."],
+    'bodyweight-good-morning': ["Hinge hips back, keep a long spine, and return to tall."],
+    'single-leg-romanian-deadlift': ["Hinge forward as the back leg reaches behind, then stand tall with control.","The prescribed work is completed separately on each side."],
+    'two-leg-calf-raise': ["Rise onto the balls of both feet and lower slowly."],
+    'paused-calf-raise': ["Rise up, pause briefly at the top, and lower under control."],
+    'single-leg-assisted-calf-raise': ["Rise on one foot, use the wall only for balance, and lower slowly.","The prescribed work is completed separately on each side."],
+    'single-leg-calf-raise': ["Rise tall on the ball of the foot and lower slowly.","The prescribed work is completed separately on each side."],
+    'elevated-single-leg-calf-raise': ["Lower heel slightly below the step, rise tall, and control the range.","The prescribed work is completed separately on each side."],
+    'forearm-plank': ["Make a straight line from head to heels and breathe steadily.","The required position or movement continues until the timer reaches zero."],
+    'plank': ["Push the floor away, squeeze glutes lightly, and breathe.","The required position or movement continues until the timer reaches zero."],
+    'hollow-hold': ["Lift shoulders and legs only as far as you can keep the back connected.","The required position or movement continues until the timer reaches zero."],
+    'dead-bug': ["Slowly reach opposite arm and leg away, then return without arching.","The prescribed work is completed separately on each side."],
+    'side-plank': ["Lift hips and hold a straight line while breathing.","The required position or movement continues until the timer reaches zero."],
+    'reverse-crunch': ["Curl hips slightly off the floor using abs, then lower slowly."],
+    'seated-compression-lift': ["Press hands down and lift one or both heels briefly without leaning back."],
+    'bent-knee-support-hold': ["Press down, lift hips as able, and keep shoulders away from ears.","The required position or movement continues until the timer reaches zero."],
+    'foot-assisted-support-hold': ["Press tall through arms and use feet only as much as needed.","The required position or movement continues until the timer reaches zero."],
+    'tuck-support-hold': ["Lift feet if possible and keep knees close to chest.","The required position or movement continues until the timer reaches zero."],
+    'one-leg-extended-tuck-hold': ["Extend one leg slightly while keeping the other tucked, then switch.","The required position or movement continues until the timer reaches zero."],
+    'alternating-one-leg-lsit': ["Alternate which leg is straight while keeping support strong.","The required position or movement continues until the timer reaches zero."],
+    'full-tuck-lsit': ["Hold knees tucked with hips lifted and shoulders pressed down.","The required position or movement continues until the timer reaches zero."],
+    'full-lsit-attempts': ["Attempt a full L shape briefly, then reset.","The attempt ends with a controlled reset or the stated safe exit."],
+    'full-lsit-hold': ["Extend both legs, press shoulders down, and hold the L shape.","The required position or movement continues until the timer reaches zero."],
+    'longer-lsit-hold': ["Hold a clean L shape for slightly longer time.","The required position or movement continues until the timer reaches zero."],
+    'wrist-preparation': ["Slowly shift your shoulders forward until you feel mild pressure through the palms, then shift back to the starting position. That is one repetition."],
+    'elevated-plank-shoulder-shift': ["Shift shoulders gently forward and back while keeping elbows straight."],
+    'pike-hold': ["Push the floor away and place ears between arms without collapsing.","The required position or movement continues until the timer reaches zero."],
+    'pike-shoulder-taps': ["Shift weight and tap one shoulder lightly at a time.","The prescribed work is completed separately on each side."],
+    'wall-walk-preparation': ["Walk feet a small distance up the wall, then come down one step at a time."],
+    'chest-to-wall-handstand-hold': ["Push tall through shoulders, tuck ribs, and hold a calm line.","The required position or movement continues until the timer reaches zero."],
+    'chest-to-wall-alignment-hold': ["Focus on ribs tucked, legs together, and shoulders pushing tall.","The required position or movement continues until the timer reaches zero."],
+    'wall-weight-shifts': ["Shift a small amount of weight from one hand to the other.","The prescribed work is completed separately on each side."],
+    'heel-pulls': ["Pull one or both heels away briefly, then return to the wall with control.","The attempt ends with a controlled reset or the stated safe exit."],
+    'controlled-wall-exit': ["Practice turning one hand and stepping down safely from wall support.","The attempt ends with a controlled reset or the stated safe exit."],
+    'back-to-wall-kick-up-practice': ["Kick gently so the wall catches you softly, then come down with control.","The required position or movement continues until the timer reaches zero."],
+    'freestanding-kick-up-practice': ["Kick lightly, aim for control, and step down before overbalancing.","The required position or movement continues until the timer reaches zero."],
+    'freestanding-balance-attempts': ["Make short balance attempts and stop while technique is calm.","The attempt ends with a controlled reset or the stated safe exit."],
+    'hollow-body-strength': ["Hold the cleanest hollow shape you can control.","The required position or movement continues until the timer reaches zero."],
+    'straight-bar-support-development': ["Hold the top support tall with shoulders down.","The required position or movement continues until the timer reaches zero."],
+    'explosive-pull-up': ["Pull fast and high while staying controlled."],
+    'straight-bar-dip-preparation': ["Practice a small controlled press from support."],
+    'low-bar-transition-drill': ["Move slowly from high pull position around the bar to support."],
+    'feet-assisted-transition': ["Pull, transition around the bar, and press with as much foot help as needed."],
+    'band-assisted-transition': ["Use band assistance to practice a smooth pull-to-support transition."],
+    'jumping-muscle-up-transition': ["Jump lightly, guide the transition, and control the support position."],
+    'slow-negative-muscle-up': ["Lower slowly through the transition and pull-up path."],
+    'assisted-muscle-up': ["Combine pull, transition, and press with controlled assistance.","The attempt ends with a controlled reset or the stated safe exit."],
+    'full-muscle-up-attempt': ["Pull high, transition smoothly, and stop after clean attempts.","The attempt ends with a controlled reset or the stated safe exit."],
+    'full-muscle-up': ["The repetition starts below the bar from a controlled still hang.","The body moves above the bar without jumping, band assistance, or foot assistance, and reaches stable straight-arm support.","The transition and approved descent or ending remain controlled."],
+    'controlled-muscle-up-repetitions': ["Perform controlled reps with full reset between each one."],
+    'crow-weight-shift': ["Lean forward slowly with toes light and return.","The required position or movement continues until the timer reaches zero."],
+    'crow-one-foot-lift': ["Lean forward, lift one foot briefly, then switch sides.","The attempt ends with a controlled reset or the stated safe exit.","The prescribed work is completed separately on each side."],
+    'crow-hold': ["Grip the floor, lift both feet briefly, and breathe.","The required position or movement continues until the timer reaches zero."],
+    'jump-rope': ["Use small relaxed jumps and turn the rope from wrists.","The required position or movement continues until the timer reaches zero."],
+  });
+
+  const instructionGuidance = {
+    'horizontal-push': { focus: ['Keep a straight body line.', 'Press evenly through both hands.'], mistakes: ['Letting the hips sag.', 'Shrugging the shoulders.'] },
+    'vertical-push': { focus: ['Keep ribs controlled.', 'Push tall through the shoulders.'], mistakes: ['Arching the lower back.', 'Rushing the weight shift.'] },
+    'dip-strength': { focus: ['Keep shoulders down.', 'Use a comfortable depth.'], mistakes: ['Dropping too deep.', 'Letting shoulders collapse forward.'] },
+    'horizontal-pull': { focus: ['Lead with the elbows.', 'Lower with control.'], mistakes: ['Using an unstable anchor.', 'Shrugging toward the ears.'] },
+    'vertical-pull': { focus: ['Start with active shoulders.', 'Lower without dropping.'], mistakes: ['Swinging for momentum.', 'Losing shoulder control at the bottom.'] },
+    'scapular-pull': { focus: ['Keep elbows straight.', 'Move only the shoulder blades.'], mistakes: ['Bending the elbows.', 'Swinging the body.'] },
+    squat: { focus: ['Keep the whole foot planted.', 'Track knees with toes.'], mistakes: ['Heels lifting.', 'Knees collapsing inward.'] },
+    unilateral: { focus: ['Control the working knee.', 'Use support before balance changes form.'], mistakes: ['Pushing mostly from the back leg.', 'Twisting the pelvis.'] },
+    'posterior-chain': { focus: ['Brace before moving.', 'Finish with the glutes.'], mistakes: ['Arching the lower back.', 'Rushing the lowering phase.'] },
+    calves: { focus: ['Rise through the big-toe side.', 'Lower without bouncing.'], mistakes: ['Rolling onto the outer foot.', 'Using momentum.'] },
+    'anti-extension': { focus: ['Keep ribs toward the pelvis.', 'Breathe without losing tension.'], mistakes: ['Arching the lower back.', 'Holding the breath.'] },
+    compression: { focus: ['Stay tall through the spine.', 'Lift without swinging.'], mistakes: ['Leaning far backward.', 'Using momentum.'] },
+    'lateral-core': { focus: ['Keep shoulder stacked.', 'Keep hips lifted.'], mistakes: ['Rotating the chest downward.', 'Letting hips sag.'] },
+    lsit: { focus: ['Press strongly through the hands.', 'Choose a clean short hold.'], mistakes: ['Shrugging the shoulders.', 'Holding after the hips drop.'] },
+    handstand: { focus: ['Push tall through the shoulders.', 'Keep ribs controlled.'], mistakes: ['Kicking or shifting too hard.', 'Continuing without a safe exit.'] },
+    crow: { focus: ['Spread the fingers.', 'Look slightly forward.'], mistakes: ['Jumping both feet up.', 'Looking straight down.'] },
+    'muscle-up': { focus: ['Keep the pull close.', 'Control the transition.'], mistakes: ['Grinding tired attempts.', 'Forcing the turnover with the shoulders.'] },
+    rope: { focus: ['Keep jumps low.', 'Turn the rope from the wrists.'], mistakes: ['Jumping too high.', 'Swinging the whole arms.'] }
+  };
+
+  function structuredInstructions(name, movementFamily, instructions, options = {}) {
+    const guidance = instructionGuidance[movementFamily] || { focus: ['Move slowly and stay in control.'], mistakes: ['Rushing the movement.'] };
+    return {
+      purpose: instructions.purpose,
+      startingPosition: instructions.setup,
+      movement: Array.isArray(options.movement) && options.movement.length ? options.movement.slice(0, 6) : [instructions.execution],
+      successCriteria: successCriteriaById[options.exerciseId],
+      focus: (options.focus || guidance.focus).slice(0, 3),
+      commonMistakes: (options.commonMistakes || guidance.mistakes).slice(0, 3),
+      safety: instructions.safety,
+      visualRequired: options.visualRequired !== false,
+      visualGuidance: options.visualGuidance || `Show the starting position and controlled movement for ${name}.`,
+      // Kept while the existing help panel migrates to the structured fields.
+      setup: instructions.setup,
+      execution: instructions.execution
+    };
+  }
+
   function exercise(id, name, movementFamily, difficulty, prescription, options = {}) {
+    if (!Array.isArray(successCriteriaById[id]) || !successCriteriaById[id].length) {
+      throw new Error(`Missing authored success criteria: ${id}`);
+    }
     const primaryAreas = options.primaryAreas || [];
     const loadedAreas = options.loadedAreas || primaryAreas;
     const setup = options.setup || `Set up for ${name.toLowerCase()} with a stable position.`;
@@ -211,19 +425,18 @@
       loadedAreas,
       contraindicationTags: options.contraindicationTags || loadedAreas.map(area => `${area}-load`),
       type: options.type || 'strength',
-      prescriptionData: prescription,
-      prescription: prescriptionToString(prescription),
-      instructions: {
+      ...prescriptionFields(prescription),
+      instructions: structuredInstructions(name, movementFamily, {
         purpose: options.purpose || `${name} builds ${movementFamily.replace(/-/g, ' ')} capacity.`,
         setup,
         execution,
         safety
-      },
+      }, { ...options, exerciseId: id }),
       progressionNote: options.progressionNote || '',
       phase: options.phase || null,
       highSkill: Boolean(options.highSkill),
       explosive: Boolean(options.explosive),
-      unilateral: Boolean(options.unilateral)
+      unilateral: Boolean(options.unilateral || prescription?.perSide)
     };
   }
 
@@ -334,7 +547,7 @@
       execution: 'Keep elbows close, lower under control, and press up tall.',
       safety: 'Use a higher surface if elbows flare or shoulders pinch. ' + PAIN_NOTICE
     }),
-    exercise('close-grip-push-up-dip-prep', 'Close-grip push-up', 'dip-strength', 3, { sets: 3, repsMin: 4, repsMax: 6 }, {
+    exercise('close-grip-push-up-dip-prep', 'Close-grip push-up for dip preparation', 'dip-strength', 3, { sets: 3, repsMin: 4, repsMax: 6 }, {
       equipment: ['floor'],
       primaryAreas: ['triceps', 'chest'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -876,9 +1089,14 @@
       primaryAreas: ['wrist'],
       loadedAreas: ['wrist'],
       type: 'preparation',
-      setup: 'Use hands-and-knees or standing wrist circles.',
-      execution: 'Move wrists through gentle circles and light rocks.',
-      safety: 'Keep this easy; it is preparation, not a stretch test. ' + PAIN_NOTICE
+      purpose: 'Prepares the wrists to bear weight before floor-based pushing or handstand practice.',
+      setup: 'Kneel on all fours with shoulders above hands, fingers pointing forward, palms flat, and elbows straight but not locked.',
+      execution: 'Slowly shift your shoulders forward until you feel mild pressure through the palms, then shift back to the starting position. That is one repetition.',
+      focus: ['Keep both palms fully in contact with the floor.', 'Move only as far as the wrists remain comfortable.', 'Keep the movement slow and even.'],
+      commonMistakes: ['Lifting the heel of the hand.', 'Bouncing into the forward position.', 'Turning the fingers outward to avoid the intended position.'],
+      safety: 'Use a smaller forward shift if the wrists feel stiff. Stop for sharp pain, tingling, or numbness; persistent symptoms should be assessed by a healthcare professional.',
+      visualRequired: true,
+      visualGuidance: 'Show a side view of one quadruped wrist rock from shoulders-over-hands to a small controlled forward shift.'
     }),
     exercise('elevated-plank-shoulder-shift', 'Elevated plank shoulder shift', 'handstand', 2, { sets: 3, repsMin: 6, repsMax: 8 }, {
       equipment: ['stable-elevated-surface'],
@@ -1101,9 +1319,15 @@
       primaryAreas: ['upper-back', 'triceps'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
       phase: 'full',
-      setup: 'Use a stable pull-up bar and begin from a still hang.',
-      execution: 'Pull high, transition over the bar, press to support, and lower safely.',
-      safety: 'Keep reps low quality-focused. ' + PAIN_NOTICE,
+      purpose: 'The final target skill combining a high pull, transition over the bar, and press to straight-arm support.',
+      setup: 'Use a suitable stable pull-up bar with clear overhead and surrounding space. Take a secure overhand grip, begin in a still controlled hang below the bar, and hold the body quiet.',
+      movement: ['1. Begin from a controlled still hang below the bar.', '2. Pull the chest high toward or above the bar.', '3. Keep the bar close while bringing the torso over it.', '4. Move continuously from the pull into support without resting on the bar.', '5. Press to a stable straight-arm support.', '6. Finish with the approved controlled descent or ending method.'],
+      execution: 'Begin from a still hang, pull the chest high, keep the bar close as the torso moves over it, press to stable straight-arm support, then use the approved controlled descent or ending.',
+      focus: ['Pull high and keep the bar close.', 'Move continuously from pull to support.', 'Finish in stable straight-arm support.'],
+      commonMistakes: ['Trying to force the transition without enough pull height.', 'Losing grip or striking the bar during the turnover.', 'Repeating an uncontrolled failed attempt.'],
+      safety: 'Use only a stable bar with clear surrounding space. Stop if pull height or transition control is insufficient, grip is lost, the body impacts the bar, stable support cannot be reached, or the approved descent is unavailable. Do not force the transition or repeat uncontrolled attempts. ' + PAIN_NOTICE,
+      visualRequired: true,
+      visualGuidance: 'Show a side view including the high pull, bar path close to the body, torso transition, final straight-arm support, and approved safe descent or ending.',
       highSkill: true,
       explosive: true
     }),
@@ -1156,9 +1380,20 @@
   ];
 
   const byId = Object.fromEntries(exerciseCatalog.map(item => [item.id, item]));
+  // These movements remain documented for migration/history lookup, but are
+  // intentionally excluded from generation because their household anchors
+  // cannot be verified by the app.
+  const disabledExerciseIds = new Set([
+    'standing-towel-row-isometric',
+    'seated-towel-row-isometric',
+    'high-angle-table-row',
+    'bent-knee-inverted-row',
+    'straight-leg-inverted-row',
+    'feet-elevated-inverted-row'
+  ]);
 
   function ids(values) {
-    return values.map(id => {
+    return values.filter(id => !disabledExerciseIds.has(id)).map(id => {
       if (!byId[id]) throw new Error(`Unknown exercise id: ${id}`);
       return byId[id];
     });
@@ -1183,7 +1418,7 @@
     muscleupFoundation: ids(['hollow-body-strength', 'scapular-pull-up', 'straight-bar-support-development', 'negative-pull-up', 'strict-pull-up-singles']),
     muscleupPower: ids(['chest-to-bar-pull-up', 'high-pull-up', 'explosive-pull-up', 'straight-bar-dip-preparation']),
     muscleupTransition: ids(['low-bar-transition-drill', 'feet-assisted-transition', 'band-assisted-transition', 'jumping-muscle-up-transition', 'slow-negative-muscle-up']),
-    muscleupFull: ids(['assisted-muscle-up', 'full-muscle-up-attempt', 'full-muscle-up', 'controlled-muscle-up-repetitions']),
+    muscleupFull: ids(['assisted-muscle-up', 'full-muscle-up-attempt', 'full-muscle-up']),
     crow: ids(['crow-weight-shift', 'crow-one-foot-lift', 'crow-hold']),
     rope: ids(['jump-rope'])
   };
@@ -1197,6 +1432,61 @@
     core: movementTracks.antiExtension,
     muscleup: movementTracks.muscleupFoundation
   };
+
+  const advancedSkillEligibility = Object.freeze({
+    'full-muscle-up': Object.freeze({
+      status: 'provisional',
+      requiredGoal: 'muscleup',
+      requiredEquipment: ['pullupBar'],
+      requirements: [
+        { trackKey: 'verticalPull', label: 'Pulling readiness', minLevel: 9 },
+        { trackKey: 'dipStrength', label: 'Above-bar pressing readiness', minLevel: 8 },
+        { trackKey: 'muscleupTransition', label: 'Transition full-completion evidence', pending: true },
+        { trackKey: 'muscleupPower', label: 'Successful high-pull exposure requirement', pending: true }
+      ],
+      instructionApproved: true,
+      visualApproved: false,
+      safetyPrerequisiteId: null
+    })
+  });
+
+  function fullCompletionCount(state, requirement) {
+    return (state?.history || []).reduce((count, session) => count + (session.exercises || []).filter(result =>
+      result?.completionStatus === 'completed' &&
+      (!requirement.trackKey || result.progressionTrackKey === requirement.trackKey) &&
+      (!requirement.exerciseId || result.exerciseId === requirement.exerciseId)
+    ).length, 0);
+  }
+
+  function evaluateAdvancedSkillEligibility(exerciseId, { profile = null, state = {}, recovery = null, config = advancedSkillEligibility[exerciseId] } = {}) {
+    const checks = [];
+    if (!config || !Array.isArray(config.requirements) || !config.requirements.length) {
+      return { eligible: false, state: 'development', checks, explanation: 'Readiness requirements are still being finalized.' };
+    }
+    const development = config.status !== 'configured';
+    checks.push({ key: 'goal', label: 'Muscle-up is your active goal', met: !config.requiredGoal || profile?.goal === config.requiredGoal });
+    const equipment = profileEquipment(profile);
+    (config.requiredEquipment || []).forEach(item => checks.push({ key: `equipment:${item}`, label: 'Required bar equipment is available', met: equipment.has(item) }));
+    config.requirements.forEach((requirement, index) => {
+      const track = state?.levels?.[requirement.trackKey] || {};
+      if (requirement.pending) checks.push({ key: `pending:${index}`, label: `${requirement.label} threshold is being finalized`, met: false });
+      if (Number.isFinite(requirement.minLevel)) checks.push({ key: `level:${index}`, label: requirement.label || 'Required progression level reached', met: Number(track.level || 0) >= requirement.minLevel });
+      if (Number.isFinite(requirement.minSuccessfulExposures)) checks.push({ key: `exposure:${index}`, label: `${requirement.label || 'Required capability'} successful exposures`, met: Number(track.positiveExposures || 0) >= requirement.minSuccessfulExposures });
+      if (Number.isFinite(requirement.minFullCompletions)) checks.push({ key: `completion:${index}`, label: `${requirement.label || 'Required capability'} full completions`, met: fullCompletionCount(state, requirement) >= requirement.minFullCompletions });
+    });
+    checks.push({ key: 'instruction', label: 'Instructions are release-ready', met: config.instructionApproved === true });
+    checks.push({ key: 'visual', label: 'Technique visual is release-ready', met: config.visualApproved === true });
+    if (config.safetyPrerequisiteId) checks.push({ key: 'safety', label: 'Safe exit prerequisite completed', met: fullCompletionCount(state, { exerciseId: config.safetyPrerequisiteId }) > 0 });
+    const activeRecovery = recovery || getActiveRecovery(state);
+    checks.push({ key: 'recovery', label: 'No active recovery restriction conflicts', met: !activeRecovery || isExerciseAllowedForRecovery(byId[exerciseId], activeRecovery) });
+    const eligible = !development && checks.length > 0 && checks.every(check => check.met);
+    return { eligible, state: development ? 'development' : eligible ? 'ready' : 'locked', checks, explanation: development ? 'Readiness requirements are still being finalized.' : eligible ? 'Ready for workouts.' : 'Complete the remaining readiness steps.' };
+  }
+
+  function isExerciseEligibleForGeneration(exercise, profile = null, state = {}, recovery = null, config) {
+    if (!exercise || !advancedSkillEligibility[exercise.id]) return true;
+    return evaluateAdvancedSkillEligibility(exercise.id, { profile, state, recovery, config }).eligible;
+  }
 
   const energyOptions = {
     great: {
@@ -1259,7 +1549,8 @@
         id: 'warmup-general-a',
         trackKey: 'warmup',
         name: 'Warm-up',
-        prescription: '2 min · 30s each',
+        prescriptionData: { sets: 4, seconds: 30 },
+        prescription: '4 × 30s',
         setCount: 4,
         isAddOn: true,
         addOnType: 'warmup',
@@ -1269,7 +1560,8 @@
         id: 'warmup-general-b',
         trackKey: 'warmup',
         name: 'Warm-up',
-        prescription: '2 min · 30s each',
+        prescriptionData: { sets: 4, seconds: 30 },
+        prescription: '4 × 30s',
         setCount: 4,
         isAddOn: true,
         addOnType: 'warmup',
@@ -1281,7 +1573,8 @@
         id: 'stretch-general-a',
         trackKey: 'stretch',
         name: 'Stretch',
-        prescription: '2 min · 30s each',
+        prescriptionData: { sets: 4, seconds: 30 },
+        prescription: '4 × 30s',
         setCount: 4,
         isAddOn: true,
         addOnType: 'stretch',
@@ -1291,7 +1584,8 @@
         id: 'stretch-general-b',
         trackKey: 'stretch',
         name: 'Stretch',
-        prescription: '2 min · 30s each',
+        prescriptionData: { sets: 4, seconds: 30 },
+        prescription: '4 × 30s',
         setCount: 4,
         isAddOn: true,
         addOnType: 'stretch',
@@ -1566,48 +1860,22 @@
     return Array.isArray(tracks?.[trackKey]) && tracks[trackKey].length > 0;
   }
 
-  function getSetCount(prescription = '') {
-    const setMatch = prescription.match(/(\d+)\s*×/);
-    if (setMatch) return Math.max(1, Number(setMatch[1]));
-    const attemptMatch = prescription.match(/(\d+)\s+attempts/);
-    if (attemptMatch) return Math.max(1, Number(attemptMatch[1]));
-    return 1;
-  }
-
-  function adaptPrescription(prescription, config = energyOptions.great, recovery = null, plateauCount = 0) {
+  function adaptPrescriptionData(prescriptionData, config = energyOptions.great, recovery = null) {
+    const source = normalizePrescriptionData(prescriptionData);
+    if (!source) return null;
     const setMultiplier = recovery?.mode === 'reduce' ? Math.min(config.setMultiplier ?? 1, 0.75) : config.setMultiplier ?? 1;
     const repMultiplier = recovery?.mode === 'reduce' ? Math.min(config.repMultiplier ?? 1, 0.75) : config.repMultiplier ?? 1;
-
-    let adapted = prescription.replace(/(\d+)\s*×\s*(\d+)-(\d+)(s?)(\/side)?/g, (_, sets, min, max, seconds, side = '') => {
-      const nextSets = Math.max(1, Math.round(Number(sets) * setMultiplier));
-      const nextMin = Math.max(1, Math.round(Number(min) * repMultiplier));
-      const nextMax = Math.max(nextMin, Math.round(Number(max) * repMultiplier));
-      return `${nextSets} × ${nextMin}-${nextMax}${seconds || ''}${side || ''}`;
+    const adapted = { ...source, sets: Math.max(1, Math.round(source.sets * setMultiplier)) };
+    ['seconds', 'minutes', 'attempts', 'reps', 'repsMin', 'repsMax'].forEach(field => {
+      if (source[field]) adapted[field] = Math.max(1, Math.round(source[field] * repMultiplier));
     });
-
-    adapted = adapted.replace(/(\d+)\s*×\s*(\d+)(s?)(\/side)?/g, (_, sets, reps, seconds, side = '') => {
-      const nextSets = Math.max(1, Math.round(Number(sets) * setMultiplier));
-      const nextReps = Math.max(1, Math.round(Number(reps) * repMultiplier));
-      return `${nextSets} × ${nextReps}${seconds || ''}${side || ''}`;
-    });
-
-    adapted = adapted.replace(/(\d+)\s+attempts(\/side)?/g, (_, attempts, side = '') => {
-      const nextAttempts = Math.max(1, Math.round(Number(attempts) * repMultiplier));
-      return `${nextAttempts} attempts${side || ''}`;
-    });
-
-    adapted = adapted.replace(/(\d+)\s+min/g, (_, minutes) => {
-      const nextMinutes = Math.max(1, Math.round(Number(minutes) * repMultiplier));
-      return `${nextMinutes} min`;
-    });
-
-    if (plateauCount > 0) return `${adapted} · quality tempo`;
+    if (adapted.repsMin && adapted.repsMax) adapted.repsMax = Math.max(adapted.repsMin, adapted.repsMax);
     return adapted;
   }
 
   function normalizeExercise(rawExercise) {
     if (!rawExercise || typeof rawExercise !== 'object') return null;
-    if (!rawExercise.name || !rawExercise.prescription) return null;
+    if (!rawExercise.name) return null;
     const catalogMatch = rawExercise.id ? byId[rawExercise.id] : exerciseCatalog.find(item => item.name === rawExercise.name);
     const normalized = {
       ...(catalogMatch || {}),
@@ -1617,8 +1885,171 @@
     normalized.id = normalized.id || `legacy-${normalized.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     normalized.trackKey = normalized.trackKey || `exercise-${normalized.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     normalized.progressionTrackKey = normalized.progressionTrackKey || normalized.trackKey;
-    normalized.setCount = normalized.setCount || getSetCount(normalized.prescription);
+    const fields = prescriptionFields(normalized.prescriptionData || legacyPrescriptionData(normalized.prescription, normalized.setCount));
+    if (!fields) return null;
+    Object.assign(normalized, fields);
+    normalized.basePrescriptionData = normalizePrescriptionData(normalized.basePrescriptionData || normalized.prescriptionData);
+    normalized.basePrescription = prescriptionToString(normalized.basePrescriptionData);
+    normalized.restSeconds = positiveInteger(normalized.restSeconds, 60);
+    normalized.workoutExerciseId = normalized.workoutExerciseId || normalized.sessionKey || `${normalized.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     return normalized;
+  }
+
+  function replaceWorkoutExercise(current, replacement) {
+    const next = normalizeExercise({
+      ...replacement,
+      trackKey: current.trackKey || replacement.trackKey,
+      progressionTrackKey: current.progressionTrackKey || current.trackKey || replacement.progressionTrackKey || replacement.trackKey,
+      workoutExerciseId: current.workoutExerciseId,
+      swappedFromExerciseId: current.swappedFromExerciseId || current.id,
+      swappedFromExerciseName: current.swappedFromExerciseName || current.name,
+      previewSwapIds: [...(current.previewSwapIds || []), current.id].filter(Boolean)
+    });
+    return next;
+  }
+
+  function createSwapReplacement(current, replacement, mode = 'normal', recovery = null, context = {}) {
+    const progressionTrackKey = current?.progressionTrackKey || current?.trackKey;
+    const progressionTrack = baseTracks[progressionTrackKey] || movementTracks[progressionTrackKey] || [];
+    if (!progressionTrack.some(item => item.id === replacement?.id)) {
+      throw new Error(`Invalid cross-progression swap: ${current?.id || 'unknown'} -> ${replacement?.id || 'unknown'} (${progressionTrackKey || 'no-track'})`);
+    }
+    if (!isExerciseEligibleForGeneration(replacement, context.profile, context.state || {}, recovery, context.eligibilityConfig)) {
+      throw new Error(`Exercise is not eligible for generation: ${replacement?.id || 'unknown'}`);
+    }
+    const adaptedPrescriptionData = adaptPrescriptionData(replacement.prescriptionData, getEnergyConfig(mode), recovery);
+    return replaceWorkoutExercise(current, {
+      ...replacement,
+      prescriptionData: adaptedPrescriptionData,
+      basePrescriptionData: replacement.prescriptionData,
+      basePrescription: replacement.prescription,
+      source: 'user-swap'
+    });
+  }
+
+  function executableRounds(exercise) {
+    const normalized = normalizeExercise(exercise);
+    if (!normalized) return [];
+    return Array.from({ length: normalized.setCount }, (_, index) => ({
+      index,
+      seconds: normalized.secondsPerSet,
+      reps: normalized.repsPerSet,
+      repsMin: normalized.repsMin,
+      repsMax: normalized.repsMax,
+      attempts: normalized.attemptsPerSet,
+      perSide: normalized.perSide
+    }));
+  }
+
+  function exerciseResult(exercise, completedSetFlags = [], rating = null) {
+    const normalized = normalizeExercise(exercise);
+    if (!normalized) return null;
+    const completedSetIndexes = Array.from({ length: normalized.setCount }, (_, index) => completedSetFlags[index] ? index : null)
+      .filter(index => index !== null);
+    const safeRating = ['easy', 'good', 'hard', 'failed'].includes(rating) ? rating : null;
+    const completionStatus = safeRating === 'failed'
+      ? 'failed'
+      : completedSetIndexes.length === normalized.setCount
+        ? 'completed'
+        : completedSetIndexes.length
+          ? 'partial'
+          : 'skipped';
+    return {
+      workoutExerciseId: normalized.workoutExerciseId,
+      exerciseId: normalized.id,
+      name: normalized.name,
+      prescription: normalized.prescription,
+      prescriptionData: normalized.prescriptionData,
+      targetSets: normalized.setCount,
+      completedSets: completedSetIndexes.length,
+      completedSetIndexes,
+      completionStatus,
+      rating: safeRating,
+      trackKey: normalized.trackKey,
+      progressionTrackKey: normalized.progressionTrackKey || null,
+      progressionLevel: normalized.level || null,
+      swappedFromExerciseId: normalized.swappedFromExerciseId || null,
+      swappedFromExerciseName: normalized.swappedFromExerciseName || null,
+      isAddOn: Boolean(normalized.isAddOn)
+    };
+  }
+
+  function applyExerciseResultToProgression(levels, result, profile = null) {
+    if (!result || !result.progressionTrackKey || !levels?.[result.progressionTrackKey]) {
+      return { applied: false, reason: 'missing-progression-track' };
+    }
+    if (!result.rating || result.completedSets < 1) {
+      return { applied: false, reason: 'no-completed-sets-or-rating' };
+    }
+    const isFullyCompleted = result.completedSets === result.targetSets;
+    if (!isFullyCompleted && ['easy', 'good'].includes(result.rating)) {
+      return { applied: false, reason: 'positive-rating-requires-full-completion' };
+    }
+    applyRating(levels, result.progressionTrackKey, result.rating, profile);
+    return {
+      applied: true,
+      reason: isFullyCompleted ? 'full-completion' : 'partial-difficulty-signal'
+    };
+  }
+
+  function shouldRecordWorkoutResults(results) {
+    return Array.isArray(results) && results.some(result => !result?.isAddOn && Number(result?.completedSets) > 0);
+  }
+
+  function createCountdownTimer({ seconds, prepSeconds = 0, trackKey = null, setIndex = null, completeOnFinish = false }, now = Date.now()) {
+    const activeSeconds = positiveInteger(seconds);
+    if (!activeSeconds) return null;
+    const safePrepSeconds = Math.max(0, Math.round(Number(prepSeconds) || 0));
+    const prepEndsAt = now + safePrepSeconds * 1000;
+    return {
+      trackKey,
+      setIndex: Number.isInteger(Number(setIndex)) ? Number(setIndex) : null,
+      completeOnFinish: Boolean(completeOnFinish),
+      prepEndsAt,
+      endsAt: prepEndsAt + activeSeconds * 1000,
+      seconds: activeSeconds,
+      prepSeconds: safePrepSeconds
+    };
+  }
+
+  function countdownTimerSnapshot(timer, now = Date.now()) {
+    if (!timer?.endsAt) return null;
+    const prepRemaining = Math.max(0, Math.ceil((Number(timer.prepEndsAt || now) - now) / 1000));
+    const remainingSeconds = Math.max(0, Math.ceil((Number(timer.endsAt) - Math.max(now, Number(timer.prepEndsAt || now))) / 1000));
+    return {
+      phase: prepRemaining > 0 ? 'prep' : 'active',
+      prepSeconds: prepRemaining,
+      remainingSeconds,
+      finished: now >= Number(timer.endsAt)
+    };
+  }
+
+  function sanitizeCountdownTimer(timer) {
+    if (!timer || !Number.isFinite(Number(timer.endsAt)) || !Number.isFinite(Number(timer.prepEndsAt))) return null;
+    return {
+      title: typeof timer.title === 'string' ? timer.title : 'Timer',
+      subtitle: typeof timer.subtitle === 'string' ? timer.subtitle : '',
+      trackKey: typeof timer.trackKey === 'string' ? timer.trackKey : null,
+      setIndex: Number.isInteger(Number(timer.setIndex)) ? Number(timer.setIndex) : null,
+      completeOnFinish: Boolean(timer.completeOnFinish),
+      prepEndsAt: Number(timer.prepEndsAt),
+      endsAt: Number(timer.endsAt),
+      seconds: positiveInteger(timer.seconds, 1),
+      prepSeconds: Math.max(0, Math.round(Number(timer.prepSeconds) || 0))
+    };
+  }
+
+  function timerShouldCompleteSet(timer, now = Date.now()) {
+    const snapshot = countdownTimerSnapshot(timer, now);
+    return Boolean(snapshot?.finished && timer?.completeOnFinish && timer?.trackKey && Number.isInteger(Number(timer?.setIndex)));
+  }
+
+  function updateSetCompletion(flags, setIndex, setCount, done) {
+    const safeSetCount = positiveInteger(setCount, 1);
+    const safeIndex = Number(setIndex);
+    const next = Array.from({ length: safeSetCount }, (_, index) => Boolean(flags?.[index]));
+    if (Number.isInteger(safeIndex) && safeIndex >= 0 && safeIndex < safeSetCount) next[safeIndex] = Boolean(done);
+    return next;
   }
 
   function sanitizeWorkout(workout) {
@@ -1632,6 +2063,7 @@
       ...workout,
       ratings: workout.ratings || {},
       sets: workout.sets || {},
+      activeTimer: sanitizeCountdownTimer(workout.activeTimer),
       exercises
     };
   }
@@ -1729,7 +2161,8 @@
     const tracks = getTracks(profile, state);
     const safeTrackKey = isTrackAvailable(trackKey, tracks) ? trackKey : 'antiExtension';
     const originalTrack = tracks[safeTrackKey] || tracks.antiExtension || baseTracks.antiExtension;
-    const track = filteredTrackForRecovery(originalTrack, recovery);
+    const eligibleTrack = originalTrack.filter(exercise => isExerciseEligibleForGeneration(exercise, profile, state, recovery));
+    const track = filteredTrackForRecovery(eligibleTrack, recovery);
     if (!track.length) return null;
     const adjustedLevel = chooseLevel(safeTrackKey, track, config, state, recovery);
     const currentFatigue = options.currentFatigue || 0;
@@ -1757,17 +2190,17 @@
     const baseExercise = track[selectedLevel];
     const trackState = state?.levels?.[safeTrackKey] || {};
     const plateauCount = Math.max(0, Math.floor(trackState.plateauCount || 0));
-    const prescription = adaptPrescription(baseExercise.prescription, config, recovery, plateauCount);
+    const prescriptionData = adaptPrescriptionData(baseExercise.prescriptionData, config, recovery);
 
     return normalizeExercise({
       ...baseExercise,
       trackKey: safeTrackKey,
       progressionTrackKey: safeTrackKey,
-      prescription,
+      prescriptionData,
       basePrescription: baseExercise.prescription,
+      basePrescriptionData: baseExercise.prescriptionData,
       level: selectedLevel + 1,
       originalLevel: Math.min(Math.max(trackState.level || 0, 0), originalTrack.length - 1) + 1,
-      setCount: getSetCount(prescription),
       plateau: plateauCount > 0
     });
   }
@@ -1898,8 +2331,13 @@
     if (!item?.instructions) return null;
     return {
       purpose: item.instructions.purpose,
-      cues: [item.instructions.setup, item.instructions.execution],
-      safety: item.instructions.safety
+      startingPosition: item.instructions.startingPosition || item.instructions.setup,
+      movement: item.instructions.movement || [item.instructions.execution].filter(Boolean),
+      successCriteria: item.instructions.successCriteria || [],
+      focus: item.instructions.focus || [],
+      commonMistakes: item.instructions.commonMistakes || [],
+      safety: item.instructions.safety,
+      cues: [item.instructions.setup, item.instructions.execution]
     };
   }
 
@@ -1974,7 +2412,17 @@
       if (ids.has(item.id)) errors.push(`Duplicate exercise id: ${item.id}`);
       ids.add(item.id);
       if (!item.prescription) errors.push(`Missing prescription: ${item.id}`);
-      if (!item.instructions?.setup || !item.instructions?.execution || !item.instructions?.safety) errors.push(`Missing instructions: ${item.id}`);
+      const fields = prescriptionFields(item.prescriptionData);
+      if (!fields) errors.push(`Invalid structured prescription: ${item.id}`);
+      if (fields && fields.prescription !== item.prescription) errors.push(`Prescription label mismatch: ${item.id}`);
+      if (fields && fields.setCount !== item.setCount) errors.push(`Set count mismatch: ${item.id}`);
+      if (item.prescriptionType === 'time' && !item.secondsPerSet) errors.push(`Timed exercise missing seconds: ${item.id}`);
+      if (item.prescriptionType === 'reps' && !item.repsPerSet && !item.repsMin) errors.push(`Rep exercise missing target: ${item.id}`);
+      const instruction = item.instructions;
+      if (!instruction?.purpose || !instruction?.startingPosition || !Array.isArray(instruction?.movement) || !instruction.movement.length ||
+          !Array.isArray(instruction?.focus) || !instruction.focus.length || !Array.isArray(instruction?.commonMistakes) || !instruction.commonMistakes.length ||
+          !instruction?.safety || !Array.isArray(instruction?.successCriteria) || !instruction.successCriteria.length ||
+          instruction.visualRequired !== true || !instruction.visualGuidance) errors.push(`Missing structured instructions: ${item.id}`);
       if (/recommended/i.test(item.name) || /recommended/i.test(item.prescription)) errors.push(`Informational exercise: ${item.id}`);
       ['difficulty', 'fatigue', 'skill', 'stability'].forEach(field => {
         if (!Number.isInteger(item[field]) || item[field] < 1 || item[field] > 10) {
@@ -2002,6 +2450,7 @@
     baseTracks,
     movementTracks,
     exerciseCatalog,
+    disabledExerciseIds,
     scoreSchema,
     scoringGuidelines,
     fatigueBudgets,
@@ -2014,11 +2463,28 @@
     getRotation,
     getGoalTrackKey,
     getMuscleUpGate,
+    advancedSkillEligibility,
+    evaluateAdvancedSkillEligibility,
+    isExerciseEligibleForGeneration,
     getTodayWorkout,
     getExtraSessionMinutes,
     applyWorkoutAddOns,
     sessionTotalLabel,
     sanitizeWorkout,
+    normalizeExercise,
+    normalizePrescriptionData,
+    prescriptionToString,
+    replaceWorkoutExercise,
+    createSwapReplacement,
+    executableRounds,
+    exerciseResult,
+    applyExerciseResultToProgression,
+    shouldRecordWorkoutResults,
+    createCountdownTimer,
+    countdownTimerSnapshot,
+    sanitizeCountdownTimer,
+    timerShouldCompleteSet,
+    updateSetCompletion,
     getExerciseHelp,
     modeLabel,
     applyRating,

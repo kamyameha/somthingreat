@@ -26,11 +26,11 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.18.212500" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.18.212500" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.18.212500" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.18.212500" />
-  <link rel="stylesheet" href="account.css?v=2026.07.18.212500" />
+  <link rel="stylesheet" href="style.css?v=2026.07.19.235500" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.19.235500" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.19.235500" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.19.235500" />
+  <link rel="stylesheet" href="account.css?v=2026.07.19.235500" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
@@ -153,10 +153,6 @@
             <button class="account-list-btn" type="button" data-account-view="support">Support</button>
           </div>
 
-          <div id="adminAccountSection" class="account-section hidden">
-            <h3>Admin</h3>
-            <button class="account-list-btn" type="button" data-account-view="admin">Dashboard <span id="accountAdminSummary">Users</span></button>
-          </div>
         </div>
 
       </div>
@@ -258,14 +254,6 @@
           <p id="supportMessage" class="auth-message" aria-live="polite"></p>
         </div>
 
-        <div id="accountAdminView" class="account-view hidden">
-          <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Dashboard</h2>
-          <p id="adminDashboardSummary" class="muted">Loading dashboard...</p>
-          <button id="toggleAdminUsersBtn" class="admin-users-toggle" type="button" aria-expanded="false">Users list</button>
-          <p id="adminDashboardMessage" class="sync-status">Loading users...</p>
-          <div id="adminDashboardList" class="admin-dashboard-list hidden"></div>
-        </div>
       </div>
     </section>
 
@@ -482,6 +470,13 @@
         <div class="progress-bar"><span id="pullupProgressBar"></span></div>
       </section>
 
+      <section id="muscleUpReadinessCard" class="card hidden" aria-live="polite">
+        <p class="eyebrow">Final target</p>
+        <h3>Full muscle-up</h3>
+        <p id="muscleUpReadinessStatus"></p>
+        <ul id="muscleUpReadinessChecks"></ul>
+      </section>
+
       <section class="card">
         <p class="eyebrow">Current levels</p>
         <div id="levelsList"></div>
@@ -538,9 +533,7 @@
     <div class="confirm-card exercise-help-card">
       <button id="closeExerciseHelpBtn" class="generated-close-btn help-close" type="button" aria-label="Close">×</button>
       <h2 id="exerciseHelpTitle">Exercise</h2>
-      <p id="exerciseHelpPurpose"></p>
-      <ul id="exerciseHelpCues" class="exercise-help-cues"></ul>
-      <p id="exerciseHelpSafety" class="exercise-help-safety"></p>
+      <div id="exerciseHelpContent" class="exercise-help-content"></div>
     </div>
   </div>
 
@@ -552,13 +545,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.18.212500"></script>
-  <script src="workouts.js?v=2026.07.18.212500"></script>
-  <script src="state.js?v=2026.07.18.212500"></script>
-  <script src="account.js?v=2026.07.18.212500"></script>
-  <script src="admin.js?v=2026.07.18.212500"></script>
-  <script src="render.js?v=2026.07.18.212500"></script>
-  <script src="app-version.js?v=2026.07.18.212500"></script>
-  <script src="app.js?v=2026.07.18.212500"></script>
+  <script src="auth.js?v=2026.07.19.235500"></script>
+  <script src="workouts.js?v=2026.07.19.235500"></script>
+  <script src="state.js?v=2026.07.19.235500"></script>
+  <script src="account.js?v=2026.07.19.235500"></script>
+  <script src="render.js?v=2026.07.19.235500"></script>
+  <script src="app-version.js?v=2026.07.19.235500"></script>
+  <script src="app.js?v=2026.07.19.235500"></script>
 </body>
 </html>
