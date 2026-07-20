@@ -102,16 +102,18 @@
           exercises: Array.isArray(item.exercises)
             ? item.exercises
                 .filter(exercise => exercise && typeof exercise === 'object' && exercise.name)
-                .map(exercise => ({
-                  workoutExerciseId: typeof exercise.workoutExerciseId === 'string' ? exercise.workoutExerciseId : '',
-                  exerciseId: typeof exercise.exerciseId === 'string' ? exercise.exerciseId : (typeof exercise.id === 'string' ? exercise.id : ''),
-                  name: String(exercise.name),
-                  prescription: typeof exercise.prescription === 'string' ? exercise.prescription : '',
-                  prescriptionData: workoutModule.normalizePrescriptionData(
+                .map(exercise => {
+                  const prescriptionData = workoutModule.normalizePrescriptionData(
                     exercise.prescriptionData,
                     exercise.prescription,
                     exercise.targetSets || exercise.setCount
-                  ),
+                  );
+                  return {
+                  workoutExerciseId: typeof exercise.workoutExerciseId === 'string' ? exercise.workoutExerciseId : '',
+                  exerciseId: typeof exercise.exerciseId === 'string' ? exercise.exerciseId : (typeof exercise.id === 'string' ? exercise.id : ''),
+                  name: String(exercise.name),
+                  prescription: workoutModule.prescriptionToString(prescriptionData),
+                  prescriptionData,
                   targetSets: exercise.targetSets !== null && exercise.targetSets !== undefined && Number.isInteger(Number(exercise.targetSets))
                     ? Math.max(1, Number(exercise.targetSets))
                     : null,
@@ -133,7 +135,8 @@
                   swappedFromExerciseId: typeof exercise.swappedFromExerciseId === 'string' ? exercise.swappedFromExerciseId : null,
                   swappedFromExerciseName: typeof exercise.swappedFromExerciseName === 'string' ? exercise.swappedFromExerciseName : null,
                   isAddOn: Boolean(exercise.isAddOn)
-                }))
+                  };
+                })
             : []
         }));
     }
