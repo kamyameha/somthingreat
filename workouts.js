@@ -2531,6 +2531,65 @@
     return Number(trackState.points || 0) >= rules.progressPoints && Number(trackState.positiveExposures || 0) >= rules.positiveExposures;
   }
 
+  const masteringSkillStages = Object.freeze({
+    handstand: Object.freeze([
+      { name: 'Foundation', endLevel: 2 },
+      { name: 'Wall entry', endLevel: 4 },
+      { name: 'Wall hold', endLevel: 6 },
+      { name: 'Wall control', endLevel: 9 },
+      { name: 'Kick-up', endLevel: 11 },
+      { name: 'Freestanding', endLevel: 12 }
+    ]),
+    crow: Object.freeze([
+      { name: 'Weight shift', endLevel: 0 },
+      { name: 'One-foot balance', endLevel: 1 },
+      { name: 'Crow hold', endLevel: 2 }
+    ]),
+    lsit: Object.freeze([
+      { name: 'Compression', endLevel: 0 },
+      { name: 'Support', endLevel: 2 },
+      { name: 'Tuck', endLevel: 3 },
+      { name: 'Single-leg', endLevel: 5 },
+      { name: 'L-sit attempts', endLevel: 7 },
+      { name: 'Full hold', endLevel: 9 }
+    ]),
+    muscleupTransition: Object.freeze([
+      { name: 'Low-bar transition', endLevel: 0 },
+      { name: 'Feet-assisted transition', endLevel: 1 },
+      { name: 'Band-assisted transition', endLevel: 2 },
+      { name: 'Jumping transition', endLevel: 3 },
+      { name: 'Slow negative', endLevel: 4 }
+    ]),
+    handstandPushup: Object.freeze([
+      { name: 'Pike foundation', endLevel: 1 },
+      { name: 'Pike push-up', endLevel: 2 },
+      { name: 'Elevated pike push-up', endLevel: 3 },
+      { name: 'Wall range', endLevel: 5 },
+      { name: 'Full wall handstand push-up', endLevel: 6 }
+    ]),
+    pistolSquat: Object.freeze([
+      { name: 'Single-leg sit-to-stand', endLevel: 0 },
+      { name: 'Elevated pistol squat', endLevel: 1 },
+      { name: 'Assisted pistol squat', endLevel: 3 },
+      { name: 'Pistol squat negative', endLevel: 4 },
+      { name: 'Full pistol squat', endLevel: 5 }
+    ])
+  });
+
+  function getMasteringSkillProgress(trackKey, trackState = {}, track = []) {
+    const stages = masteringSkillStages[trackKey] || [];
+    if (!stages.length || !Array.isArray(track) || !track.length) {
+      return { stages, completedStages: 0 };
+    }
+    const level = Math.max(0, Math.min(Number(trackState.level || 0), track.length - 1));
+    const finalExerciseIndex = track.length - 1;
+    const completedStages = stages.filter(stage => (
+      level > stage.endLevel ||
+      (stage.endLevel === finalExerciseIndex && isTrackMastered(trackKey, trackState, track))
+    )).length;
+    return { stages, completedStages };
+  }
+
   function getProgressCardState(progressData = {}) {
     if (progressData.focusAchieved) return 'focus_achieved';
     if (progressData.recentUnlockedExercise) return 'new_exercise_unlocked';
@@ -2786,6 +2845,8 @@
     getGeneralFitnessProgress,
     remainingProgressRequirement,
     isTrackMastered,
+    masteringSkillStages,
+    getMasteringSkillProgress,
     getProgressCardState,
     getProgressCardContent,
     applyRating,
