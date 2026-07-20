@@ -214,9 +214,8 @@
   }
 
   function normalizePrescriptionData(value, legacyLabel = '', fallbackSets = null) {
-    const source = value && typeof value === 'object'
-      ? value
-      : legacyPrescriptionData(legacyLabel, fallbackSets);
+    const hasStructuredSource = Boolean(value && typeof value === 'object');
+    const source = hasStructuredSource ? value : legacyPrescriptionData(legacyLabel, fallbackSets);
     if (!source) return null;
     const sets = positiveInteger(source.sets, source.minutes ? 1 : positiveInteger(fallbackSets, 1));
     const normalized = { sets, perSide: Boolean(source.perSide) };
@@ -224,6 +223,7 @@
     else if (positiveInteger(source.minutes)) normalized.minutes = positiveInteger(source.minutes);
     else if (positiveInteger(source.attempts)) normalized.attempts = positiveInteger(source.attempts);
     else if (positiveInteger(source.reps)) normalized.reps = positiveInteger(source.reps);
+    else if (hasStructuredSource && legacyLabel) return normalizePrescriptionData(null, legacyLabel, fallbackSets);
     else return null;
     return normalized;
   }
