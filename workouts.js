@@ -2464,12 +2464,12 @@
   }
 
   const progressMascotByState = Object.freeze({
-    regular: 'Assets/Progress/mascot-progress-regular.png',
-    new_user: 'Assets/Progress/mascot-progress-new-user.png',
-    new_exercise_unlocked: 'Assets/Progress/mascot-progress-unlocked.png',
-    strong_pattern: 'Assets/Progress/mascot-progress-strong-pattern.png',
-    focus_achieved: 'Assets/Progress/mascot-progress-focus-achieved.png',
-    returning_user: 'Assets/Progress/mascot-progress-returning.png'
+    regular: 'Assets/Progress/mascot-progress-regular.svg',
+    new_user: 'Assets/Progress/mascot-progress-new-user.svg',
+    new_exercise_unlocked: 'Assets/Progress/mascot-progress-unlocked.svg',
+    strong_pattern: 'Assets/Progress/mascot-progress-strong-pattern.svg',
+    focus_achieved: 'Assets/Progress/mascot-progress-focus-achieved.svg',
+    returning_user: 'Assets/Progress/mascot-progress-returning.svg'
   });
 
   const generalFitnessStages = Object.freeze([
@@ -2543,42 +2543,37 @@
   function getProgressCardContent(cardState, progressData = {}) {
     const rows = [];
     let headline = "You're on track!";
-    const push = (label, value) => { if (label && value && rows.length < 3) rows.push({ label, value }); };
+    const push = (label, value) => {
+      if (label && value && rows.length < 2) rows.push({ label, value });
+    };
+    const comingNext = progressData.nextExerciseName
+      ? `${progressData.nextExerciseName}${progressData.remainingRequirement ? ` · ${progressData.remainingRequirement} away` : ''}`
+      : null;
+
     if (cardState === 'new_user') {
       headline = "Let's get started!";
-      push('First workout', 'Your plan is ready');
-      push('First step', "Complete today's workout");
       push('Your focus', progressData.currentFocusName);
+      push('First step', "Complete today's workout");
     } else if (cardState === 'new_exercise_unlocked') {
-      headline = "You're doing great!";
+      headline = 'Nice work!';
       push('New exercise unlocked', progressData.recentUnlockedExercise);
-      push('Coming next', progressData.nextExerciseName);
-      if (progressData.recentProgressSummary) push('Recent progress', progressData.recentProgressSummary);
-      else push('Keep going', progressData.remainingRequirement);
+      push('Coming next', comingNext);
     } else if (cardState === 'strong_pattern') {
       headline = "You're building momentum!";
-      push('Strong pattern', progressData.strongPattern);
-      push('Coming next', progressData.nextExerciseName);
-      push('Keep going', progressData.remainingRequirement);
+      push('Consistency', progressData.strongPattern);
+      push('Coming next', comingNext);
     } else if (cardState === 'focus_achieved') {
       headline = 'You did it!';
       push('Focus achieved', progressData.achievedFocusName);
       push(progressData.recommendedFocusName ? 'Recommended next focus' : "What's next", progressData.recommendedFocusName || 'Choose a new focus');
-      push("You're already building", progressData.relevantReadinessSummary);
     } else if (cardState === 'returning_user') {
       headline = 'Welcome back!';
       push('Your focus', progressData.currentFocusName);
-      push('Coming next', progressData.nextExerciseName);
       push('Next step', 'Continue with your next workout');
     } else {
-      if (progressData.nextExerciseName) {
-        push('Next exercise', progressData.nextExerciseName);
-        push('Keep going', progressData.remainingRequirement || 'Build confidence at this level');
-        push('Recent progress', progressData.recentProgressSummary);
-      } else {
-        push('Recent progress', progressData.recentProgressSummary);
-        push('Next step', progressData.planContinuationMessage || 'Continue with your next workout');
-      }
+      push(progressData.recentProgressSummary ? 'Recent progress' : 'Current level', progressData.recentProgressSummary || progressData.currentLevelName);
+      if (comingNext) push('Coming next', comingNext);
+      else push('Next step', progressData.planContinuationMessage || 'Continue with your next workout');
     }
     return { state: cardState, mascot: progressMascotByState[cardState] || progressMascotByState.regular, headline, rows };
   }
