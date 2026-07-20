@@ -253,7 +253,7 @@
   const successCriteriaById = Object.freeze({
     'wall-push-up': ["Lower chest toward the wall, keep ribs tucked, then press the wall away."],
     'high-incline-push-up': ["Hold a straight line from head to heels, lower under control, and press back up."],
-    'medium-incline-push-up': ["Lower the chest to the surface while keeping elbows controlled, then press up."],
+    'medium-incline-push-up': ["Your chest reaches the same controlled depth on each repetition, your body stays in a straight line from head to heels, and you return to straight arms without the hips sagging."],
     'low-incline-push-up': ["Lower slowly with a straight body line and press up without letting hips drop."],
     'eccentric-push-up': ["Lower for three to five seconds, set knees down, then reset to the top."],
     'full-push-up-singles': ["Complete one clean rep, rest, and repeat for quality."],
@@ -358,6 +358,18 @@
     'crow-one-foot-lift': ["Lean forward, lift one foot briefly, then switch sides.","The attempt ends with a controlled reset or the stated safe exit.","The prescribed work is completed separately on each side."],
     'crow-hold': ["Grip the floor, lift both feet briefly, and breathe.","The required position or movement continues until the timer reaches zero."],
     'jump-rope': ["Use small relaxed jumps and turn the rope from wrists.","The required position or movement continues until the timer reaches zero."],
+    'assisted-single-leg-sit-to-stand': ["Each side completes the sit and stand with the working heel planted, the knee tracking over the toes, and only light assistance."],
+    'elevated-pistol-squat': ["Each side reaches the elevated target under control and returns to standing without the free foot touching down."],
+    'counterbalance-pistol-squat': ["Each side reaches a controlled single-leg squat depth with the heel planted and stands without a bounce or free-foot support."],
+    'assisted-pistol-squat': ["Each side reaches full controlled depth and stands with only light hand assistance, a planted heel, and steady knee tracking."],
+    'pistol-squat-negative': ["Each side lowers to full depth for at least three controlled seconds, keeps the heel planted, and finishes on the target without falling."],
+    'full-pistol-squat': ["Each side completes one controlled full-depth repetition with the working heel planted, the other leg off the floor, controlled knee tracking, and a return to standing without assistance, an uncontrolled fall, or a bounce."],
+    'elevated-pike-hold': ["The hips remain stacked toward the shoulders, elbows stay straight, shoulders stay active, and the position is maintained until the timer reaches zero."],
+    'pike-push-up': ["Each repetition reaches a consistent controlled head depth between the hands and returns to straight elbows without the shoulders collapsing."],
+    'feet-elevated-pike-push-up': ["Each repetition reaches the defined safe target with hips high and returns to straight arms without losing shoulder control."],
+    'wall-handstand-push-up-negative': ["Each descent reaches the padded target under control for at least three seconds, with active shoulders and no collapse onto the head or neck."],
+    'partial-wall-handstand-push-up': ["Each repetition touches the same raised safe target under control and returns to full elbow extension without kicking or collapsing."],
+    'full-wall-handstand-push-up': ["From a stable wall-supported handstand, each repetition descends under control until the head reaches the defined safe target, then presses to full elbow extension with active shoulders, no uncontrolled collapse, and no leg kick."],
   });
 
   const instructionGuidance = {
@@ -381,13 +393,39 @@
     rope: { focus: ['Keep jumps low.', 'Turn the rope from the wrists.'], mistakes: ['Jumping too high.', 'Swinging the whole arms.'] }
   };
 
+  function normalizeInstructionText(value = '') {
+    return String(value).toLowerCase().trim().replace(/\s+/g, ' ').replace(/[.!?]+$/g, '');
+  }
+
+  function distinctSuccessCriteria(movement = [], successCriteria = []) {
+    const movementText = normalizeInstructionText((Array.isArray(movement) ? movement : [movement]).filter(Boolean).join(' '));
+    return (Array.isArray(successCriteria) ? successCriteria : [successCriteria]).filter(Boolean).filter(value => normalizeInstructionText(value) !== movementText);
+  }
+
+  function generatedSuccessCriteria(name, prescription, options = {}) {
+    if (prescription?.seconds || prescription?.minutes) {
+      return [`The defined position remains controlled and the listed focus points are maintained until the timer reaches zero${prescription?.perSide ? ' on each prescribed side' : ''}.`];
+    }
+    if (prescription?.attempts) {
+      return [`Each ${name.toLowerCase()} attempt reaches its defined controlled endpoint and finishes with the stated safe reset or exit${prescription?.perSide || options.unilateral ? ' on each side' : ''}.`];
+    }
+    if (prescription?.perSide || options.unilateral) {
+      return ['Every prescribed repetition is completed separately on each side through a consistent controlled range, with the working joint alignment maintained.'];
+    }
+    return ['Every prescribed repetition uses a consistent controlled range and returns to the defined finish position without losing the listed focus points.'];
+  }
+
   function structuredInstructions(name, movementFamily, instructions, options = {}) {
     const guidance = instructionGuidance[movementFamily] || { focus: ['Move slowly and stay in control.'], mistakes: ['Rushing the movement.'] };
+    const movement = Array.isArray(options.movement) && options.movement.length ? options.movement.slice(0, 6) : [instructions.execution];
+    const authoredSuccess = successCriteriaById[options.exerciseId] || [];
+    const successCriteria = distinctSuccessCriteria(movement, authoredSuccess);
+    const removedDuplicate = successCriteria.length !== authoredSuccess.length;
     return {
       purpose: instructions.purpose,
       startingPosition: instructions.setup,
-      movement: Array.isArray(options.movement) && options.movement.length ? options.movement.slice(0, 6) : [instructions.execution],
-      successCriteria: successCriteriaById[options.exerciseId],
+      movement,
+      successCriteria: removedDuplicate || !successCriteria.length ? generatedSuccessCriteria(name, options.prescription, options) : successCriteria,
       focus: (options.focus || guidance.focus).slice(0, 3),
       commonMistakes: (options.commonMistakes || guidance.mistakes).slice(0, 3),
       safety: instructions.safety,
@@ -431,7 +469,7 @@
         setup,
         execution,
         safety
-      }, { ...options, exerciseId: id }),
+      }, { ...options, exerciseId: id, prescription }),
       progressionNote: options.progressionNote || '',
       phase: options.phase || null,
       highSkill: Boolean(options.highSkill),
@@ -463,7 +501,7 @@
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
       setup: 'Place hands on a stable bench, sofa edge, or step around mid-thigh height.',
-      execution: 'Lower the chest to the surface while keeping elbows controlled, then press up.',
+      execution: 'Bend your elbows and lower your chest toward the surface. Keep your body moving as one unit, then press through both hands until your arms are straight.',
       safety: 'Choose a surface that cannot tip. Return to a higher incline if reps get messy. ' + PAIN_NOTICE
     }),
     exercise('low-incline-push-up', 'Low incline push-up', 'horizontal-push', 4, { sets: 3, repsMin: 5, repsMax: 8 }, {
@@ -847,6 +885,61 @@
       highSkill: true
     }),
 
+    exercise('assisted-single-leg-sit-to-stand', 'Assisted single-leg sit-to-stand', 'unilateral', 4, { sets: 3, repsMin: 5, repsMax: 6, perSide: true }, {
+      equipment: ['chair'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true,
+      purpose: 'Builds the single-leg control and strength needed to begin a pistol squat progression.',
+      setup: 'Sit near the front of a stable chair with one foot planted and fingertips on a stable support.',
+      execution: 'Lean slightly forward, stand through the planted foot with only light hand help, then lower back to the chair under control.',
+      focus: ['Keep the working heel planted.', 'Track the working knee over the toes.', 'Use the hands only as much as needed.'],
+      commonMistakes: ['Pushing strongly with the hands.', 'Dropping onto the chair.', 'Letting the free foot take weight.'],
+      safety: 'Use a higher chair and more support if the knee, hip, or ankle cannot stay comfortable. ' + PAIN_NOTICE
+    }),
+    exercise('elevated-pistol-squat', 'Elevated pistol squat', 'unilateral', 5, { sets: 3, repsMin: 4, repsMax: 6, perSide: true }, {
+      equipment: ['stable-elevated-surface'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true,
+      purpose: 'Develops pistol squat balance and range from a raised surface that gives the free leg clearance.',
+      setup: 'Stand on the edge of a low, stable platform with one foot supported and the other leg hanging clear.',
+      execution: 'Reach the free leg forward, lower on the working leg to a controlled depth, then press through the whole foot to stand.',
+      focus: ['Keep the working heel planted.', 'Keep the free foot off the floor.', 'Control the same range on every repetition.'],
+      commonMistakes: ['Dropping quickly.', 'Pushing from the free foot.', 'Letting the knee collapse inward.'],
+      safety: 'Use support nearby and a platform that cannot tip or slide. Reduce depth for knee or ankle discomfort. ' + PAIN_NOTICE
+    }),
+    exercise('counterbalance-pistol-squat', 'Counterbalance pistol squat', 'unilateral', 6, { sets: 3, repsMin: 4, repsMax: 5, perSide: true }, {
+      equipment: ['floor'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true,
+      purpose: 'Uses the arms as a counterbalance while building deeper single-leg squat control.',
+      setup: 'Stand on one leg with both arms reaching forward and the other leg extended in front.',
+      execution: 'Keep the arms reaching forward as you lower into a single-leg squat, then drive through the planted foot to stand.',
+      focus: ['Keep the heel down.', 'Keep the free leg clear of the floor.', 'Let the knee track with the toes.'],
+      commonMistakes: ['Swinging the arms for momentum.', 'Bouncing out of the bottom.', 'Twisting the pelvis.'],
+      safety: 'Work only through a depth you can reverse smoothly and keep a stable support within reach. ' + PAIN_NOTICE
+    }),
+    exercise('assisted-pistol-squat', 'Assisted pistol squat', 'unilateral', 7, { sets: 3, repsMin: 3, repsMax: 5, perSide: true }, {
+      equipment: ['wall'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true, highSkill: true,
+      purpose: 'Practices full pistol squat depth while a stable hand support reduces the strength and balance demand.',
+      setup: 'Stand beside a fixed support, hold it lightly, and extend the free leg forward.',
+      execution: 'Lower to full controlled depth on one leg, use only enough hand assistance to stay balanced, then stand through the working foot.',
+      focus: ['Keep the heel planted.', 'Keep hand assistance light.', 'Maintain steady knee tracking.'],
+      commonMistakes: ['Pulling heavily with the arm.', 'Letting the free foot touch down.', 'Falling into the bottom.'],
+      safety: 'Use a secure support and reduce depth if ankle, knee, or hip comfort changes. ' + PAIN_NOTICE
+    }),
+    exercise('pistol-squat-negative', 'Pistol squat negative', 'unilateral', 8, { sets: 3, reps: 3, perSide: true }, {
+      equipment: ['chair'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true, highSkill: true,
+      purpose: 'Builds the eccentric strength and bottom-position control required for a full pistol squat.',
+      setup: 'Stand on one leg in front of a low stable target with the free leg extended forward.',
+      execution: 'Lower for at least three seconds until seated or lightly supported on the target, then use both feet to reset at the top.',
+      focus: ['Keep the heel planted.', 'Make the descent last at least three seconds.', 'Keep the knee tracking over the toes.'],
+      commonMistakes: ['Dropping during the final range.', 'Bouncing off the target.', 'Trying to stand on the working leg before the negative is controlled.'],
+      safety: 'Use a target high enough to prevent a fall and stop if knee or ankle pain appears. ' + PAIN_NOTICE
+    }),
+    exercise('full-pistol-squat', 'Full pistol squat', 'unilateral', 9, { sets: 3, reps: 1, perSide: true }, {
+      equipment: ['floor'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true, highSkill: true,
+      purpose: 'Demonstrates an unassisted full-depth pistol squat with controlled balance and joint alignment.',
+      setup: 'Stand tall on the tested leg with the other leg extended forward and arms available for balance.',
+      execution: 'Lower under control to full depth without touching the free foot down, then press through the planted foot to stand tall without assistance.',
+      focus: ['Keep the working heel planted.', 'Keep the free leg off the floor.', 'Control the knee over the toes through the full repetition.'],
+      commonMistakes: ['Falling or bouncing into depth.', 'Touching the free foot down.', 'Using external support to stand.'],
+      safety: 'Attempt only after controlled negatives; keep clear space and a stable support within reach for a safe abort. ' + PAIN_NOTICE
+    }),
+
     exercise('glute-bridge', 'Glute bridge', 'posterior-chain', 1, { sets: 3, repsMin: 10, repsMax: 15 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
@@ -1203,6 +1296,61 @@
       highSkill: true
     }),
 
+    exercise('elevated-pike-hold', 'Elevated pike hold', 'handstand', 4, { sets: 3, seconds: 20 }, {
+      equipment: ['stable-elevated-surface'], primaryAreas: ['shoulder', 'core'], loadedAreas: ['wrist', 'elbow', 'shoulder'], stimulus: 'skill', highSkill: true,
+      purpose: 'Builds overhead support strength with more body weight over the hands than a floor pike hold.',
+      setup: 'Place feet on a stable low surface and hands on the floor, then lift hips over the shoulders as far as controlled.',
+      execution: 'Press the floor away with straight elbows and hold the elevated pike position with active shoulders.',
+      focus: ['Keep elbows straight.', 'Push tall through the shoulders.', 'Keep the head neutral between the arms.'],
+      commonMistakes: ['Letting the shoulders collapse.', 'Moving the feet on an unstable surface.', 'Holding the breath.'],
+      safety: 'Use a surface that cannot slide. Come down before wrist, elbow, or shoulder control fades. ' + PAIN_NOTICE
+    }),
+    exercise('pike-push-up', 'Pike push-up', 'handstand', 5, { sets: 3, repsMin: 5, repsMax: 8 }, {
+      equipment: ['floor'], primaryAreas: ['shoulder', 'triceps'], loadedAreas: ['wrist', 'elbow', 'shoulder', 'neck'], stimulus: 'strength', highSkill: true,
+      purpose: 'Develops inverted pressing strength while both feet remain on the floor.',
+      setup: 'Start in a pike with hips high, hands shoulder-width, and head positioned to travel between the hands.',
+      execution: 'Bend the elbows and lower the top of the head toward a safe point between the hands, then press back to straight arms.',
+      focus: ['Keep hips high.', 'Keep shoulders active.', 'Use the same controlled depth each repetition.'],
+      commonMistakes: ['Turning the movement into a horizontal push-up.', 'Flaring elbows abruptly.', 'Resting body weight on the head.'],
+      safety: 'The head is a depth reference, not a support. Reduce range for wrist, elbow, shoulder, or neck discomfort. ' + PAIN_NOTICE
+    }),
+    exercise('feet-elevated-pike-push-up', 'Feet-elevated pike push-up', 'handstand', 6, { sets: 3, repsMin: 4, repsMax: 6 }, {
+      equipment: ['stable-elevated-surface'], primaryAreas: ['shoulder', 'triceps'], loadedAreas: ['wrist', 'elbow', 'shoulder', 'neck'], stimulus: 'strength', highSkill: true,
+      purpose: 'Increases the vertical pressing load before wall-supported handstand push-up work.',
+      setup: 'Place feet on a stable surface, hands on the floor, and raise hips so the torso is close to vertical.',
+      execution: 'Lower the head toward a defined padded target between the hands, then press through both hands to straight arms.',
+      focus: ['Keep hips over the shoulders.', 'Control the descent.', 'Finish with active shoulders.'],
+      commonMistakes: ['Using an unstable foot support.', 'Collapsing onto the target.', 'Letting the hips drift backward.'],
+      safety: 'Use a low stable surface and a soft target that limits range without bearing uncontrolled head load. ' + PAIN_NOTICE
+    }),
+    exercise('wall-handstand-push-up-negative', 'Wall handstand push-up negative', 'handstand', 7, { sets: 3, reps: 3 }, {
+      equipment: ['wall'], primaryAreas: ['shoulder', 'triceps'], loadedAreas: ['wrist', 'elbow', 'shoulder', 'neck'], stimulus: 'strength', highSkill: true,
+      purpose: 'Builds controlled eccentric strength through the wall handstand push-up range.',
+      setup: 'Enter a stable wall-supported handstand above a padded head target, with hands set at a repeatable width.',
+      execution: 'Bend the elbows and lower for at least three seconds until the head lightly reaches the target, then exit safely and reset without pressing up.',
+      focus: ['Keep shoulders active throughout.', 'Make each descent last at least three seconds.', 'Keep pressure balanced through both hands.'],
+      commonMistakes: ['Dropping onto the target.', 'Relaxing the shoulders at the bottom.', 'Trying another repetition without a safe reset.'],
+      safety: 'Use a padded target and a practiced wall exit. Never load the head or neck, and stop before elbow or shoulder control fades. ' + PAIN_NOTICE
+    }),
+    exercise('partial-wall-handstand-push-up', 'Partial-range wall handstand push-up', 'handstand', 8, { sets: 3, repsMin: 3, repsMax: 5 }, {
+      equipment: ['wall'], primaryAreas: ['shoulder', 'triceps'], loadedAreas: ['wrist', 'elbow', 'shoulder', 'neck'], stimulus: 'strength', highSkill: true,
+      purpose: 'Develops the concentric wall handstand press through a deliberately limited, repeatable range.',
+      setup: 'Enter a stable wall-supported handstand above a raised padded target that limits the descent.',
+      execution: 'Lower until the head lightly touches the raised target, then press through both hands to full elbow extension.',
+      focus: ['Use the same target height each set.', 'Keep shoulders active.', 'Finish every repetition with straight elbows.'],
+      commonMistakes: ['Kicking with the legs to finish.', 'Changing target height during the set.', 'Resting on the head.'],
+      safety: 'Use a firm padded target that cannot slip and a practiced exit. Stop for wrist, elbow, shoulder, or neck symptoms. ' + PAIN_NOTICE
+    }),
+    exercise('full-wall-handstand-push-up', 'Full-range wall handstand push-up', 'handstand', 9, { sets: 3, repsMin: 1, repsMax: 3 }, {
+      equipment: ['wall'], primaryAreas: ['shoulder', 'triceps'], loadedAreas: ['wrist', 'elbow', 'shoulder', 'neck'], stimulus: 'skill', highSkill: true,
+      purpose: 'Demonstrates a complete controlled wall-supported handstand push-up without assistance from the legs.',
+      setup: 'Enter a stable wall-supported handstand with hands at a repeatable width and a thin padded target defining full safe depth.',
+      execution: 'Lower under control until the head lightly reaches the defined target, then press through both hands to full elbow extension while the legs remain quiet.',
+      focus: ['Maintain active shoulders.', 'Keep the descent controlled.', 'Press evenly without a leg kick.'],
+      commonMistakes: ['Collapsing onto the head.', 'Kicking off the wall to finish.', 'Stopping before full elbow extension.'],
+      safety: 'Use a practiced wall entry and exit, never bear uncontrolled weight through the head or neck, and stop for wrist, elbow, shoulder, or neck pain. ' + PAIN_NOTICE
+    }),
+
     exercise('hollow-body-strength', 'Hollow-body strength', 'muscle-up', 1, { sets: 3, seconds: 20 }, {
       equipment: ['floor'],
       primaryAreas: ['core'],
@@ -1408,6 +1556,7 @@
     scapularPull: ids(['standing-towel-row-isometric', 'seated-towel-row-isometric', 'scapular-pull-up']),
     squat: ids(['supported-chair-squat', 'chair-squat', 'bodyweight-squat', 'tempo-squat', 'pause-squat', 'narrow-squat']),
     unilateral: ids(['assisted-split-squat', 'split-squat', 'bulgarian-split-squat', 'assisted-shrimp-squat', 'shrimp-squat']),
+    pistolSquat: ids(['assisted-single-leg-sit-to-stand', 'elevated-pistol-squat', 'counterbalance-pistol-squat', 'assisted-pistol-squat', 'pistol-squat-negative', 'full-pistol-squat']),
     posteriorChain: ids(['glute-bridge', 'paused-glute-bridge', 'single-leg-assisted-glute-bridge', 'single-leg-glute-bridge', 'hip-hinge-drill', 'bodyweight-good-morning', 'single-leg-romanian-deadlift']),
     calves: ids(['two-leg-calf-raise', 'paused-calf-raise', 'single-leg-assisted-calf-raise', 'single-leg-calf-raise', 'elevated-single-leg-calf-raise']),
     antiExtension: ids(['dead-bug', 'forearm-plank', 'plank', 'hollow-hold']),
@@ -1415,6 +1564,7 @@
     lateralCore: ids(['side-plank']),
     lsit: ids(['seated-compression-lift', 'bent-knee-support-hold', 'foot-assisted-support-hold', 'tuck-support-hold', 'one-leg-extended-tuck-hold', 'alternating-one-leg-lsit', 'full-tuck-lsit', 'full-lsit-attempts', 'full-lsit-hold', 'longer-lsit-hold']),
     handstand: ids(['wrist-preparation', 'elevated-plank-shoulder-shift', 'pike-hold', 'pike-shoulder-taps', 'wall-walk-preparation', 'chest-to-wall-handstand-hold', 'chest-to-wall-alignment-hold', 'wall-weight-shifts', 'heel-pulls', 'controlled-wall-exit', 'back-to-wall-kick-up-practice', 'freestanding-kick-up-practice', 'freestanding-balance-attempts']),
+    handstandPushup: ids(['pike-hold', 'elevated-pike-hold', 'pike-push-up', 'feet-elevated-pike-push-up', 'wall-handstand-push-up-negative', 'partial-wall-handstand-push-up', 'full-wall-handstand-push-up']),
     muscleupFoundation: ids(['hollow-body-strength', 'scapular-pull-up', 'straight-bar-support-development', 'negative-pull-up', 'strict-pull-up-singles']),
     muscleupPower: ids(['chest-to-bar-pull-up', 'high-pull-up', 'explosive-pull-up', 'straight-bar-dip-preparation']),
     muscleupTransition: ids(['low-bar-transition-drill', 'feet-assisted-transition', 'band-assisted-transition', 'jumping-muscle-up-transition', 'slow-negative-muscle-up']),
@@ -1435,17 +1585,17 @@
 
   const advancedSkillEligibility = Object.freeze({
     'full-muscle-up': Object.freeze({
-      status: 'provisional',
+      status: 'configured',
       requiredGoal: 'muscleup',
       requiredEquipment: ['pullupBar'],
       requirements: [
         { trackKey: 'verticalPull', label: 'Pulling readiness', minLevel: 9 },
         { trackKey: 'dipStrength', label: 'Above-bar pressing readiness', minLevel: 8 },
-        { trackKey: 'muscleupTransition', label: 'Transition full-completion evidence', pending: true },
-        { trackKey: 'muscleupPower', label: 'Successful high-pull exposure requirement', pending: true }
+        { trackKey: 'muscleupTransition', label: 'Transition readiness', minLevel: 4, minSuccessfulExposures: 3 },
+        { trackKey: 'muscleupPower', label: 'High-pull power readiness', minLevel: 3, minSuccessfulExposures: 3 },
+        { trackKey: 'muscleupTransition', exerciseId: 'slow-negative-muscle-up', label: 'Controlled slow-negative evidence', minFullCompletions: 2 }
       ],
       instructionApproved: true,
-      visualApproved: false,
       safetyPrerequisiteId: null
     })
   });
@@ -1475,7 +1625,6 @@
       if (Number.isFinite(requirement.minFullCompletions)) checks.push({ key: `completion:${index}`, label: `${requirement.label || 'Required capability'} full completions`, met: fullCompletionCount(state, requirement) >= requirement.minFullCompletions });
     });
     checks.push({ key: 'instruction', label: 'Instructions are release-ready', met: config.instructionApproved === true });
-    checks.push({ key: 'visual', label: 'Technique visual is release-ready', met: config.visualApproved === true });
     if (config.safetyPrerequisiteId) checks.push({ key: 'safety', label: 'Safe exit prerequisite completed', met: fullCompletionCount(state, { exerciseId: config.safetyPrerequisiteId }) > 0 });
     const activeRecovery = recovery || getActiveRecovery(state);
     checks.push({ key: 'recovery', label: 'No active recovery restriction conflicts', met: !activeRecovery || isExerciseAllowedForRecovery(byId[exerciseId], activeRecovery) });
@@ -1847,7 +1996,7 @@
       {
         name: 'Skills',
         focusLabel: goal === 'muscleup' ? muscleGate.label : '',
-        tracks: unique([skillTrack, goal === 'lsit' ? 'compression' : goal === 'handstand' ? 'verticalPush' : 'horizontalPull', 'lsit', 'antiExtension'])
+        tracks: unique([skillTrack, 'pistolSquat', 'handstandPushup', 'lsit', goal === 'lsit' ? 'compression' : goal === 'handstand' ? 'verticalPush' : 'horizontalPull', 'antiExtension'])
       }
     ];
   }
@@ -2225,7 +2374,7 @@
       Push: ['horizontalPush', 'dipStrength', 'verticalPush', 'antiExtension', 'squat'],
       Pull: ['horizontalPull', 'verticalPull', 'scapularPull', 'antiExtension', 'posteriorChain'],
       'Legs + Core': ['squat', 'posteriorChain', 'unilateral', 'compression', 'calves', 'antiExtension'],
-      Skills: ['handstand', 'lsit', 'verticalPull', 'horizontalPull', 'antiExtension', 'posteriorChain']
+      Skills: ['pistolSquat', 'handstandPushup', 'handstand', 'lsit', 'verticalPull', 'horizontalPull', 'antiExtension', 'posteriorChain']
     };
     const selected = [];
     [...workout.tracks, ...(fillByWorkout[workout.name] || [])].forEach(trackKey => {
@@ -2329,13 +2478,16 @@
 
   function helpFromInstructions(item) {
     if (!item?.instructions) return null;
+    const movement = item.instructions.movement || [item.instructions.execution].filter(Boolean);
+    const authoredSuccess = item.instructions.successCriteria || [];
+    const successCriteria = distinctSuccessCriteria(movement, authoredSuccess);
     return {
       purpose: item.instructions.purpose,
       startingPosition: item.instructions.startingPosition || item.instructions.setup,
-      movement: item.instructions.movement || [item.instructions.execution].filter(Boolean),
-      successCriteria: item.instructions.successCriteria || [],
-      focus: item.instructions.focus || [],
-      commonMistakes: item.instructions.commonMistakes || [],
+      movement,
+      successCriteria: successCriteria.length || authoredSuccess.length ? successCriteria : ['Complete the movement for the prescribed time or repetitions with a steady range and a controlled finish.'],
+      focus: item.instructions.focus || ['Move slowly through a comfortable, repeatable range.'],
+      commonMistakes: item.instructions.commonMistakes || ['Rushing or forcing the movement beyond a comfortable range.'],
       safety: item.instructions.safety,
       cues: [item.instructions.setup, item.instructions.execution]
     };
@@ -2405,6 +2557,22 @@
     }
   }
 
+  function validateEligibilityConfig(configs = advancedSkillEligibility) {
+    const errors = [];
+    Object.entries(configs || {}).forEach(([exerciseId, config]) => {
+      if (config.status !== 'configured') errors.push(`Eligibility is not configured: ${exerciseId}`);
+      (config.requirements || []).forEach(requirement => {
+        if (requirement.pending) errors.push(`Pending eligibility requirement: ${exerciseId}`);
+        if (Number.isFinite(requirement.minLevel)) {
+          const track = movementTracks[requirement.trackKey];
+          if (!Array.isArray(track)) errors.push(`Unknown eligibility track ${requirement.trackKey}: ${exerciseId}`);
+          else if (requirement.minLevel > track.length - 1) errors.push(`Eligibility level ${requirement.minLevel} exceeds ${requirement.trackKey} maximum ${track.length - 1}: ${exerciseId}`);
+        }
+      });
+    });
+    return errors;
+  }
+
   function validateWorkoutSystem() {
     const errors = [];
     const ids = new Set();
@@ -2423,6 +2591,13 @@
           !Array.isArray(instruction?.focus) || !instruction.focus.length || !Array.isArray(instruction?.commonMistakes) || !instruction.commonMistakes.length ||
           !instruction?.safety || !Array.isArray(instruction?.successCriteria) || !instruction.successCriteria.length ||
           instruction.visualRequired !== true || !instruction.visualGuidance) errors.push(`Missing structured instructions: ${item.id}`);
+      const normalizedMovement = normalizeInstructionText((instruction?.movement || []).join(' '));
+      const normalizedSuccess = (instruction?.successCriteria || []).map(normalizeInstructionText).filter(Boolean);
+      if (!normalizedMovement) errors.push(`Missing movement instructions: ${item.id}`);
+      if (!normalizedSuccess.length) errors.push(`Missing success criteria: ${item.id}`);
+      if (normalizedSuccess.length && normalizedSuccess.every(value => value === normalizedMovement)) errors.push(`Movement duplicates every success criterion: ${item.id}`);
+      const instructionText = JSON.stringify(instruction || {});
+      if (/\b(?:placeholder|provisional|to be confirmed|being finalized|tbd)\b/i.test(instructionText)) errors.push(`Placeholder or provisional instructions: ${item.id}`);
       if (/recommended/i.test(item.name) || /recommended/i.test(item.prescription)) errors.push(`Informational exercise: ${item.id}`);
       ['difficulty', 'fatigue', 'skill', 'stability'].forEach(field => {
         if (!Number.isInteger(item[field]) || item[field] < 1 || item[field] > 10) {
@@ -2442,6 +2617,12 @@
         if (item.difficulty < previousDifficulty) errors.push(`Difficulty drops in ${key}: ${item.id}`);
         previousDifficulty = Math.max(previousDifficulty, item.difficulty);
       });
+    });
+    errors.push(...validateEligibilityConfig());
+    Object.entries(addOnMovementHelp).forEach(([name, item]) => {
+      const help = helpFromInstructions(item);
+      if (!help?.purpose || !help?.startingPosition || !help?.movement?.length || !help?.successCriteria?.length || !help?.focus?.length || !help?.commonMistakes?.length || !help?.safety) errors.push(`Missing add-on instructions: ${name}`);
+      if (help?.successCriteria?.length && help.successCriteria.every(value => normalizeInstructionText(value) === normalizeInstructionText(help.movement.join(' ')))) errors.push(`Movement duplicates every success criterion: add-on ${name}`);
     });
     return errors;
   }
@@ -2486,6 +2667,9 @@
     timerShouldCompleteSet,
     updateSetCompletion,
     getExerciseHelp,
+    normalizeInstructionText,
+    distinctSuccessCriteria,
+    validateEligibilityConfig,
     modeLabel,
     applyRating,
     validateWorkoutSystem,
