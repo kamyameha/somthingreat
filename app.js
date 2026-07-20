@@ -1551,11 +1551,12 @@ function showExerciseHelp(exerciseName) {
   document.getElementById('exerciseHelpTitle').textContent = displayName;
   const content = document.getElementById('exerciseHelpContent');
   if (content) {
+    const distinctSuccess = workoutModule.distinctSuccessCriteria(help.movement, help.successCriteria);
     const sections = [
       ['Purpose', [help.purpose]],
       ['Starting position', [help.startingPosition]],
       ['Movement', help.movement],
-      ['Success looks like', help.successCriteria],
+      ['Success looks like', distinctSuccess],
       ['Focus', help.focus],
       ['Common mistakes', help.commonMistakes],
       ['Safety', [help.safety]]
@@ -2045,8 +2046,10 @@ function renderProgress() {
     crow: 'Crow pose',
     rope: 'Jump rope',
     handstand: 'Handstand',
+    handstandPushup: 'Handstand push-up',
     lsit: 'L-sit',
-    muscleup: 'Muscle-up'
+    muscleup: 'Muscle-up',
+    pistolSquat: 'Pistol squat'
   };
 
   Object.keys(labels).forEach(key => {
