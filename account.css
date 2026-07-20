@@ -1147,6 +1147,34 @@ body.account-active .app {
   font-weight: 400;
 }
 
+.activity-screen .history-item-header,
+.activity-screen .history-exercise-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 15px;
+}
+
+.activity-screen .history-item-header span,
+.activity-screen .history-exercise-result {
+  text-align: right;
+}
+
+.activity-screen .history-item-exercises {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.activity-screen .history-exercise-row span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.activity-screen .history-exercise-result {
+  white-space: nowrap;
+}
+
 @media (max-width: 380px) {
   .activity-screen .history-item,
   .account-submenu-panel .history-item {
