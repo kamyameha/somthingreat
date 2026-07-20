@@ -2,7 +2,7 @@
   const STORAGE_KEY = 'camille-calisthenics-v4';
   const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
   const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
-  const STATE_SCHEMA_VERSION = 2;
+  const STATE_SCHEMA_VERSION = 3;
 
   function applyWorkoutCatalogMigrations(workoutModule) {
     if (!workoutModule || workoutModule.catalogMigrationsApplied) return;
@@ -146,6 +146,16 @@
         .map(record => JSON.parse(JSON.stringify(record)));
     }
 
+    function sanitizeProgressInsights(insights) {
+      const source = insights && typeof insights === 'object' ? insights : {};
+      return {
+        acknowledgedUnlockIds: Array.isArray(source.acknowledgedUnlockIds)
+          ? Array.from(new Set(source.acknowledgedUnlockIds.filter(value => typeof value === 'string' && value).slice(-100)))
+          : [],
+        returningSeenWorkoutId: typeof source.returningSeenWorkoutId === 'string' ? source.returningSeenWorkoutId : ''
+      };
+    }
+
     function sanitizeCustomChecklist(checklist) {
       if (!checklist || typeof checklist !== 'object') return null;
       const type = ['rounds', 'minutes'].includes(checklist.type) ? checklist.type : 'rounds';
@@ -217,6 +227,7 @@
         restTimerSeconds: 60,
         recovery: null,
         pendingSessionRecords: [],
+        progressInsights: sanitizeProgressInsights(null),
         todayEmptyStateDismissed: false
       };
     }
@@ -248,6 +259,7 @@
       nextState.restTimerSeconds = 60;
       nextState.recovery = sanitizeRecovery(nextState.recovery);
       nextState.pendingSessionRecords = sanitizePendingSessionRecords(nextState.pendingSessionRecords);
+      nextState.progressInsights = sanitizeProgressInsights(nextState.progressInsights);
       nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
       nextState.schemaVersion = STATE_SCHEMA_VERSION;
 
@@ -306,6 +318,7 @@
         restTimerSeconds: state.restTimerSeconds,
         recovery: state.recovery,
         pendingSessionRecords: state.pendingSessionRecords,
+        progressInsights: state.progressInsights,
         todayEmptyStateDismissed: state.todayEmptyStateDismissed
       };
     }
