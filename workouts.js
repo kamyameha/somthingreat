@@ -180,9 +180,6 @@
     if (prescription.seconds) return `${sets} × ${prescription.seconds}s`;
     if (prescription.minutes) return `${prescription.minutes} min`;
     if (prescription.attempts) return `${sets} × ${prescription.attempts} attempt${prescription.attempts === 1 ? '' : 's'}${prescription.perSide ? '/side' : ''}`;
-    if (prescription.repsMin && prescription.repsMax) {
-      return `${sets} × ${prescription.repsMin}-${prescription.repsMax}${prescription.perSide ? '/side' : ''}`;
-    }
     if (prescription.reps) return `${sets} × ${prescription.reps}${prescription.perSide ? '/side' : ''}`;
     return '';
   }
@@ -203,8 +200,14 @@
     if (minutes) return { sets: 1, minutes };
     const attempts = positiveInteger(text.match(/[×x]\s*(\d+)\s*attempt/i)?.[1] || text.match(/^(\d+)\s*attempt/i)?.[1]);
     if (attempts) return { sets, attempts, perSide: /\/side/i.test(text) };
-    const range = text.match(/[×x]\s*(\d+)\s*-\s*(\d+)(\/side)?/i);
-    if (range) return { sets, repsMin: positiveInteger(range[1]), repsMax: positiveInteger(range[2]), perSide: Boolean(range[3]) };
+    const legacyRange = text.match(/[×x]\\s*(\\d+)\\s*[-–]\\s*(\\d+)(\\/side)?/i);
+    if (legacyRange) {
+      return {
+        sets,
+        reps: Math.round((positiveInteger(legacyRange[1]) + positiveInteger(legacyRange[2])) / 2),
+        perSide: Boolean(legacyRange[3])
+      };
+    }
     const reps = positiveInteger(text.match(/[×x]\s*(\d+)(\/side)?/i)?.[1]);
     if (reps) return { sets, reps, perSide: /\/side/i.test(text) };
     return null;
@@ -220,10 +223,7 @@
     if (positiveInteger(source.seconds)) normalized.seconds = positiveInteger(source.seconds);
     else if (positiveInteger(source.minutes)) normalized.minutes = positiveInteger(source.minutes);
     else if (positiveInteger(source.attempts)) normalized.attempts = positiveInteger(source.attempts);
-    else if (positiveInteger(source.repsMin) && positiveInteger(source.repsMax)) {
-      normalized.repsMin = positiveInteger(source.repsMin);
-      normalized.repsMax = Math.max(normalized.repsMin, positiveInteger(source.repsMax));
-    } else if (positiveInteger(source.reps)) normalized.reps = positiveInteger(source.reps);
+    else if (positiveInteger(source.reps)) normalized.reps = positiveInteger(source.reps);
     else return null;
     return normalized;
   }
@@ -241,8 +241,6 @@
       prescriptionType,
       setCount: prescriptionData.sets,
       repsPerSet: prescriptionData.reps || null,
-      repsMin: prescriptionData.repsMin || null,
-      repsMax: prescriptionData.repsMax || null,
       attemptsPerSet: prescriptionData.attempts || null,
       secondsPerSet: prescriptionData.seconds || (prescriptionData.minutes ? prescriptionData.minutes * 60 : null),
       perSide: Boolean(prescriptionData.perSide),
@@ -479,7 +477,7 @@
   }
 
   const exerciseCatalog = [
-    exercise('wall-push-up', 'Wall push-up', 'horizontal-push', 1, { sets: 3, repsMin: 8, repsMax: 12 }, {
+    exercise('wall-push-up', 'Wall push-up', 'horizontal-push', 1, { sets: 3, reps: 10 }, {
       equipment: ['wall'],
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -488,7 +486,7 @@
       execution: 'Lower chest toward the wall, keep ribs tucked, then press the wall away.',
       safety: 'Keep wrists comfortable and step closer to the wall if your shoulders shrug. ' + PAIN_NOTICE
     }),
-    exercise('high-incline-push-up', 'High incline push-up', 'horizontal-push', 2, { sets: 3, repsMin: 6, repsMax: 10 }, {
+    exercise('high-incline-push-up', 'High incline push-up', 'horizontal-push', 2, { sets: 3, reps: 8 }, {
       equipment: ['stable-elevated-surface'],
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -496,7 +494,7 @@
       execution: 'Hold a straight line from head to heels, lower under control, and press back up.',
       safety: 'The surface must be stable. Use a higher surface if your hips sag. ' + PAIN_NOTICE
     }),
-    exercise('medium-incline-push-up', 'Medium incline push-up', 'horizontal-push', 3, { sets: 3, repsMin: 6, repsMax: 10 }, {
+    exercise('medium-incline-push-up', 'Medium incline push-up', 'horizontal-push', 3, { sets: 3, reps: 8 }, {
       equipment: ['stable-elevated-surface'],
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -504,7 +502,7 @@
       execution: 'Bend your elbows and lower your chest toward the surface. Keep your body moving as one unit, then press through both hands until your arms are straight.',
       safety: 'Choose a surface that cannot tip. Return to a higher incline if reps get messy. ' + PAIN_NOTICE
     }),
-    exercise('low-incline-push-up', 'Low incline push-up', 'horizontal-push', 4, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('low-incline-push-up', 'Low incline push-up', 'horizontal-push', 4, { sets: 3, reps: 7 }, {
       equipment: ['stable-elevated-surface'],
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -512,7 +510,7 @@
       execution: 'Lower slowly with a straight body line and press up without letting hips drop.',
       safety: 'Use a higher incline when the low surface changes your body line. ' + PAIN_NOTICE
     }),
-    exercise('eccentric-push-up', 'Eccentric push-up', 'horizontal-push', 5, { sets: 3, repsMin: 3, repsMax: 5 }, {
+    exercise('eccentric-push-up', 'Eccentric push-up', 'horizontal-push', 5, { sets: 3, reps: 4 }, {
       equipment: ['floor'],
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -528,7 +526,7 @@
       execution: 'Complete one clean rep, rest, and repeat for quality.',
       safety: 'Stop each single before your hips sag or elbows flare hard. ' + PAIN_NOTICE
     }),
-    exercise('full-push-up', 'Full push-up', 'horizontal-push', 7, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('full-push-up', 'Full push-up', 'horizontal-push', 7, { sets: 3, reps: 7 }, {
       equipment: ['floor'],
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -536,7 +534,7 @@
       execution: 'Lower under control and press the floor away as one piece.',
       safety: 'End the set when your body line breaks. ' + PAIN_NOTICE
     }),
-    exercise('tempo-push-up', 'Tempo push-up', 'horizontal-push', 8, { sets: 3, repsMin: 4, repsMax: 6 }, {
+    exercise('tempo-push-up', 'Tempo push-up', 'horizontal-push', 8, { sets: 3, reps: 5 }, {
       equipment: ['floor'],
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -544,7 +542,7 @@
       execution: 'Lower for three seconds, press smoothly, and keep the body quiet.',
       safety: 'Keep reps crisp; slow tempo should not turn into collapsing. ' + PAIN_NOTICE
     }),
-    exercise('pause-push-up', 'Pause push-up', 'horizontal-push', 9, { sets: 3, repsMin: 3, repsMax: 5 }, {
+    exercise('pause-push-up', 'Pause push-up', 'horizontal-push', 9, { sets: 3, reps: 4 }, {
       equipment: ['floor'],
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -552,7 +550,7 @@
       execution: 'Pause briefly near the bottom, stay tight, then press back up.',
       safety: 'Use a smaller range if the pause causes shoulder discomfort. ' + PAIN_NOTICE
     }),
-    exercise('close-grip-push-up', 'Close-grip push-up', 'horizontal-push', 10, { sets: 3, repsMin: 3, repsMax: 6 }, {
+    exercise('close-grip-push-up', 'Close-grip push-up', 'horizontal-push', 10, { sets: 3, reps: 5 }, {
       equipment: ['floor'],
       primaryAreas: ['triceps', 'chest', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -560,7 +558,7 @@
       execution: 'Keep elbows near the body, lower with control, and press up strongly.',
       safety: 'Move hands wider if wrists or elbows feel crowded. ' + PAIN_NOTICE
     }),
-    exercise('decline-push-up', 'Decline push-up', 'horizontal-push', 11, { sets: 3, repsMin: 3, repsMax: 6 }, {
+    exercise('decline-push-up', 'Decline push-up', 'horizontal-push', 11, { sets: 3, reps: 5 }, {
       equipment: ['stable-elevated-surface'],
       primaryAreas: ['chest', 'triceps', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -569,7 +567,7 @@
       safety: 'Use a low surface that cannot slide. Skip if shoulder pressure feels sharp. ' + PAIN_NOTICE
     }),
 
-    exercise('close-grip-wall-push-up', 'Close-grip wall push-up', 'dip-strength', 1, { sets: 3, repsMin: 8, repsMax: 12 }, {
+    exercise('close-grip-wall-push-up', 'Close-grip wall push-up', 'dip-strength', 1, { sets: 3, reps: 10 }, {
       equipment: ['wall'],
       primaryAreas: ['triceps', 'chest'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -577,7 +575,7 @@
       execution: 'Lower with elbows close to your sides and press back to straight arms.',
       safety: 'Keep shoulders down and step closer if elbows feel irritated. ' + PAIN_NOTICE
     }),
-    exercise('close-grip-incline-push-up', 'Close-grip incline push-up', 'dip-strength', 2, { sets: 3, repsMin: 6, repsMax: 10 }, {
+    exercise('close-grip-incline-push-up', 'Close-grip incline push-up', 'dip-strength', 2, { sets: 3, reps: 8 }, {
       equipment: ['stable-elevated-surface'],
       primaryAreas: ['triceps', 'chest'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -585,7 +583,7 @@
       execution: 'Keep elbows close, lower under control, and press up tall.',
       safety: 'Use a higher surface if elbows flare or shoulders pinch. ' + PAIN_NOTICE
     }),
-    exercise('close-grip-push-up-dip-prep', 'Close-grip push-up for dip preparation', 'dip-strength', 3, { sets: 3, repsMin: 4, repsMax: 6 }, {
+    exercise('close-grip-push-up-dip-prep', 'Close-grip push-up for dip preparation', 'dip-strength', 3, { sets: 3, reps: 5 }, {
       equipment: ['floor'],
       primaryAreas: ['triceps', 'chest'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -601,7 +599,7 @@
       execution: 'Push tall through the bars, keep shoulders down, and hold a quiet position.',
       safety: 'Use stable dip bars and step down before shoulders shrug. ' + PAIN_NOTICE
     }),
-    exercise('scapular-support-movement', 'Scapular support movement', 'dip-strength', 5, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('scapular-support-movement', 'Scapular support movement', 'dip-strength', 5, { sets: 3, reps: 7 }, {
       equipment: ['dipBars'],
       primaryAreas: ['shoulder', 'triceps'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -609,7 +607,7 @@
       execution: 'Keep elbows straight, let shoulders rise slightly, then press tall again.',
       safety: 'Move only through a comfortable shoulder range. ' + PAIN_NOTICE
     }),
-    exercise('feet-assisted-dip', 'Feet-assisted dip', 'dip-strength', 6, { sets: 3, repsMin: 4, repsMax: 6 }, {
+    exercise('feet-assisted-dip', 'Feet-assisted dip', 'dip-strength', 6, { sets: 3, reps: 5 }, {
       equipment: ['dipBars'],
       primaryAreas: ['triceps', 'chest', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -617,7 +615,7 @@
       execution: 'Lower a small controlled range, use legs only as much as needed, then press up.',
       safety: 'Avoid deep shoulder positions and keep support stable. ' + PAIN_NOTICE
     }),
-    exercise('negative-dip', 'Negative dip', 'dip-strength', 7, { sets: 3, repsMin: 2, repsMax: 4 }, {
+    exercise('negative-dip', 'Negative dip', 'dip-strength', 7, { sets: 3, reps: 3 }, {
       equipment: ['dipBars'],
       primaryAreas: ['triceps', 'chest', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -625,7 +623,7 @@
       execution: 'Lower slowly, then use feet or a step to return to the top.',
       safety: 'Do not chase depth if shoulders feel pinched. ' + PAIN_NOTICE
     }),
-    exercise('partial-dip', 'Partial dip', 'dip-strength', 8, { sets: 3, repsMin: 3, repsMax: 5 }, {
+    exercise('partial-dip', 'Partial dip', 'dip-strength', 8, { sets: 3, reps: 4 }, {
       equipment: ['dipBars'],
       primaryAreas: ['triceps', 'chest', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -641,7 +639,7 @@
       execution: 'Perform one clean dip, rest, and repeat for quality.',
       safety: 'Stop before tired reps turn into shoulder collapse. ' + PAIN_NOTICE
     }),
-    exercise('full-dip', 'Full dip', 'dip-strength', 10, { sets: 3, repsMin: 3, repsMax: 5 }, {
+    exercise('full-dip', 'Full dip', 'dip-strength', 10, { sets: 3, reps: 4 }, {
       equipment: ['dipBars'],
       primaryAreas: ['triceps', 'chest', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -649,7 +647,7 @@
       execution: 'Lower under control, keep shoulders down, and press back to the top.',
       safety: 'Use only a comfortable depth. ' + PAIN_NOTICE
     }),
-    exercise('tempo-dip', 'Tempo dip', 'dip-strength', 11, { sets: 3, repsMin: 2, repsMax: 4 }, {
+    exercise('tempo-dip', 'Tempo dip', 'dip-strength', 11, { sets: 3, reps: 3 }, {
       equipment: ['dipBars'],
       primaryAreas: ['triceps', 'chest', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -674,7 +672,7 @@
       execution: 'Pull elbows back and hold shoulder blades gently together.',
       safety: 'Keep the neck relaxed and do not yank the towel. ' + PAIN_NOTICE
     }),
-    exercise('high-angle-table-row', 'High-angle table row', 'horizontal-pull', 3, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('high-angle-table-row', 'High-angle table row', 'horizontal-pull', 3, { sets: 3, reps: 7 }, {
       equipment: ['stable-table'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -682,7 +680,7 @@
       execution: 'Keep knees bent, pull chest toward the edge, and lower slowly.',
       safety: 'Skip this if the structure is not unquestionably stable. ' + PAIN_NOTICE
     }),
-    exercise('bent-knee-inverted-row', 'Bent-knee inverted row', 'horizontal-pull', 4, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('bent-knee-inverted-row', 'Bent-knee inverted row', 'horizontal-pull', 4, { sets: 3, reps: 7 }, {
       equipment: ['stable-table'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -690,7 +688,7 @@
       execution: 'Pull chest up, keep body from shoulders to knees straight, and lower with control.',
       safety: 'Do not use furniture that rocks, slides, or feels light. ' + PAIN_NOTICE
     }),
-    exercise('straight-leg-inverted-row', 'Straight-leg inverted row', 'horizontal-pull', 5, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('straight-leg-inverted-row', 'Straight-leg inverted row', 'horizontal-pull', 5, { sets: 3, reps: 7 }, {
       equipment: ['stable-table'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -698,7 +696,7 @@
       execution: 'Keep the body long, pull chest toward the anchor, and lower slowly.',
       safety: 'Use bent knees if the straight-leg version changes your shoulder position. ' + PAIN_NOTICE
     }),
-    exercise('feet-elevated-inverted-row', 'Feet-elevated inverted row', 'horizontal-pull', 6, { sets: 3, repsMin: 4, repsMax: 6 }, {
+    exercise('feet-elevated-inverted-row', 'Feet-elevated inverted row', 'horizontal-pull', 6, { sets: 3, reps: 5 }, {
       equipment: ['stable-table', 'stable-elevated-surface'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -715,7 +713,7 @@
       execution: 'Gently pull shoulders down away from ears and hold a quiet active hang.',
       safety: 'Step down before grip or shoulder control fades. ' + PAIN_NOTICE
     }),
-    exercise('scapular-pull-up', 'Scapular pull-up', 'vertical-pull', 2, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('scapular-pull-up', 'Scapular pull-up', 'vertical-pull', 2, { sets: 3, reps: 7 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -723,7 +721,7 @@
       execution: 'Without bending elbows, pull shoulders down, rise slightly, then relax with control.',
       safety: 'Avoid swinging or bending elbows. ' + PAIN_NOTICE
     }),
-    exercise('assisted-pull-up', 'Assisted pull-up', 'vertical-pull', 3, { sets: 3, repsMin: 3, repsMax: 5 }, {
+    exercise('assisted-pull-up', 'Assisted pull-up', 'vertical-pull', 3, { sets: 3, reps: 4 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -739,7 +737,7 @@
       execution: 'Hold chin near the bar with shoulders active, then step down safely.',
       safety: 'Use a step and stop before grip fails. ' + PAIN_NOTICE
     }),
-    exercise('negative-pull-up', 'Negative pull-up', 'vertical-pull', 5, { sets: 3, repsMin: 2, repsMax: 3 }, {
+    exercise('negative-pull-up', 'Negative pull-up', 'vertical-pull', 5, { sets: 3, reps: 3 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -747,7 +745,7 @@
       execution: 'Lower as slowly as you can while keeping shoulders active.',
       safety: 'Step down before the lowering turns into a drop. ' + PAIN_NOTICE
     }),
-    exercise('partial-pull-up', 'Partial pull-up', 'vertical-pull', 6, { sets: 3, repsMin: 3, repsMax: 5 }, {
+    exercise('partial-pull-up', 'Partial pull-up', 'vertical-pull', 6, { sets: 3, reps: 4 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -763,7 +761,7 @@
       execution: 'Perform one strict pull-up, rest fully, and repeat.',
       safety: 'Do not grind swinging reps. ' + PAIN_NOTICE
     }),
-    exercise('strict-pull-up', 'Strict pull-up', 'vertical-pull', 8, { sets: 3, repsMin: 3, repsMax: 5 }, {
+    exercise('strict-pull-up', 'Strict pull-up', 'vertical-pull', 8, { sets: 3, reps: 4 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -771,7 +769,7 @@
       execution: 'Pull chin over the bar, keep body quiet, and lower with control.',
       safety: 'Stop before reps become swinging attempts. ' + PAIN_NOTICE
     }),
-    exercise('chest-to-bar-pull-up', 'Chest-to-bar pull-up', 'vertical-pull', 9, { sets: 3, repsMin: 2, repsMax: 4 }, {
+    exercise('chest-to-bar-pull-up', 'Chest-to-bar pull-up', 'vertical-pull', 9, { sets: 3, reps: 3 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -779,7 +777,7 @@
       execution: 'Pull higher than a normal pull-up, aiming chest toward the bar.',
       safety: 'Only use this when strict pull-ups are controlled. ' + PAIN_NOTICE
     }),
-    exercise('high-pull-up', 'High pull-up', 'vertical-pull', 10, { sets: 3, repsMin: 2, repsMax: 3 }, {
+    exercise('high-pull-up', 'High pull-up', 'vertical-pull', 10, { sets: 3, reps: 3 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -789,7 +787,7 @@
       explosive: true
     }),
 
-    exercise('supported-chair-squat', 'Supported chair squat', 'squat', 1, { sets: 3, repsMin: 8, repsMax: 10 }, {
+    exercise('supported-chair-squat', 'Supported chair squat', 'squat', 1, { sets: 3, reps: 9 }, {
       equipment: ['chair'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -797,7 +795,7 @@
       execution: 'Sit back to touch the chair, then stand by pressing through the feet.',
       safety: 'Use a higher chair or smaller range if knees feel irritated. ' + PAIN_NOTICE
     }),
-    exercise('chair-squat', 'Chair squat', 'squat', 2, { sets: 3, repsMin: 8, repsMax: 12 }, {
+    exercise('chair-squat', 'Chair squat', 'squat', 2, { sets: 3, reps: 10 }, {
       equipment: ['chair'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -805,7 +803,7 @@
       execution: 'Tap the chair with control and stand without rocking.',
       safety: 'Keep knees tracking with toes. ' + PAIN_NOTICE
     }),
-    exercise('bodyweight-squat', 'Bodyweight squat', 'squat', 3, { sets: 3, repsMin: 10, repsMax: 15 }, {
+    exercise('bodyweight-squat', 'Bodyweight squat', 'squat', 3, { sets: 3, reps: 13 }, {
       equipment: ['floor'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -813,7 +811,7 @@
       execution: 'Sit hips down and back, keep knees tracking with toes, and stand tall.',
       safety: 'Use a smaller range if knees or hips feel irritated. ' + PAIN_NOTICE
     }),
-    exercise('tempo-squat', 'Tempo squat', 'squat', 4, { sets: 3, repsMin: 6, repsMax: 10 }, {
+    exercise('tempo-squat', 'Tempo squat', 'squat', 4, { sets: 3, reps: 8 }, {
       equipment: ['floor'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -821,7 +819,7 @@
       execution: 'Lower for three seconds, stand smoothly, and keep balance centered.',
       safety: 'Slow tempo should feel controlled, not painful. ' + PAIN_NOTICE
     }),
-    exercise('pause-squat', 'Pause squat', 'squat', 5, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('pause-squat', 'Pause squat', 'squat', 5, { sets: 3, reps: 7 }, {
       equipment: ['floor'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -829,7 +827,7 @@
       execution: 'Pause briefly at a comfortable bottom position, then stand with control.',
       safety: 'Pause only at a depth you own. ' + PAIN_NOTICE
     }),
-    exercise('narrow-squat', 'Narrow squat', 'squat', 6, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('narrow-squat', 'Narrow squat', 'squat', 6, { sets: 3, reps: 7 }, {
       equipment: ['floor'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -837,7 +835,7 @@
       execution: 'Squat with control while knees continue to track with toes.',
       safety: 'Return to regular stance if knees feel crowded. ' + PAIN_NOTICE
     }),
-    exercise('assisted-split-squat', 'Assisted split squat', 'unilateral', 7, { sets: 3, repsMin: 5, repsMax: 8, perSide: true }, {
+    exercise('assisted-split-squat', 'Assisted split squat', 'unilateral', 7, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['wall'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -846,7 +844,7 @@
       safety: 'Use support and a shorter range if knees feel irritated. ' + PAIN_NOTICE,
       unilateral: true
     }),
-    exercise('split-squat', 'Split squat', 'unilateral', 8, { sets: 3, repsMin: 5, repsMax: 8, perSide: true }, {
+    exercise('split-squat', 'Split squat', 'unilateral', 8, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -855,7 +853,7 @@
       safety: 'Use support if balance limits the set. ' + PAIN_NOTICE,
       unilateral: true
     }),
-    exercise('bulgarian-split-squat', 'Bulgarian split squat', 'unilateral', 9, { sets: 3, repsMin: 4, repsMax: 6, perSide: true }, {
+    exercise('bulgarian-split-squat', 'Bulgarian split squat', 'unilateral', 9, { sets: 3, reps: 5, perSide: true }, {
       equipment: ['stable-elevated-surface'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -864,7 +862,7 @@
       safety: 'Use a low surface and hold support if balance is shaky. ' + PAIN_NOTICE,
       unilateral: true
     }),
-    exercise('assisted-shrimp-squat', 'Assisted shrimp squat', 'unilateral', 10, { sets: 3, repsMin: 2, repsMax: 4, perSide: true }, {
+    exercise('assisted-shrimp-squat', 'Assisted shrimp squat', 'unilateral', 10, { sets: 3, reps: 3, perSide: true }, {
       equipment: ['wall'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -874,7 +872,7 @@
       unilateral: true,
       highSkill: true
     }),
-    exercise('shrimp-squat', 'Shrimp squat', 'unilateral', 11, { sets: 3, repsMin: 1, repsMax: 3, perSide: true }, {
+    exercise('shrimp-squat', 'Shrimp squat', 'unilateral', 11, { sets: 3, reps: 2, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['quads', 'glutes'],
       loadedAreas: ['knee', 'hip', 'ankle'],
@@ -885,7 +883,7 @@
       highSkill: true
     }),
 
-    exercise('assisted-single-leg-sit-to-stand', 'Assisted single-leg sit-to-stand', 'unilateral', 4, { sets: 3, repsMin: 5, repsMax: 6, perSide: true }, {
+    exercise('assisted-single-leg-sit-to-stand', 'Assisted single-leg sit-to-stand', 'unilateral', 4, { sets: 3, reps: 6, perSide: true }, {
       equipment: ['chair'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true,
       purpose: 'Builds the single-leg control and strength needed to begin a pistol squat progression.',
       setup: 'Sit near the front of a stable chair with one foot planted and fingertips on a stable support.',
@@ -894,7 +892,7 @@
       commonMistakes: ['Pushing strongly with the hands.', 'Dropping onto the chair.', 'Letting the free foot take weight.'],
       safety: 'Use a higher chair and more support if the knee, hip, or ankle cannot stay comfortable. ' + PAIN_NOTICE
     }),
-    exercise('elevated-pistol-squat', 'Elevated pistol squat', 'unilateral', 5, { sets: 3, repsMin: 4, repsMax: 6, perSide: true }, {
+    exercise('elevated-pistol-squat', 'Elevated pistol squat', 'unilateral', 5, { sets: 3, reps: 5, perSide: true }, {
       equipment: ['stable-elevated-surface'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true,
       purpose: 'Develops pistol squat balance and range from a raised surface that gives the free leg clearance.',
       setup: 'Stand on the edge of a low, stable platform with one foot supported and the other leg hanging clear.',
@@ -903,7 +901,7 @@
       commonMistakes: ['Dropping quickly.', 'Pushing from the free foot.', 'Letting the knee collapse inward.'],
       safety: 'Use support nearby and a platform that cannot tip or slide. Reduce depth for knee or ankle discomfort. ' + PAIN_NOTICE
     }),
-    exercise('counterbalance-pistol-squat', 'Counterbalance pistol squat', 'unilateral', 6, { sets: 3, repsMin: 4, repsMax: 5, perSide: true }, {
+    exercise('counterbalance-pistol-squat', 'Counterbalance pistol squat', 'unilateral', 6, { sets: 3, reps: 5, perSide: true }, {
       equipment: ['floor'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true,
       purpose: 'Uses the arms as a counterbalance while building deeper single-leg squat control.',
       setup: 'Stand on one leg with both arms reaching forward and the other leg extended in front.',
@@ -912,7 +910,7 @@
       commonMistakes: ['Swinging the arms for momentum.', 'Bouncing out of the bottom.', 'Twisting the pelvis.'],
       safety: 'Work only through a depth you can reverse smoothly and keep a stable support within reach. ' + PAIN_NOTICE
     }),
-    exercise('assisted-pistol-squat', 'Assisted pistol squat', 'unilateral', 7, { sets: 3, repsMin: 3, repsMax: 5, perSide: true }, {
+    exercise('assisted-pistol-squat', 'Assisted pistol squat', 'unilateral', 7, { sets: 3, reps: 4, perSide: true }, {
       equipment: ['wall'], primaryAreas: ['quads', 'glutes'], loadedAreas: ['knee', 'hip', 'ankle'], stimulus: 'skill', unilateral: true, highSkill: true,
       purpose: 'Practices full pistol squat depth while a stable hand support reduces the strength and balance demand.',
       setup: 'Stand beside a fixed support, hold it lightly, and extend the free leg forward.',
@@ -940,7 +938,7 @@
       safety: 'Attempt only after controlled negatives; keep clear space and a stable support within reach for a safe abort. ' + PAIN_NOTICE
     }),
 
-    exercise('glute-bridge', 'Glute bridge', 'posterior-chain', 1, { sets: 3, repsMin: 10, repsMax: 15 }, {
+    exercise('glute-bridge', 'Glute bridge', 'posterior-chain', 1, { sets: 3, reps: 13 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -948,7 +946,7 @@
       execution: 'Press through heels, lift hips by squeezing glutes, then lower slowly.',
       safety: 'Keep the lower back quiet and use a smaller lift if needed. ' + PAIN_NOTICE
     }),
-    exercise('paused-glute-bridge', 'Paused glute bridge', 'posterior-chain', 2, { sets: 3, repsMin: 8, repsMax: 12 }, {
+    exercise('paused-glute-bridge', 'Paused glute bridge', 'posterior-chain', 2, { sets: 3, reps: 10 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -956,7 +954,7 @@
       execution: 'Pause for two seconds at the top before lowering.',
       safety: 'The pause should be felt in glutes, not the lower back. ' + PAIN_NOTICE
     }),
-    exercise('single-leg-assisted-glute-bridge', 'Single-leg assisted glute bridge', 'posterior-chain', 3, { sets: 3, repsMin: 6, repsMax: 8, perSide: true }, {
+    exercise('single-leg-assisted-glute-bridge', 'Single-leg assisted glute bridge', 'posterior-chain', 3, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -965,7 +963,7 @@
       safety: 'Keep hips level and switch to two-leg bridges if the back takes over. ' + PAIN_NOTICE,
       unilateral: true
     }),
-    exercise('single-leg-glute-bridge', 'Single-leg glute bridge', 'posterior-chain', 4, { sets: 3, repsMin: 5, repsMax: 8, perSide: true }, {
+    exercise('single-leg-glute-bridge', 'Single-leg glute bridge', 'posterior-chain', 4, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -974,7 +972,7 @@
       safety: 'Keep the range small if hips shift. ' + PAIN_NOTICE,
       unilateral: true
     }),
-    exercise('hip-hinge-drill', 'Hip hinge drill', 'posterior-chain', 5, { sets: 3, repsMin: 8, repsMax: 10 }, {
+    exercise('hip-hinge-drill', 'Hip hinge drill', 'posterior-chain', 5, { sets: 3, reps: 9 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -982,7 +980,7 @@
       execution: 'Push hips back, keep spine neutral, then stand by squeezing glutes.',
       safety: 'Move in a range where the back stays calm. ' + PAIN_NOTICE
     }),
-    exercise('bodyweight-good-morning', 'Bodyweight good morning', 'posterior-chain', 6, { sets: 3, repsMin: 8, repsMax: 12 }, {
+    exercise('bodyweight-good-morning', 'Bodyweight good morning', 'posterior-chain', 6, { sets: 3, reps: 10 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -990,7 +988,7 @@
       execution: 'Hinge hips back, keep a long spine, and return to tall.',
       safety: 'Do not round or force range. ' + PAIN_NOTICE
     }),
-    exercise('single-leg-romanian-deadlift', 'Single-leg Romanian deadlift', 'posterior-chain', 7, { sets: 3, repsMin: 5, repsMax: 8, perSide: true }, {
+    exercise('single-leg-romanian-deadlift', 'Single-leg Romanian deadlift', 'posterior-chain', 7, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back', 'ankle'],
@@ -1000,7 +998,7 @@
       unilateral: true
     }),
 
-    exercise('two-leg-calf-raise', 'Two-leg calf raise', 'calves', 1, { sets: 3, repsMin: 12, repsMax: 18 }, {
+    exercise('two-leg-calf-raise', 'Two-leg calf raise', 'calves', 1, { sets: 3, reps: 15 }, {
       equipment: ['floor'],
       primaryAreas: ['calves'],
       loadedAreas: ['ankle'],
@@ -1008,7 +1006,7 @@
       execution: 'Rise onto the balls of both feet and lower slowly.',
       safety: 'Use support if balance is unsteady. ' + PAIN_NOTICE
     }),
-    exercise('paused-calf-raise', 'Paused calf raise', 'calves', 2, { sets: 3, repsMin: 10, repsMax: 15 }, {
+    exercise('paused-calf-raise', 'Paused calf raise', 'calves', 2, { sets: 3, reps: 13 }, {
       equipment: ['floor'],
       primaryAreas: ['calves'],
       loadedAreas: ['ankle'],
@@ -1016,7 +1014,7 @@
       execution: 'Rise up, pause briefly at the top, and lower under control.',
       safety: 'Keep ankles tracking straight. ' + PAIN_NOTICE
     }),
-    exercise('single-leg-assisted-calf-raise', 'Single-leg assisted calf raise', 'calves', 3, { sets: 3, repsMin: 8, repsMax: 12, perSide: true }, {
+    exercise('single-leg-assisted-calf-raise', 'Single-leg assisted calf raise', 'calves', 3, { sets: 3, reps: 10, perSide: true }, {
       equipment: ['wall'],
       primaryAreas: ['calves'],
       loadedAreas: ['ankle'],
@@ -1025,7 +1023,7 @@
       safety: 'Switch to two-leg raises if the ankle wobbles. ' + PAIN_NOTICE,
       unilateral: true
     }),
-    exercise('single-leg-calf-raise', 'Single-leg calf raise', 'calves', 4, { sets: 3, repsMin: 6, repsMax: 10, perSide: true }, {
+    exercise('single-leg-calf-raise', 'Single-leg calf raise', 'calves', 4, { sets: 3, reps: 8, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['calves'],
       loadedAreas: ['ankle'],
@@ -1034,7 +1032,7 @@
       safety: 'Use support without bouncing. ' + PAIN_NOTICE,
       unilateral: true
     }),
-    exercise('elevated-single-leg-calf-raise', 'Elevated single-leg calf raise', 'calves', 5, { sets: 3, repsMin: 5, repsMax: 8, perSide: true }, {
+    exercise('elevated-single-leg-calf-raise', 'Elevated single-leg calf raise', 'calves', 5, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['stable-elevated-surface'],
       primaryAreas: ['calves'],
       loadedAreas: ['ankle'],
@@ -1068,7 +1066,7 @@
       execution: 'Lift shoulders and legs only as far as you can keep the back connected.',
       safety: 'Bend knees if the lower back lifts. ' + PAIN_NOTICE
     }),
-    exercise('dead-bug', 'Dead bug', 'anti-extension', 1, { sets: 3, repsMin: 6, repsMax: 8, perSide: true }, {
+    exercise('dead-bug', 'Dead bug', 'anti-extension', 1, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['core'],
       loadedAreas: ['hip'],
@@ -1084,7 +1082,7 @@
       execution: 'Lift hips and hold a straight line while breathing.',
       safety: 'Use bent knees if the full shape is too much. ' + PAIN_NOTICE
     }),
-    exercise('reverse-crunch', 'Reverse crunch', 'compression', 1, { sets: 3, repsMin: 8, repsMax: 12 }, {
+    exercise('reverse-crunch', 'Reverse crunch', 'compression', 1, { sets: 3, reps: 10 }, {
       equipment: ['floor'],
       primaryAreas: ['core'],
       loadedAreas: ['hip', 'lower-back'],
@@ -1092,7 +1090,7 @@
       execution: 'Curl hips slightly off the floor using abs, then lower slowly.',
       safety: 'Avoid swinging the legs. ' + PAIN_NOTICE
     }),
-    exercise('seated-compression-lift', 'Seated compression lift', 'compression', 2, { sets: 4, repsMin: 5, repsMax: 8 }, {
+    exercise('seated-compression-lift', 'Seated compression lift', 'compression', 2, { sets: 4, reps: 7 }, {
       equipment: ['floor'],
       primaryAreas: ['core', 'hip-flexors'],
       loadedAreas: ['hip'],
@@ -1177,7 +1175,7 @@
       highSkill: true
     }),
 
-    exercise('wrist-preparation', 'Wrist preparation', 'handstand', 1, { sets: 2, repsMin: 6, repsMax: 8 }, {
+    exercise('wrist-preparation', 'Wrist preparation', 'handstand', 1, { sets: 2, reps: 7 }, {
       equipment: ['floor'],
       primaryAreas: ['wrist'],
       loadedAreas: ['wrist'],
@@ -1191,7 +1189,7 @@
       visualRequired: true,
       visualGuidance: 'Show a side view of one quadruped wrist rock from shoulders-over-hands to a small controlled forward shift.'
     }),
-    exercise('elevated-plank-shoulder-shift', 'Elevated plank shoulder shift', 'handstand', 2, { sets: 3, repsMin: 6, repsMax: 8 }, {
+    exercise('elevated-plank-shoulder-shift', 'Elevated plank shoulder shift', 'handstand', 2, { sets: 3, reps: 7 }, {
       equipment: ['stable-elevated-surface'],
       primaryAreas: ['shoulder'],
       loadedAreas: ['wrist', 'shoulder'],
@@ -1207,7 +1205,7 @@
       execution: 'Push the floor away and place ears between arms without collapsing.',
       safety: 'Keep weight comfortable on wrists. ' + PAIN_NOTICE
     }),
-    exercise('pike-shoulder-taps', 'Pike shoulder taps', 'handstand', 4, { sets: 3, repsMin: 4, repsMax: 6, perSide: true }, {
+    exercise('pike-shoulder-taps', 'Pike shoulder taps', 'handstand', 4, { sets: 3, reps: 5, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['shoulder', 'core'],
       loadedAreas: ['wrist', 'shoulder'],
@@ -1241,7 +1239,7 @@
       safety: 'Keep enough energy to walk down safely. ' + PAIN_NOTICE,
       highSkill: true
     }),
-    exercise('wall-weight-shifts', 'Wall weight shifts', 'handstand', 8, { sets: 3, repsMin: 4, repsMax: 6, perSide: true }, {
+    exercise('wall-weight-shifts', 'Wall weight shifts', 'handstand', 8, { sets: 3, reps: 5, perSide: true }, {
       equipment: ['wall'],
       primaryAreas: ['shoulder', 'core'],
       loadedAreas: ['wrist', 'shoulder'],
@@ -1305,7 +1303,7 @@
       commonMistakes: ['Letting the shoulders collapse.', 'Moving the feet on an unstable surface.', 'Holding the breath.'],
       safety: 'Use a surface that cannot slide. Come down before wrist, elbow, or shoulder control fades. ' + PAIN_NOTICE
     }),
-    exercise('pike-push-up', 'Pike push-up', 'handstand', 5, { sets: 3, repsMin: 5, repsMax: 8 }, {
+    exercise('pike-push-up', 'Pike push-up', 'handstand', 5, { sets: 3, reps: 7 }, {
       equipment: ['floor'], primaryAreas: ['shoulder', 'triceps'], loadedAreas: ['wrist', 'elbow', 'shoulder', 'neck'], stimulus: 'strength', highSkill: true,
       purpose: 'Develops inverted pressing strength while both feet remain on the floor.',
       setup: 'Start in a pike with hips high, hands shoulder-width, and head positioned to travel between the hands.',
@@ -1314,7 +1312,7 @@
       commonMistakes: ['Turning the movement into a horizontal push-up.', 'Flaring elbows abruptly.', 'Resting body weight on the head.'],
       safety: 'The head is a depth reference, not a support. Reduce range for wrist, elbow, shoulder, or neck discomfort. ' + PAIN_NOTICE
     }),
-    exercise('feet-elevated-pike-push-up', 'Feet-elevated pike push-up', 'handstand', 6, { sets: 3, repsMin: 4, repsMax: 6 }, {
+    exercise('feet-elevated-pike-push-up', 'Feet-elevated pike push-up', 'handstand', 6, { sets: 3, reps: 5 }, {
       equipment: ['stable-elevated-surface'], primaryAreas: ['shoulder', 'triceps'], loadedAreas: ['wrist', 'elbow', 'shoulder', 'neck'], stimulus: 'strength', highSkill: true,
       purpose: 'Increases the vertical pressing load before wall-supported handstand push-up work.',
       setup: 'Place feet on a stable surface, hands on the floor, and raise hips so the torso is close to vertical.',
@@ -1332,7 +1330,7 @@
       commonMistakes: ['Dropping onto the target.', 'Relaxing the shoulders at the bottom.', 'Trying another repetition without a safe reset.'],
       safety: 'Use a padded target and a practiced wall exit. Never load the head or neck, and stop before elbow or shoulder control fades. ' + PAIN_NOTICE
     }),
-    exercise('partial-wall-handstand-push-up', 'Partial-range wall handstand push-up', 'handstand', 8, { sets: 3, repsMin: 3, repsMax: 5 }, {
+    exercise('partial-wall-handstand-push-up', 'Partial-range wall handstand push-up', 'handstand', 8, { sets: 3, reps: 4 }, {
       equipment: ['wall'], primaryAreas: ['shoulder', 'triceps'], loadedAreas: ['wrist', 'elbow', 'shoulder', 'neck'], stimulus: 'strength', highSkill: true,
       purpose: 'Develops the concentric wall handstand press through a deliberately limited, repeatable range.',
       setup: 'Enter a stable wall-supported handstand above a raised padded target that limits the descent.',
@@ -1341,7 +1339,7 @@
       commonMistakes: ['Kicking with the legs to finish.', 'Changing target height during the set.', 'Resting on the head.'],
       safety: 'Use a firm padded target that cannot slip and a practiced exit. Stop for wrist, elbow, shoulder, or neck symptoms. ' + PAIN_NOTICE
     }),
-    exercise('full-wall-handstand-push-up', 'Full-range wall handstand push-up', 'handstand', 9, { sets: 3, repsMin: 1, repsMax: 3 }, {
+    exercise('full-wall-handstand-push-up', 'Full-range wall handstand push-up', 'handstand', 9, { sets: 3, reps: 2 }, {
       equipment: ['wall'], primaryAreas: ['shoulder', 'triceps'], loadedAreas: ['wrist', 'elbow', 'shoulder', 'neck'], stimulus: 'skill', highSkill: true,
       purpose: 'Demonstrates a complete controlled wall-supported handstand push-up without assistance from the legs.',
       setup: 'Enter a stable wall-supported handstand with hands at a repeatable width and a thin padded target defining full safe depth.',
@@ -1369,7 +1367,7 @@
       execution: 'Hold the top support tall with shoulders down.',
       safety: 'Use foot assistance and avoid forcing wrists. ' + PAIN_NOTICE
     }),
-    exercise('explosive-pull-up', 'Explosive pull-up', 'muscle-up', 10, { sets: 3, repsMin: 2, repsMax: 3 }, {
+    exercise('explosive-pull-up', 'Explosive pull-up', 'muscle-up', 10, { sets: 3, reps: 3 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -1380,7 +1378,7 @@
       explosive: true,
       highSkill: true
     }),
-    exercise('straight-bar-dip-preparation', 'Straight-bar dip preparation', 'muscle-up', 10, { sets: 3, repsMin: 3, repsMax: 5 }, {
+    exercise('straight-bar-dip-preparation', 'Straight-bar dip preparation', 'muscle-up', 10, { sets: 3, reps: 4 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['triceps', 'chest', 'shoulder'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -1390,7 +1388,7 @@
       safety: 'Keep shoulders comfortable and use foot assistance. ' + PAIN_NOTICE,
       highSkill: true
     }),
-    exercise('low-bar-transition-drill', 'Low-bar transition drill', 'muscle-up', 11, { sets: 4, repsMin: 3, repsMax: 5 }, {
+    exercise('low-bar-transition-drill', 'Low-bar transition drill', 'muscle-up', 11, { sets: 4, reps: 4 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'triceps'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -1400,7 +1398,7 @@
       safety: 'Keep it controlled and do not force shoulder rotation. ' + PAIN_NOTICE,
       highSkill: true
     }),
-    exercise('feet-assisted-transition', 'Feet-assisted transition', 'muscle-up', 12, { sets: 4, repsMin: 2, repsMax: 4 }, {
+    exercise('feet-assisted-transition', 'Feet-assisted transition', 'muscle-up', 12, { sets: 4, reps: 3 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'triceps'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -1410,7 +1408,7 @@
       safety: 'Use slow reps and avoid grinding. ' + PAIN_NOTICE,
       highSkill: true
     }),
-    exercise('band-assisted-transition', 'Band-assisted transition', 'muscle-up', 13, { sets: 4, repsMin: 2, repsMax: 4 }, {
+    exercise('band-assisted-transition', 'Band-assisted transition', 'muscle-up', 13, { sets: 4, reps: 3 }, {
       equipment: ['pullupBar', 'bands'],
       primaryAreas: ['upper-back', 'triceps'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -1420,7 +1418,7 @@
       safety: 'Check the band and keep your face away from the band path. ' + PAIN_NOTICE,
       highSkill: true
     }),
-    exercise('jumping-muscle-up-transition', 'Jumping muscle-up transition', 'muscle-up', 14, { sets: 4, repsMin: 2, repsMax: 4 }, {
+    exercise('jumping-muscle-up-transition', 'Jumping muscle-up transition', 'muscle-up', 14, { sets: 4, reps: 3 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'triceps'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -1431,7 +1429,7 @@
       highSkill: true,
       explosive: true
     }),
-    exercise('slow-negative-muscle-up', 'Slow negative muscle-up', 'muscle-up', 15, { sets: 3, repsMin: 1, repsMax: 2 }, {
+    exercise('slow-negative-muscle-up', 'Slow negative muscle-up', 'muscle-up', 15, { sets: 3, reps: 2 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'triceps'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -1479,7 +1477,7 @@
       highSkill: true,
       explosive: true
     }),
-    exercise('controlled-muscle-up-repetitions', 'Controlled muscle-up repetitions', 'muscle-up', 19, { sets: 3, repsMin: 2, repsMax: 3 }, {
+    exercise('controlled-muscle-up-repetitions', 'Controlled muscle-up repetitions', 'muscle-up', 19, { sets: 3, reps: 3 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'triceps'],
       loadedAreas: ['wrist', 'elbow', 'shoulder'],
@@ -2015,10 +2013,9 @@
     const setMultiplier = recovery?.mode === 'reduce' ? Math.min(config.setMultiplier ?? 1, 0.75) : config.setMultiplier ?? 1;
     const repMultiplier = recovery?.mode === 'reduce' ? Math.min(config.repMultiplier ?? 1, 0.75) : config.repMultiplier ?? 1;
     const adapted = { ...source, sets: Math.max(1, Math.round(source.sets * setMultiplier)) };
-    ['seconds', 'minutes', 'attempts', 'reps', 'repsMin', 'repsMax'].forEach(field => {
+    ['seconds', 'minutes', 'attempts', 'reps'].forEach(field => {
       if (source[field]) adapted[field] = Math.max(1, Math.round(source[field] * repMultiplier));
     });
-    if (adapted.repsMin && adapted.repsMax) adapted.repsMax = Math.max(adapted.repsMin, adapted.repsMax);
     return adapted;
   }
 
@@ -2083,8 +2080,6 @@
       index,
       seconds: normalized.secondsPerSet,
       reps: normalized.repsPerSet,
-      repsMin: normalized.repsMin,
-      repsMax: normalized.repsMax,
       attempts: normalized.attemptsPerSet,
       perSide: normalized.perSide
     }));
@@ -2705,7 +2700,7 @@
       if (fields && fields.prescription !== item.prescription) errors.push(`Prescription label mismatch: ${item.id}`);
       if (fields && fields.setCount !== item.setCount) errors.push(`Set count mismatch: ${item.id}`);
       if (item.prescriptionType === 'time' && !item.secondsPerSet) errors.push(`Timed exercise missing seconds: ${item.id}`);
-      if (item.prescriptionType === 'reps' && !item.repsPerSet && !item.repsMin) errors.push(`Rep exercise missing target: ${item.id}`);
+      if (item.prescriptionType === 'reps' && !item.repsPerSet) errors.push(`Rep exercise missing target: ${item.id}`);
       const instruction = item.instructions;
       if (!instruction?.purpose || !instruction?.startingPosition || !Array.isArray(instruction?.movement) || !instruction.movement.length ||
           !Array.isArray(instruction?.focus) || !instruction.focus.length || !Array.isArray(instruction?.commonMistakes) || !instruction.commonMistakes.length ||
