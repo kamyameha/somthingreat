@@ -64,6 +64,31 @@ assert.notStrictEqual(workouts.movementTracks.handstand, workouts.movementTracks
 assert.notDeepStrictEqual(Array.from(workouts.movementTracks.handstand, item => item.id), Array.from(workouts.movementTracks.handstandPushup, item => item.id));
 assert.ok(workouts.createDefaultLevels().pistolSquat);
 assert.ok(workouts.createDefaultLevels().handstandPushup);
+assert.strictEqual(workouts.getProgressCardState({ focusAchieved: true, recentUnlockedExercise: 'X', strongPattern: 'Y' }), 'focus_achieved');
+assert.strictEqual(workouts.getProgressCardState({ recentUnlockedExercise: 'X', strongPattern: 'Y' }), 'new_exercise_unlocked');
+assert.strictEqual(workouts.getProgressCardState({ strongPattern: 'Y', isReturningUser: true }), 'strong_pattern');
+assert.strictEqual(workouts.getProgressCardState({ isReturningUser: true, completedWorkoutCount: 0 }), 'returning_user');
+assert.strictEqual(workouts.getProgressCardState({ completedWorkoutCount: 0 }), 'new_user');
+assert.strictEqual(workouts.getProgressCardState({ completedWorkoutCount: 1 }), 'regular');
+const regularCard = workouts.getProgressCardContent('regular', {
+  nextExerciseName: 'Flex-arm hang', remainingRequirement: '1 Easy completion or 2 Good completions'
+});
+assert.strictEqual(regularCard.rows.length, 2);
+assert.strictEqual(regularCard.rows[0].value, 'Flex-arm hang');
+assert.strictEqual(workouts.remainingProgressRequirement('horizontalPush', { points: 3, positiveExposures: 1 }), '1 Easy completion or 2 Good completions');
+assert.strictEqual(workouts.getProgressCardContent('new_exercise_unlocked', { recentUnlockedExercise: 'Full push-up' }).rows.length, 1);
+assert.ok(workouts.getProgressCardContent('focus_achieved', { achievedFocusName: 'Pull-up achieved' }).rows.some(row => row.value === 'Choose a new focus'));
+const generalCard = workouts.getProgressCardContent('regular', { recentProgressSummary: '3 successful completions this month' });
+assert.ok(!generalCard.rows.some(row => row.label === 'Next exercise'));
+assert.ok(generalCard.rows.some(row => row.value === 'Continue with your next workout'));
+const generalLevels = workouts.createDefaultLevels();
+assert.strictEqual(workouts.getGeneralFitnessProgress(generalLevels).completedStages, 0);
+['horizontalPush', 'verticalPull', 'squat', 'antiExtension'].forEach(key => {
+  generalLevels[key].level = workouts.movementTracks[key].length - 1;
+});
+assert.strictEqual(workouts.getGeneralFitnessProgress(generalLevels).completedStages, 5);
+generalLevels.antiExtension.level = 0;
+assert.strictEqual(workouts.getGeneralFitnessProgress(generalLevels).completedStages, 0);
 const skillsWorkout = workouts.getTodayWorkout({
   mode: 'great',
   state: { rotationIndex: 3, levels: workouts.createDefaultLevels() },
@@ -303,6 +328,14 @@ assert.ok(appSource.includes("handstandPushup: 'Handstand push-up'"));
 assert.ok(appSource.includes("pistolSquat: 'Pistol squat'"));
 const focusLabelsSource = appSource.match(/const goalLabels = \{([\s\S]*?)\n\};/)?.[1] || '';
 assert.ok(!/pistolSquat|handstandPushup/.test(focusLabelsSource));
+assert.ok(appSource.includes('21 * 86400000'));
+assert.ok(appSource.includes('30 * 86400000'));
+assert.ok(appSource.includes('acknowledgedUnlockIds'));
+assert.ok(appSource.includes("returningSeenWorkoutId: ''"));
+assert.ok(appSource.includes("goal === 'general' ? null : getGoalTrackKey(goal)"));
+assert.ok(indexSource.includes('dynamicProgressCard'));
+assert.ok(indexSource.includes('focusProgressDots'));
+assert.ok(indexSource.includes('Mastering skills'));
 
 assert.deepStrictEqual(Array.from(workouts.distinctSuccessCriteria(['Same sentence.'], ['same sentence!'])), []);
 
@@ -325,6 +358,8 @@ state.history.push({
 const sanitized = stateStore.sanitizeState(state);
 assert.ok(sanitized.levels.pistolSquat);
 assert.ok(sanitized.levels.handstandPushup);
+assert.deepStrictEqual(Array.from(sanitized.progressInsights.acknowledgedUnlockIds), []);
+assert.strictEqual(sanitized.progressInsights.returningSeenWorkoutId, '');
 assert.strictEqual(sanitized.history[0].exercises[0].completedSets, 2);
 assert.strictEqual(sanitized.history[0].exercises[0].targetSets, 3);
 assert.strictEqual(sanitized.history[0].exercises[0].exerciseId, 'pike-hold');
