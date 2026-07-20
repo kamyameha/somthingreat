@@ -78,6 +78,18 @@ assert.strictEqual(regularCard.rows.length, 2);
 assert.strictEqual(regularCard.rows[0].value, 'Flex-arm hang');
 assert.strictEqual(workouts.remainingProgressRequirement('horizontalPush', { points: 3, positiveExposures: 1 }), '1 Easy completion or 2 Good completions');
 assert.strictEqual(workouts.getProgressCardContent('new_exercise_unlocked', { recentUnlockedExercise: 'Full push-up' }).rows.length, 1);
+const refinedStates = [
+  ['regular', { currentLevelName: 'Assisted pull-up', nextExerciseName: 'Flex-arm hang', remainingRequirement: '2 Easy completions' }],
+  ['new_user', { currentFocusName: 'Pull-up' }],
+  ['new_exercise_unlocked', { recentUnlockedExercise: 'Full push-up', nextExerciseName: 'Decline push-up', remainingRequirement: '2 Good completions' }],
+  ['strong_pattern', { strongPattern: '4 workouts completed this month', nextExerciseName: 'Flex-arm hang', remainingRequirement: '2 Easy completions' }],
+  ['focus_achieved', { achievedFocusName: 'Pull-up achieved' }],
+  ['returning_user', { currentFocusName: 'Pull-up' }]
+].map(([stateName, data]) => workouts.getProgressCardContent(stateName, data));
+assert.ok(refinedStates.every(content => content.rows.length <= 2));
+assert.ok(refinedStates.every(content => content.rows.every(row => row.label !== 'Keep going' && row.label !== 'Strong pattern')));
+assert.ok(refinedStates.find(content => content.state === 'strong_pattern').rows.some(row => row.label === 'Consistency'));
+assert.ok(refinedStates.find(content => content.state === 'new_exercise_unlocked').rows.some(row => /away$/.test(row.value)));
 assert.ok(workouts.getProgressCardContent('focus_achieved', { achievedFocusName: 'Pull-up achieved' }).rows.some(row => row.value === 'Choose a new focus'));
 const generalCard = workouts.getProgressCardContent('regular', { recentProgressSummary: '3 successful completions this month' });
 assert.ok(!generalCard.rows.some(row => row.label === 'Next exercise'));
@@ -339,6 +351,9 @@ assert.ok(appSource.includes('30 * 86400000'));
 assert.ok(appSource.includes('acknowledgedUnlockIds'));
 assert.ok(appSource.includes("returningSeenWorkoutId: ''"));
 assert.ok(appSource.includes("goal === 'general' ? null : getGoalTrackKey(goal)"));
+assert.ok(appSource.includes("const dotCount = goal === 'general' ? 0 : track.length"));
+assert.ok(appSource.includes("Number(item.level || 0), 0"));
+assert.ok(!appSource.includes("Number(item.level || 0) + 1"));
 assert.ok(indexSource.includes('dynamicProgressCard'));
 assert.ok(indexSource.includes('focusProgressDots'));
 assert.ok(indexSource.includes('Mastering skills'));
