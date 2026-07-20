@@ -65,6 +65,27 @@ assert.notStrictEqual(workouts.movementTracks.handstand, workouts.movementTracks
 assert.notDeepStrictEqual(Array.from(workouts.movementTracks.handstand, item => item.id), Array.from(workouts.movementTracks.handstandPushup, item => item.id));
 assert.ok(workouts.createDefaultLevels().pistolSquat);
 assert.ok(workouts.createDefaultLevels().handstandPushup);
+const expectedCapabilityStageCounts = {
+  handstand: 6,
+  crow: 3,
+  lsit: 6,
+  muscleupTransition: 5,
+  handstandPushup: 5,
+  pistolSquat: 5
+};
+Object.entries(expectedCapabilityStageCounts).forEach(([key, expectedCount]) => {
+  const track = workouts.movementTracks[key] || workouts.baseTracks[key];
+  const stages = workouts.masteringSkillStages[key];
+  assert.strictEqual(stages.length, expectedCount, `capability stage count: ${key}`);
+  assert.strictEqual(stages[stages.length - 1].endLevel, track.length - 1, `final capability threshold: ${key}`);
+  assert.ok(stages.every((stage, index) => index === 0 || stage.endLevel > stages[index - 1].endLevel), `ordered capability stages: ${key}`);
+  assert.strictEqual(workouts.getMasteringSkillProgress(key, { level: 0 }, track).completedStages, 0, `zero-dot support: ${key}`);
+});
+const handstandTrack = workouts.movementTracks.handstand;
+assert.strictEqual(workouts.getMasteringSkillProgress('handstand', { level: 6 }, handstandTrack).completedStages, 2);
+assert.strictEqual(workouts.getMasteringSkillProgress('handstand', { level: 7 }, handstandTrack).completedStages, 3);
+assert.strictEqual(workouts.getMasteringSkillProgress('handstand', { level: 12, points: 0, positiveExposures: 0 }, handstandTrack).completedStages, 5);
+assert.strictEqual(workouts.getMasteringSkillProgress('handstand', { level: 12, points: 7, positiveExposures: 3 }, handstandTrack).completedStages, 6);
 assert.strictEqual(workouts.getProgressCardState({ focusAchieved: true, recentUnlockedExercise: 'X', strongPattern: 'Y' }), 'focus_achieved');
 assert.strictEqual(workouts.getProgressCardState({ recentUnlockedExercise: 'X', strongPattern: 'Y' }), 'new_exercise_unlocked');
 assert.strictEqual(workouts.getProgressCardState({ strongPattern: 'Y', isReturningUser: true }), 'strong_pattern');
@@ -352,7 +373,7 @@ assert.ok(appSource.includes('acknowledgedUnlockIds'));
 assert.ok(appSource.includes("returningSeenWorkoutId: ''"));
 assert.ok(appSource.includes("goal === 'general' ? null : getGoalTrackKey(goal)"));
 assert.ok(appSource.includes("const dotCount = goal === 'general' ? 0 : track.length"));
-assert.ok(appSource.includes("Number(item.level || 0), 0"));
+assert.ok(appSource.includes('getMasteringSkillProgress(key, item, exerciseTrack)'));
 assert.ok(!appSource.includes("Number(item.level || 0) + 1"));
 assert.ok(indexSource.includes('dynamicProgressCard'));
 assert.ok(indexSource.includes('focusProgressDots'));
