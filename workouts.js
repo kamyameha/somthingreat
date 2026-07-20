@@ -2531,7 +2531,7 @@
         ? (trackState.difficultExposures || 0) + 1
         : Math.max(0, (trackState.difficultExposures || 0) - 1);
 
-    if (trackState.points >= rules.progressPoints && trackState.positiveExposures >= rules.positiveExposures) {
+    if (trackState.points >= rules.progressPoints && trackState.positiveExposures >= rules.positiveExposures && (trackState.level || 0) < maxLevel) {
       trackState.level = Math.min((trackState.level || 0) + 1, maxLevel);
       trackState.points = 0;
       trackState.positiveExposures = 0;
