@@ -2103,6 +2103,7 @@ function buildProgressCardData(goal, profile, trackKey, track) {
     returningWorkoutId: returning.workoutId,
     completedWorkoutCount,
     currentFocusName: goalLabels[goal] || 'Pull-up',
+    currentLevelName: track?.[level]?.name || null,
     nextExerciseName,
     planContinuationMessage: 'Continue with your next workout',
     remainingRequirement: trackKey ? workoutModule.remainingProgressRequirement(trackKey, trackState) : null
@@ -2143,8 +2144,8 @@ function renderProgress() {
   const heroTitle = document.getElementById('goalHeroTitle');
   if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'Pull-up';
   const generalProgress = goal === 'general' ? workoutModule.getGeneralFitnessProgress(state.levels) : null;
-  const dotCount = generalProgress ? generalProgress.stages.length : track.length;
-  const filledDots = generalProgress ? generalProgress.completedStages : Math.min(level + 1, track.length);
+  const dotCount = goal === 'general' ? 0 : track.length;
+  const filledDots = goal === 'general' ? 0 : Math.min(level + 1, track.length);
   const focusDots = document.getElementById('focusProgressDots');
   const goalHero = document.querySelector('.progress-screen .goal-hero');
   if (goalHero) goalHero.classList.toggle('has-no-dots', !dotCount);
@@ -2170,7 +2171,7 @@ function renderProgress() {
     const item = state.levels[key];
     const exerciseTrack = tracks[key] || baseTracks[key];
     if (!item || !Array.isArray(exerciseTrack) || !exerciseTrack.length) return;
-    const reached = Math.min(Math.max(Number(item.level || 0) + 1, 0), exerciseTrack.length);
+    const reached = Math.min(Math.max(Number(item.level || 0), 0), exerciseTrack.length);
     const row = document.createElement('div');
     row.className = 'level-row';
     row.innerHTML = `<strong>${escapeHTML(label)}</strong><div class="progress-dots skill-progress-dots" aria-label="${reached} of ${exerciseTrack.length} levels reached">${progressDotsMarkup(exerciseTrack.length, reached)}</div>`;
