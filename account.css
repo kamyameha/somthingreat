@@ -1148,11 +1148,21 @@ body.account-active .app {
 }
 
 .activity-screen .history-item-header,
+.activity-screen .history-item-exercises {
+  grid-column: 1 / -1;
+}
+
+.activity-screen .history-item-header,
 .activity-screen .history-exercise-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
   gap: 15px;
+}
+
+.activity-screen .history-item-header strong,
+.activity-screen .history-item-header span {
+  font-weight: 500;
 }
 
 .activity-screen .history-item-header span,
@@ -1162,8 +1172,8 @@ body.account-active .app {
 
 .activity-screen .history-item-exercises {
   display: grid;
-  gap: 8px;
-  margin-top: 20px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .activity-screen .history-exercise-row span:first-child {
