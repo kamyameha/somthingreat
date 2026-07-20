@@ -264,6 +264,10 @@ readyState.levels.muscleupPower.level = 3;
 readyState.levels.muscleupPower.positiveExposures = 3;
 const readyResult = workouts.evaluateAdvancedSkillEligibility('full-muscle-up', { profile: { goal: 'muscleup', equipment: ['pullupBar'] }, state: readyState });
 assert.strictEqual(readyResult.eligible, true);
+workouts.applyRating(readyState.levels, 'muscleupTransition', 'easy');
+assert.strictEqual(readyState.levels.muscleupTransition.level, 4);
+assert.ok(readyState.levels.muscleupTransition.positiveExposures >= 3);
+assert.strictEqual(workouts.evaluateAdvancedSkillEligibility('full-muscle-up', { profile: { goal: 'muscleup', equipment: ['pullupBar'] }, state: readyState }).eligible, true);
 const eligibleFullSwap = workouts.createSwapReplacement(
   workouts.normalizeExercise({ ...catalog('full-muscle-up-attempt'), trackKey: 'muscleupFull', progressionTrackKey: 'muscleupFull' }),
   fullMuscleUp, 'great', null,
