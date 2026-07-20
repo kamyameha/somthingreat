@@ -2464,12 +2464,12 @@
   }
 
   const progressMascotByState = Object.freeze({
-    regular: 'Assets/Progress/mascot-progress-regular.svg',
-    new_user: 'Assets/Progress/mascot-progress-new-user.svg',
-    new_exercise_unlocked: 'Assets/Progress/mascot-progress-unlocked.svg',
-    strong_pattern: 'Assets/Progress/mascot-progress-strong-pattern.svg',
-    focus_achieved: 'Assets/Progress/mascot-progress-focus-achieved.svg',
-    returning_user: 'Assets/Progress/mascot-progress-returning.svg'
+    regular: 'Assets/Progress/mascot-progress-regular.png',
+    new_user: 'Assets/Progress/mascot-progress-new-user.png',
+    new_exercise_unlocked: 'Assets/Progress/mascot-progress-unlocked.png',
+    strong_pattern: 'Assets/Progress/mascot-progress-strong-pattern.png',
+    focus_achieved: 'Assets/Progress/mascot-progress-focus-achieved.png',
+    returning_user: 'Assets/Progress/mascot-progress-returning.png'
   });
 
   const generalFitnessStages = Object.freeze([
