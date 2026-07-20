@@ -26,11 +26,11 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.20.155414" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.20.155414" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.20.155414" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.20.155414" />
-  <link rel="stylesheet" href="account.css?v=2026.07.20.155414" />
+  <link rel="stylesheet" href="style.css?v=2026.07.20.171018" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.20.171018" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.20.171018" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.20.171018" />
+  <link rel="stylesheet" href="account.css?v=2026.07.20.171018" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
@@ -465,20 +465,18 @@
 
     <section id="progress" class="screen progress-screen">
       <section class="hero-card goal-hero">
-        <p class="muted-light">Main focus</p>
         <h2 id="goalHeroTitle">Pull-up</h2>
-        <div class="progress-bar"><span id="pullupProgressBar"></span></div>
+        <div id="focusProgressDots" class="progress-dots focus-progress-dots" aria-label="Focus progression"></div>
       </section>
 
-      <section id="muscleUpReadinessCard" class="card hidden" aria-live="polite">
-        <p class="eyebrow">Final target</p>
-        <h3>Full muscle-up</h3>
-        <p id="muscleUpReadinessStatus"></p>
-        <ul id="muscleUpReadinessChecks"></ul>
+      <section id="dynamicProgressCard" class="progress-insight-card" aria-live="polite">
+        <img id="progressMascot" class="progress-mascot" src="Assets/Progress/mascot-progress-regular.png" alt="" />
+        <h3 id="progressCardHeadline">You're on track!</h3>
+        <div id="progressCardRows" class="progress-insight-rows"></div>
       </section>
 
-      <section class="card">
-        <p class="eyebrow">Current levels</p>
+      <section class="card mastering-skills-card">
+        <h3>Mastering skills</h3>
         <div id="levelsList"></div>
       </section>
     </section>
@@ -546,12 +544,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.20.155414"></script>
-  <script src="workouts.js?v=2026.07.20.155414"></script>
-  <script src="state.js?v=2026.07.20.155414"></script>
-  <script src="account.js?v=2026.07.20.155414"></script>
-  <script src="render.js?v=2026.07.20.155414"></script>
-  <script src="app-version.js?v=2026.07.20.155414"></script>
-  <script src="app.js?v=2026.07.20.155414"></script>
+  <script src="auth.js?v=2026.07.20.171018"></script>
+  <script src="workouts.js?v=2026.07.20.171018"></script>
+  <script src="state.js?v=2026.07.20.171018"></script>
+  <script src="account.js?v=2026.07.20.171018"></script>
+  <script src="render.js?v=2026.07.20.171018"></script>
+  <script src="app-version.js?v=2026.07.20.171018"></script>
+  <script src="app.js?v=2026.07.20.171018"></script>
 </body>
 </html>
