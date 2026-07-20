@@ -1094,6 +1094,7 @@ function completeCustomChecklist(skipIncompleteConfirm = false) {
     target: countedTarget,
     exercises: [{ name: checklist.name, prescription, trackKey: 'custom', isAddOn: false }]
   });
+  state.progressInsights = { ...(state.progressInsights || {}), returningSeenWorkoutId: '' };
   state.customChecklist = null;
   saveState();
   renderToday();
@@ -1910,6 +1911,7 @@ function completeWorkoutNow(showFullConfirmation = true) {
     progressionEvents
   });
   state.rotationIndex = (state.rotationIndex + 1) % getRotation().length;
+  state.progressInsights = { ...(state.progressInsights || {}), returningSeenWorkoutId: '' };
   state.current = null;
   state.selectedEnergy = null;
   state.generated = null;
@@ -1999,69 +2001,179 @@ function historyEntryId(item = {}) {
   return `${Date.parse(item.date) || 0}-${Math.abs(hash)}`;
 }
 
-function renderGeneralGoalProgress() {
-  const total = countableHistory().length;
-  const percent = Math.min(100, Math.round((Math.min(total, 12) / 12) * 100));
-  const progress = document.getElementById('pullupProgressBar');
-  if (progress) progress.style.width = `${percent}%`;
+function progressDotsMarkup(total, filled) {
+  return Array.from({ length: Math.max(0, total) }, (_, index) => `<i class="progress-dot${index < filled ? ' is-filled' : ''}" aria-hidden="true"></i>`).join('');
+}
+
+function currentMonthProgressResults() {
+  const now = new Date();
+  return countableHistory()
+    .filter(session => {
+      const date = new Date(session.date);
+      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+    })
+    .flatMap(session => (session.exercises || []).map(exercise => ({ session, exercise })))
+    .filter(({ exercise }) => exercise.completionStatus === 'completed' && ['easy', 'good'].includes(exercise.rating));
+}
+
+function unlockEventId(session, exercise) {
+  return [session.sessionId || historyEntryId(session), exercise.progressionTrackKey, exercise.progressionLevel, exercise.exerciseId].join(':');
+}
+
+function latestUnacknowledgedUnlock(trackKeys) {
+  const validTrackKeys = new Set((trackKeys || []).filter(Boolean));
+  const acknowledged = new Set(state.progressInsights?.acknowledgedUnlockIds || []);
+  const safetyCutoff = Date.now() - 30 * 86400000;
+  const tracks = getTracks();
+  return countableHistory()
+    .filter(session => new Date(session.date).getTime() >= safetyCutoff)
+    .flatMap(session => (session.exercises || []).map(exercise => ({ session, exercise })))
+    .filter(({ exercise }) => exercise.progressionApplied && validTrackKeys.has(exercise.progressionTrackKey) && Number.isFinite(Number(exercise.progressionLevel)))
+    .map(({ session, exercise }) => {
+      const id = unlockEventId(session, exercise);
+      const track = tracks[exercise.progressionTrackKey] || baseTracks[exercise.progressionTrackKey] || [];
+      const unlockedIndex = Number(exercise.progressionLevel);
+      const currentLevel = Number(state.levels?.[exercise.progressionTrackKey]?.level || 0);
+      return { id, session, exercise, track, unlockedIndex, currentLevel };
+    })
+    .filter(event => !acknowledged.has(event.id) && event.currentLevel >= event.unlockedIndex && event.track[event.unlockedIndex])
+    .sort((a, b) => new Date(b.session.date) - new Date(a.session.date))
+    .map(event => ({ id: event.id, name: event.track[event.unlockedIndex].name, index: event.unlockedIndex, trackKey: event.exercise.progressionTrackKey }))[0] || null;
+}
+
+function progressPatternData() {
+  const recentSuccessful = currentMonthProgressResults().length;
+  const now = new Date();
+  const currentMonthWorkouts = countableHistory().filter(item => {
+    const date = new Date(item.date);
+    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  }).length;
+  const recentProgressSummary = recentSuccessful > 0
+    ? `${recentSuccessful} successful completion${recentSuccessful === 1 ? '' : 's'} this month`
+    : null;
+  const strongPattern = recentSuccessful >= 6
+    ? recentProgressSummary
+    : currentMonthWorkouts >= 4
+      ? `${currentMonthWorkouts} workouts completed this month`
+      : null;
+  return { recentProgressSummary, strongPattern };
+}
+
+function recommendedFocus(goal, profile) {
+  if (goal === 'pullup' && profile?.equipment?.includes('pullupBar')) return 'Muscle-up';
+  return null;
+}
+
+function returningProgressInsight() {
+  const history = countableHistory().slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+  const lastWorkout = history[0];
+  if (!lastWorkout) return { active: false, workoutId: '' };
+  const workoutId = historyEntryId(lastWorkout);
+  const inactiveFor21Days = Date.now() - new Date(lastWorkout.date).getTime() >= 21 * 86400000;
+  return {
+    active: inactiveFor21Days && state.progressInsights?.returningSeenWorkoutId !== workoutId,
+    workoutId
+  };
+}
+
+function buildProgressCardData(goal, profile, trackKey, track) {
+  const trackState = trackKey ? state.levels?.[trackKey] || {} : {};
+  const level = track?.length ? Math.max(0, Math.min(Number(trackState.level || 0), track.length - 1)) : 0;
+  const generalProgress = goal === 'general' ? workoutModule.getGeneralFitnessProgress(state.levels) : null;
+  const generalTrackKeys = goal === 'general'
+    ? ['horizontalPush', 'dipStrength', 'verticalPush', 'verticalPull', 'horizontalPull', 'scapularPull', 'squat', 'unilateral', 'posteriorChain', 'calves', 'antiExtension', 'compression', 'lateralCore']
+    : [trackKey];
+  const unlocked = latestUnacknowledgedUnlock(generalTrackKeys);
+  const pattern = progressPatternData();
+  const returning = returningProgressInsight();
+  const focusAchieved = goal === 'general' ? generalProgress.achieved : workoutModule.isTrackMastered(trackKey, trackState, track);
+  const nextIndex = unlocked?.trackKey === trackKey ? unlocked.index + 1 : level + 1;
+  const nextExerciseName = track?.[nextIndex]?.name || (!focusAchieved ? track?.[level]?.name : null) || null;
+  const completedWorkoutCount = countableHistory().length;
+  return {
+    focusAchieved,
+    achievedFocusName: focusAchieved ? `${goalLabels[goal] || 'Focus'} achieved` : null,
+    recommendedFocusName: focusAchieved ? recommendedFocus(goal, profile) : null,
+    relevantReadinessSummary: null,
+    recentUnlockedExercise: unlocked?.name || null,
+    unlockEventId: unlocked?.id || null,
+    strongPattern: pattern.strongPattern,
+    recentProgressSummary: pattern.recentProgressSummary,
+    isReturningUser: returning.active,
+    returningWorkoutId: returning.workoutId,
+    completedWorkoutCount,
+    currentFocusName: goalLabels[goal] || 'Pull-up',
+    nextExerciseName,
+    planContinuationMessage: 'Continue with your next workout',
+    remainingRequirement: trackKey ? workoutModule.remainingProgressRequirement(trackKey, trackState) : null
+  };
+}
+
+function renderProgressCard(data) {
+  const cardState = workoutModule.getProgressCardState(data);
+  const content = workoutModule.getProgressCardContent(cardState, data);
+  const card = document.getElementById('dynamicProgressCard');
+  const mascot = document.getElementById('progressMascot');
+  const headline = document.getElementById('progressCardHeadline');
+  const rows = document.getElementById('progressCardRows');
+  if (card) card.dataset.state = content.state;
+  if (mascot) mascot.src = content.mascot;
+  if (headline) headline.textContent = content.headline;
+  if (rows) rows.innerHTML = content.rows.map(row => `<div class="progress-insight-row"><span>${escapeHTML(row.label)}</span><strong>${escapeHTML(row.value)}</strong></div>`).join('');
+  const visitingProgress = document.getElementById('progress')?.classList.contains('active');
+  if (visitingProgress && content.state === 'new_exercise_unlocked' && data.unlockEventId) {
+    const ids = state.progressInsights?.acknowledgedUnlockIds || [];
+    state.progressInsights = { ...(state.progressInsights || {}), acknowledgedUnlockIds: [...new Set([...ids, data.unlockEventId])].slice(-100) };
+    saveState();
+  }
+  if (visitingProgress && content.state === 'returning_user' && data.returningWorkoutId) {
+    state.progressInsights = { ...(state.progressInsights || {}), returningSeenWorkoutId: data.returningWorkoutId };
+    saveState();
+  }
 }
 
 function renderProgress() {
   const profile = getProfile();
   const goal = profile?.goal || 'pullup';
-  const goalTrackKey = getGoalTrackKey(goal);
+  const goalTrackKey = goal === 'general' ? null : getGoalTrackKey(goal);
   const tracks = getTracks();
-  const track = tracks[goalTrackKey]?.length ? tracks[goalTrackKey] : tracks.pullup?.length ? tracks.pullup : baseTracks.pullup;
-  if (!Array.isArray(track) || !track.length) return;
-  const level = Math.max(0, Math.min(getTrackLevel(goalTrackKey), track.length - 1));
-  const percent = Math.round(((level + 1) / track.length) * 100);
+  const track = goalTrackKey ? (tracks[goalTrackKey]?.length ? tracks[goalTrackKey] : baseTracks[goalTrackKey] || []) : [];
+  const level = track.length ? Math.max(0, Math.min(getTrackLevel(goalTrackKey), track.length - 1)) : 0;
 
   const heroTitle = document.getElementById('goalHeroTitle');
   if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'Pull-up';
-  const progress = document.getElementById('pullupProgressBar');
-  if (progress) progress.style.width = `${percent}%`;
-  if (goal === 'general') renderGeneralGoalProgress();
-
-  const readinessCard = document.getElementById('muscleUpReadinessCard');
-  if (readinessCard) {
-    readinessCard.classList.toggle('hidden', goal !== 'muscleup');
-    if (goal === 'muscleup') {
-      const readiness = workoutModule.evaluateAdvancedSkillEligibility('full-muscle-up', { profile, state, recovery: getActiveRecovery() });
-      const status = document.getElementById('muscleUpReadinessStatus');
-      const checks = document.getElementById('muscleUpReadinessChecks');
-      if (status) status.textContent = readiness.state === 'ready' ? 'Ready for workouts' : readiness.explanation;
-      if (checks) checks.innerHTML = readiness.checks.map(check => `<li>${check.met ? '✓' : '○'} ${escapeHTML(check.label)}</li>`).join('');
-    }
+  const generalProgress = goal === 'general' ? workoutModule.getGeneralFitnessProgress(state.levels) : null;
+  const dotCount = generalProgress ? generalProgress.stages.length : track.length;
+  const filledDots = generalProgress ? generalProgress.completedStages : Math.min(level + 1, track.length);
+  const focusDots = document.getElementById('focusProgressDots');
+  const goalHero = document.querySelector('.progress-screen .goal-hero');
+  if (goalHero) goalHero.classList.toggle('has-no-dots', !dotCount);
+  if (focusDots) {
+    focusDots.classList.toggle('hidden', !dotCount);
+    focusDots.innerHTML = progressDotsMarkup(dotCount, filledDots);
+    focusDots.setAttribute('aria-label', dotCount ? `${filledDots} of ${dotCount} focus levels reached` : 'No capability progression available');
   }
+  renderProgressCard(buildProgressCardData(goal, profile, goalTrackKey, track));
 
   const levels = document.getElementById('levelsList');
   if (!levels) return;
   levels.innerHTML = '';
-  const labels = {
-    pullup: 'Pull-up',
-    pushup: 'Push-up',
-    dip: 'Dip',
-    legs: 'Legs',
-    core: 'Core',
-    crow: 'Crow pose',
-    rope: 'Jump rope',
+  const skills = {
     handstand: 'Handstand',
-    handstandPushup: 'Handstand push-up',
+    crow: 'Crow pose',
     lsit: 'L-sit',
-    muscleup: 'Muscle-up',
+    muscleupTransition: 'Muscle-up',
+    handstandPushup: 'Handstand push-up',
     pistolSquat: 'Pistol squat'
   };
-
-  Object.keys(labels).forEach(key => {
+  Object.entries(skills).forEach(([key, label]) => {
     const item = state.levels[key];
-    if (!item) return;
-    const exerciseTrack = getTracks()[key] || baseTracks[key];
-    if (!Array.isArray(exerciseTrack) || !exerciseTrack.length) return;
-    const exercise = exerciseTrack[Math.min(item.level, exerciseTrack.length - 1)];
-    if (!exercise) return;
+    const exerciseTrack = tracks[key] || baseTracks[key];
+    if (!item || !Array.isArray(exerciseTrack) || !exerciseTrack.length) return;
+    const reached = Math.min(Math.max(Number(item.level || 0) + 1, 0), exerciseTrack.length);
     const row = document.createElement('div');
     row.className = 'level-row';
-    row.innerHTML = `<strong>${labels[key]}</strong><span>${item.level + 1}/${exerciseTrack.length}</span>`;
+    row.innerHTML = `<strong>${escapeHTML(label)}</strong><div class="progress-dots skill-progress-dots" aria-label="${reached} of ${exerciseTrack.length} levels reached">${progressDotsMarkup(exerciseTrack.length, reached)}</div>`;
     levels.appendChild(row);
   });
 }
