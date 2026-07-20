@@ -200,7 +200,7 @@
     if (minutes) return { sets: 1, minutes };
     const attempts = positiveInteger(text.match(/[×x]\s*(\d+)\s*attempt/i)?.[1] || text.match(/^(\d+)\s*attempt/i)?.[1]);
     if (attempts) return { sets, attempts, perSide: /\/side/i.test(text) };
-    const legacyRange = text.match(/[×x]\\s*(\\d+)\\s*[-–]\\s*(\\d+)(\\/side)?/i);
+    const legacyRange = text.match(/[×x]\s*(\d+)\s*[-–]\s*(\d+)(\/side)?/i);
     if (legacyRange) {
       return {
         sets,
