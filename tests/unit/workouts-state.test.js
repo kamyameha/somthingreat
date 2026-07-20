@@ -102,6 +102,8 @@ assert.strictEqual(workouts.prescriptionToString({ sets: 3, seconds: 20 }), '3 �
 assert.strictEqual(workouts.prescriptionToString({ sets: 3, reps: 8 }), '3 × 8');
 const legacyRangeLabel = ['3 × 6', '10'].join('-');
 assert.strictEqual(workouts.prescriptionToString(workouts.normalizePrescriptionData(null, legacyRangeLabel, 3)), '3 × 8');
+const obsoleteStructuredRange = { sets: 3, ['reps' + 'Min']: 6, ['reps' + 'Max']: 10 };
+assert.strictEqual(workouts.prescriptionToString(workouts.normalizePrescriptionData(obsoleteStructuredRange, legacyRangeLabel, 3)), '3 × 8');
 const pike = workouts.normalizeExercise({ ...catalog('pike-hold'), trackKey: 'handstand', progressionTrackKey: 'handstand' });
 assert.strictEqual(workouts.executableRounds(pike).length, 3);
 assert.ok(workouts.executableRounds(pike).every(round => round.seconds === 20));
