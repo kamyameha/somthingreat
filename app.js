@@ -2171,10 +2171,13 @@ function renderProgress() {
     const item = state.levels[key];
     const exerciseTrack = tracks[key] || baseTracks[key];
     if (!item || !Array.isArray(exerciseTrack) || !exerciseTrack.length) return;
-    const reached = Math.min(Math.max(Number(item.level || 0), 0), exerciseTrack.length);
+    const capability = workoutModule.getMasteringSkillProgress(key, item, exerciseTrack);
+    const stageCount = capability.stages.length;
+    const reached = capability.completedStages;
+    if (!stageCount) return;
     const row = document.createElement('div');
     row.className = 'level-row';
-    row.innerHTML = `<strong>${escapeHTML(label)}</strong><div class="progress-dots skill-progress-dots" aria-label="${reached} of ${exerciseTrack.length} levels reached">${progressDotsMarkup(exerciseTrack.length, reached)}</div>`;
+    row.innerHTML = `<strong>${escapeHTML(label)}</strong><div class="progress-dots skill-progress-dots" aria-label="${reached} of ${stageCount} capability stages completed">${progressDotsMarkup(stageCount, reached)}</div>`;
     levels.appendChild(row);
   });
 }
