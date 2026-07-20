@@ -47,7 +47,13 @@ const APP_SHELL = [
   './Assets/Energy/great-icon.png',
   './Assets/Energy/normal-icon.png',
   './Assets/Energy/tired-icon.png',
-  './Assets/Energy/exhaustive-icon.png'
+  './Assets/Energy/exhaustive-icon.png',
+  './Assets/Progress/mascot-progress-regular.png',
+  './Assets/Progress/mascot-progress-new-user.png',
+  './Assets/Progress/mascot-progress-unlocked.png',
+  './Assets/Progress/mascot-progress-strong-pattern.png',
+  './Assets/Progress/mascot-progress-focus-achieved.png',
+  './Assets/Progress/mascot-progress-returning.png'
 ];
 
 self.addEventListener('install', event => {
