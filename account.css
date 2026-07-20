@@ -1162,6 +1162,8 @@ body.account-active .app {
 
 .activity-screen .history-item-header strong,
 .activity-screen .history-item-header span {
+  font-size: 24px;
+  line-height: 1.15;
   font-weight: 500;
 }
 
