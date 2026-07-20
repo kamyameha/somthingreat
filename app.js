@@ -2809,14 +2809,43 @@ async function sendSupportMessage() {
   renderModule.setButtonLoading(button, true, 'Sent');
   setTimeout(() => renderModule.setButtonLoading(button, false), 1600);
 }
+function activityEnergySummary() {
+  const counts = new Map();
+  countableHistory().forEach(item => {
+    if (item.type === 'custom' || item.customType) return;
+    const energy = item.energy || item.mode;
+    if (!energyOptions[energy]) return;
+    counts.set(energy, (counts.get(energy) || 0) + 1);
+  });
+  if (!counts.size) return '';
+  const highestCount = Math.max(...counts.values());
+  return Object.keys(energyOptions)
+    .filter(energy => counts.get(energy) === highestCount)
+    .map(energy => energyOptions[energy].title || energyOptions[energy].label || energy)
+    .join(' & ');
+}
+
+function activityExerciseDetail(exercise) {
+  const plannedSets = Number(exercise?.targetSets);
+  const completedSets = Number(exercise?.completedSets);
+  if (Number.isFinite(plannedSets) && plannedSets > 0 && Number.isFinite(completedSets)) {
+    const rating = exercise.rating
+      ? exercise.rating.charAt(0).toUpperCase() + exercise.rating.slice(1)
+      : '';
+    return `${Math.max(0, completedSets)}/${plannedSets} sets${rating ? ` - ${rating}` : ''}`;
+  }
+  return exercise?.prescription || '';
+}
+
 function renderActivity() {
   const yearSummary = document.getElementById('historyYearSummary');
   const monthSummary = document.getElementById('historyMonthSummary');
+  const energySummary = document.getElementById('historyEnergySummary');
   const yearTitle = document.getElementById('historyYearTitle');
   const title = document.getElementById('historyMonthTitle');
   const calendar = document.getElementById('historyCalendar');
   const list = document.getElementById('historyList');
-  if (!yearSummary || !monthSummary || !yearTitle || !title || !calendar || !list) return;
+  if (!yearSummary || !monthSummary || !energySummary || !yearTitle || !title || !calendar || !list) return;
 
   const month = accountHistoryMonth.getMonth();
   const year = accountHistoryMonth.getFullYear();
@@ -2827,6 +2856,9 @@ function renderActivity() {
   const monthCount = monthItems.length;
   yearSummary.textContent = `This year: ${yearCount} workout${yearCount === 1 ? '' : 's'}`;
   monthSummary.textContent = `This month: ${monthCount} workout${monthCount === 1 ? '' : 's'}`;
+  const commonEnergy = activityEnergySummary();
+  energySummary.textContent = commonEnergy ? `Most common energy: ${commonEnergy}` : '';
+  energySummary.classList.toggle('hidden', !commonEnergy);
   yearTitle.textContent = String(year);
   title.textContent = accountHistoryMonth.toLocaleDateString('en-US', { month: 'long' });
 
@@ -2888,12 +2920,23 @@ function renderActivity() {
       const label = item.type === 'custom'
         ? `${item.workout || 'Custom checklist'} - Custom`
         : `${item.workout || 'Workout'} - ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
+      const exercises = Array.isArray(item.exercises) ? item.exercises : [];
+      const exerciseRows = exercises.map(exercise => {
+        const detail = activityExerciseDetail(exercise);
+        return `
+          <div class="history-exercise-row">
+            <span>${escapeHTML(exercise.name || 'Exercise')}</span>
+            ${detail ? `<span class="history-exercise-result">${escapeHTML(detail)}</span>` : ''}
+          </div>
+        `;
+      }).join('');
       return `
         <div class="history-item">
-          <div class="history-item-copy">
+          <div class="history-item-header">
             <strong>${escapeHTML(dateLabel)}</strong>
             <span>${escapeHTML(label)}</span>
           </div>
+          ${exerciseRows ? `<div class="history-item-exercises">${exerciseRows}</div>` : ''}
         </div>
       `;
     }).join('')
