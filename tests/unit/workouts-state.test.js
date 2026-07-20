@@ -49,7 +49,8 @@ workouts.exerciseCatalog.forEach(item => {
   assert.ok(item.instructions.visualGuidance, `visual guidance: ${item.id}`);
   if (item.perSide) assert.ok(item.instructions.successCriteria.some(value => /each side|separately on each side/i.test(value)), `side semantics: ${item.id}`);
   if (item.prescriptionType === 'time') assert.ok(item.secondsPerSet > 0, `seconds: ${item.id}`);
-  if (item.prescriptionType === 'reps') assert.ok(item.repsPerSet || item.repsMin, `reps: ${item.id}`);
+  if (item.prescriptionType === 'reps') assert.ok(item.repsPerSet, `reps: ${item.id}`);
+  assert.ok(!/\\d\\s*[-–]\\s*\\d/.test(item.prescription), `fixed target: ${item.id}`);
 });
 
 assert.deepStrictEqual(Array.from(workouts.movementTracks.pistolSquat, item => item.id), [
@@ -98,6 +99,9 @@ assert.ok(skillsWorkout.exercises.some(item => item.progressionTrackKey === 'pis
 assert.ok(skillsWorkout.exercises.some(item => item.progressionTrackKey === 'handstandPushup'));
 
 assert.strictEqual(workouts.prescriptionToString({ sets: 3, seconds: 20 }), '3 × 20s');
+assert.strictEqual(workouts.prescriptionToString({ sets: 3, reps: 8 }), '3 × 8');
+const legacyRangeLabel = ['3 × 6', '10'].join('-');
+assert.strictEqual(workouts.prescriptionToString(workouts.normalizePrescriptionData(null, legacyRangeLabel, 3)), '3 × 8');
 const pike = workouts.normalizeExercise({ ...catalog('pike-hold'), trackKey: 'handstand', progressionTrackKey: 'handstand' });
 assert.strictEqual(workouts.executableRounds(pike).length, 3);
 assert.ok(workouts.executableRounds(pike).every(round => round.seconds === 20));
@@ -116,7 +120,7 @@ assert.strictEqual(swapped.setCount, 3);
 assert.strictEqual(swapped.secondsPerSet, 20);
 assert.strictEqual(swapped.prescriptionType, 'time');
 assert.strictEqual(swapped.repsPerSet, null);
-assert.strictEqual(swapped.repsMin, null);
+assert.deepStrictEqual(Object.keys(swapped).filter(key => key.startsWith('reps') && key !== 'repsPerSet'), []);
 assert.strictEqual(swapped.swappedFromExerciseId, 'wrist-preparation');
 assert.strictEqual(workouts.executableRounds(swapped).length, 3);
 
@@ -364,5 +368,17 @@ assert.strictEqual(sanitized.history[0].exercises[0].completedSets, 2);
 assert.strictEqual(sanitized.history[0].exercises[0].targetSets, 3);
 assert.strictEqual(sanitized.history[0].exercises[0].exerciseId, 'pike-hold');
 assert.strictEqual(sanitized.history[0].exercises[0].rating, 'hard');
+
+const legacyRangeState = stateStore.defaultState();
+legacyRangeState.history.push({
+  date: new Date().toISOString(),
+  workout: 'Push',
+  mode: 'normal',
+  completedCount: 3,
+  exercises: [{ name: 'Medium incline push-up', prescription: legacyRangeLabel, targetSets: 3, completedSets: 3 }]
+});
+const sanitizedLegacyRange = stateStore.sanitizeState(legacyRangeState);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(sanitizedLegacyRange.history[0].exercises[0].prescriptionData)), { sets: 3, perSide: false, reps: 8 });
+assert.strictEqual(sanitizedLegacyRange.history[0].exercises[0].prescription, '3 × 8');
 
 console.log(`Validated ${workouts.exerciseCatalog.length} exercises and workout lifecycle regression cases.`);
