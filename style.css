@@ -1047,6 +1047,150 @@ body.onboarding-active .app {
   white-space: nowrap;
 }
 
+/* Progress screen */
+.progress-screen .goal-hero {
+  margin: 0 0 39px;
+}
+
+.progress-screen .goal-hero h2 {
+  margin: 0 0 7px;
+  color: var(--main);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.progress-screen .goal-hero.has-no-dots h2 {
+  margin-bottom: 0;
+}
+
+.progress-dots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress-dot {
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(1, 45, 237, 0.15);
+}
+
+.progress-dot.is-filled {
+  background: var(--main);
+}
+
+.focus-progress-dots .progress-dot {
+  width: 28px;
+  height: 28px;
+}
+
+.progress-insight-card {
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--main);
+  color: #ffffff;
+}
+
+.progress-mascot {
+  display: block;
+  width: min(100%, 265px);
+  height: auto;
+  max-height: 148px;
+  margin: 0 auto 25px;
+  object-fit: contain;
+}
+
+.progress-insight-card > h3 {
+  margin: 0 0 29px;
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.progress-insight-rows {
+  display: grid;
+  gap: 15px;
+  margin-top: auto;
+}
+
+.progress-insight-row {
+  min-width: 0;
+  padding: 12px 15px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.progress-insight-row span,
+.progress-insight-row strong {
+  display: block;
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.progress-insight-row span {
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.progress-insight-row strong {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.progress-screen > .mastering-skills-card {
+  margin-top: 44px;
+}
+
+.progress-screen .mastering-skills-card > h3 {
+  margin: 0 0 39px;
+  color: var(--main);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.progress-screen #levelsList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 20px;
+  row-gap: 28px;
+}
+
+.progress-screen .level-row {
+  min-width: 0;
+  display: block;
+}
+
+.progress-screen .level-row strong {
+  display: block;
+  margin: 0 0 7px;
+  color: var(--main);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.skill-progress-dots {
+  gap: 4px;
+}
+
+.skill-progress-dots .progress-dot {
+  width: 20px;
+  height: 20px;
+}
+
 .consistency-card {
   width: 100%;
   min-height: 144px;
@@ -1172,8 +1316,8 @@ body.onboarding-active .app {
     width: min(393px, 100%);
   }
 
-  #levelsList {
-    grid-template-columns: 1fr;
+  .progress-screen #levelsList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
