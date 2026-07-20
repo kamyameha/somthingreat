@@ -593,8 +593,7 @@ body.workout-active .bottom-nav {
   width: 100%;
   height: 46px;
   min-height: 46px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 21px;
@@ -616,6 +615,15 @@ body.workout-active .bottom-nav {
   white-space: nowrap;
   font-style: normal;
   font-weight: 400;
+}
+
+.exercise-chip-toggle span {
+  flex: 1 1 auto;
+}
+
+.exercise-chip-toggle em,
+.exercise-chip-toggle i {
+  flex: 0 0 auto;
 }
 
 .exercise-chip-toggle i {
@@ -659,7 +667,7 @@ body.workout-active .bottom-nav {
 
 .exercise-card-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 26px;
+  grid-template-columns: minmax(0, 1fr) 24px;
   align-items: center;
   gap: 12px;
   margin-bottom: 33px;
@@ -674,10 +682,10 @@ body.workout-active .bottom-nav {
 }
 
 .workout-accordion-card .exercise-help-btn {
-  width: 26px;
-  height: 26px;
-  min-width: 26px;
-  min-height: 26px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
   margin: 0;
   padding: 0;
   display: grid;
@@ -1246,10 +1254,18 @@ body.workout-active .bottom-nav {
 
 .generated-preview-list .preview-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 16px;
   padding: 0;
   border: 0;
+}
+
+.preview-exercise-copy {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
 }
 
 .generated-preview-list .preview-row strong,
@@ -1260,15 +1276,44 @@ body.workout-active .bottom-nav {
   line-height: 1.1;
 }
 
+.generated-preview-list .preview-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .generated-preview-list .preview-row span {
   color: #989898;
-  text-align: right;
+  font-size: 16px;
+  font-weight: 400;
+  text-align: left;
 }
 
 .generated-preview-list .preview-exercise-actions {
+  flex: 0 0 auto;
+  min-height: 24px;
   display: flex;
   align-items: center;
   gap: 15px;
+}
+
+.preview-icon-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #000000;
+  color: #000000;
+}
+
+.preview-swap-btn {
+  -webkit-mask: url("Assets/repeat.svg") center / 24px 24px no-repeat;
+  mask: url("Assets/repeat.svg") center / 24px 24px no-repeat;
 }
 
 .generated-preview-list .preview-help-btn {
