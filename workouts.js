@@ -2468,6 +2468,126 @@
     return 'Workout';
   }
 
+  const progressMascotByState = Object.freeze({
+    regular: 'Assets/Progress/mascot-progress-regular.png',
+    new_user: 'Assets/Progress/mascot-progress-new-user.png',
+    new_exercise_unlocked: 'Assets/Progress/mascot-progress-unlocked.png',
+    strong_pattern: 'Assets/Progress/mascot-progress-strong-pattern.png',
+    focus_achieved: 'Assets/Progress/mascot-progress-focus-achieved.png',
+    returning_user: 'Assets/Progress/mascot-progress-returning.png'
+  });
+
+  const generalFitnessStages = Object.freeze([
+    { name: 'Foundation', minimum: 0.2 },
+    { name: 'Developing', minimum: 0.4 },
+    { name: 'Capable', minimum: 0.6 },
+    { name: 'Strong', minimum: 0.8 },
+    { name: 'Well-rounded', minimum: 1 }
+  ]);
+
+  const generalFitnessCategories = Object.freeze({
+    push: ['horizontalPush', 'dipStrength', 'verticalPush'],
+    pull: ['verticalPull', 'horizontalPull', 'scapularPull'],
+    legs: ['squat', 'unilateral', 'posteriorChain', 'calves'],
+    core: ['antiExtension', 'compression', 'lateralCore']
+  });
+
+  function normalizedTrackCapability(trackKey, levels = {}) {
+    const track = movementTracks[trackKey] || [];
+    const maximum = Math.max(0, track.length - 1);
+    if (!maximum) return 0;
+    return Math.max(0, Math.min(Number(levels?.[trackKey]?.level || 0) / maximum, 1));
+  }
+
+  function getGeneralFitnessProgress(levels = {}) {
+    const categories = Object.fromEntries(Object.entries(generalFitnessCategories).map(([category, trackKeys]) => [
+      category,
+      Math.max(0, ...trackKeys.map(trackKey => normalizedTrackCapability(trackKey, levels)))
+    ]));
+    const completedStages = generalFitnessStages.filter(stage => Object.values(categories).every(value => value >= stage.minimum)).length;
+    return {
+      stages: generalFitnessStages,
+      categories,
+      completedStages,
+      achieved: completedStages === generalFitnessStages.length,
+      nextStage: generalFitnessStages[completedStages] || null
+    };
+  }
+
+  function completionLabel(count, rating) {
+    const safeCount = Math.max(0, Math.ceil(Number(count) || 0));
+    return `${safeCount} ${rating} completion${safeCount === 1 ? '' : 's'}`;
+  }
+
+  function remainingProgressRequirement(trackKey, trackState = {}) {
+    const rules = ratingRulesForTrack(trackKey);
+    const pointDeficit = Math.max(0, rules.progressPoints - Number(trackState.points || 0));
+    const exposureDeficit = Math.max(0, rules.positiveExposures - Number(trackState.positiveExposures || 0));
+    const easyCount = Math.max(Math.ceil(pointDeficit / 2), Math.ceil(exposureDeficit));
+    const goodCount = Math.max(Math.ceil(pointDeficit), Math.ceil(exposureDeficit / 0.5));
+    if (!easyCount && !goodCount) return null;
+    if (easyCount && goodCount) return `${completionLabel(easyCount, 'Easy')} or ${completionLabel(goodCount, 'Good')}`;
+    return easyCount ? completionLabel(easyCount, 'Easy') : completionLabel(goodCount, 'Good');
+  }
+
+  function isTrackMastered(trackKey, trackState = {}, track = []) {
+    if (!Array.isArray(track) || !track.length || Number(trackState.level || 0) < track.length - 1) return false;
+    const rules = ratingRulesForTrack(trackKey);
+    return Number(trackState.points || 0) >= rules.progressPoints && Number(trackState.positiveExposures || 0) >= rules.positiveExposures;
+  }
+
+  function getProgressCardState(progressData = {}) {
+    if (progressData.focusAchieved) return 'focus_achieved';
+    if (progressData.recentUnlockedExercise) return 'new_exercise_unlocked';
+    if (progressData.strongPattern) return 'strong_pattern';
+    if (progressData.isReturningUser) return 'returning_user';
+    if (Number(progressData.completedWorkoutCount || 0) === 0) return 'new_user';
+    return 'regular';
+  }
+
+  function getProgressCardContent(cardState, progressData = {}) {
+    const rows = [];
+    let headline = "You're on track!";
+    const push = (label, value) => { if (label && value && rows.length < 3) rows.push({ label, value }); };
+    if (cardState === 'new_user') {
+      headline = "Let's get started!";
+      push('First workout', 'Your plan is ready');
+      push('First step', "Complete today's workout");
+      push('Your focus', progressData.currentFocusName);
+    } else if (cardState === 'new_exercise_unlocked') {
+      headline = "You're doing great!";
+      push('New exercise unlocked', progressData.recentUnlockedExercise);
+      push('Coming next', progressData.nextExerciseName);
+      if (progressData.recentProgressSummary) push('Recent progress', progressData.recentProgressSummary);
+      else push('Keep going', progressData.remainingRequirement);
+    } else if (cardState === 'strong_pattern') {
+      headline = "You're building momentum!";
+      push('Strong pattern', progressData.strongPattern);
+      push('Coming next', progressData.nextExerciseName);
+      push('Keep going', progressData.remainingRequirement);
+    } else if (cardState === 'focus_achieved') {
+      headline = 'You did it!';
+      push('Focus achieved', progressData.achievedFocusName);
+      push(progressData.recommendedFocusName ? 'Recommended next focus' : "What's next", progressData.recommendedFocusName || 'Choose a new focus');
+      push("You're already building", progressData.relevantReadinessSummary);
+    } else if (cardState === 'returning_user') {
+      headline = 'Welcome back!';
+      push('Your focus', progressData.currentFocusName);
+      push('Coming next', progressData.nextExerciseName);
+      push('Next step', 'Continue with your next workout');
+    } else {
+      if (progressData.nextExerciseName) {
+        push('Next exercise', progressData.nextExerciseName);
+        push('Keep going', progressData.remainingRequirement || 'Build confidence at this level');
+        push('Recent progress', progressData.recentProgressSummary);
+      } else {
+        push('Recent progress', progressData.recentProgressSummary);
+        push('Next step', progressData.planContinuationMessage || 'Continue with your next workout');
+      }
+    }
+    return { state: cardState, mascot: progressMascotByState[cardState] || progressMascotByState.regular, headline, rows };
+  }
+
   function normaliseHelpName(value = '') {
     return String(value)
       .toLowerCase()
@@ -2671,6 +2791,13 @@
     distinctSuccessCriteria,
     validateEligibilityConfig,
     modeLabel,
+    progressMascotByState,
+    generalFitnessStages,
+    getGeneralFitnessProgress,
+    remainingProgressRequirement,
+    isTrackMastered,
+    getProgressCardState,
+    getProgressCardContent,
     applyRating,
     validateWorkoutSystem,
     isExerciseAllowedForRecovery
