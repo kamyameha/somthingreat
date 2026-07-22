@@ -2707,27 +2707,27 @@
 
   function getProgressCardContent(cardState, progressData = {}) {
     let headline = "You're on track!";
-    let event = null;
+    let description = progressData.recentProgressSummary || `Your ${progressData.currentFocusName || 'training'} plan is underway`;
     if (cardState === 'focus_achieved') {
       headline = 'You did it!';
-      event = { label: 'Focus achieved', value: progressData.achievedFocusName };
+      description = progressData.achievedFocusName || 'Your focus was achieved';
     } else if (cardState === 'new_exercise_unlocked') {
       headline = 'Nice work!';
-      event = { label: 'New exercise unlocked', value: progressData.recentUnlockedExercise };
+      description = `${progressData.recentUnlockedExercise || 'New exercise'} unlocked`;
     } else if (cardState === 'exercise_progressed') {
       headline = "You're getting stronger!";
-      event = { label: 'Recent progress', value: progressData.exerciseProgressSummary };
+      description = progressData.exerciseProgressSummary || description;
     } else if (cardState === 'strong_pattern') {
       headline = "You're building momentum!";
-      event = { label: 'Consistency', value: progressData.strongPattern };
+      description = progressData.strongPattern || description;
     } else if (cardState === 'new_user') {
       headline = "Let's get started!";
-      event = { label: 'Your focus', value: progressData.currentFocusName };
-    } else if (progressData.recentProgressSummary) {
-      event = { label: 'Recent progress', value: progressData.recentProgressSummary };
+      description = `Your ${progressData.currentFocusName || 'training'} journey is ready`;
+    } else if (cardState === 'returning_user') {
+      headline = 'Welcome back!';
+      description = `You returned to your ${progressData.currentFocusName || 'training'} journey`;
     }
-    const rows = event?.label && event?.value ? [event] : [];
-    return { state: cardState, mascot: progressMascotByState[cardState] || progressMascotByState.regular, headline, rows };
+    return { state: cardState, mascot: progressMascotByState[cardState] || progressMascotByState.regular, headline, description };
   }
 
   function normaliseHelpName(value = '') {

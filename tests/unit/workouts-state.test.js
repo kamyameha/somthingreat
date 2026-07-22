@@ -95,9 +95,9 @@ assert.strictEqual(workouts.getProgressCardState({ completedWorkoutCount: 1 }), 
 const regularCard = workouts.getProgressCardContent('regular', {
   nextExerciseName: 'Flex-arm hang', remainingRequirement: '1 Easy completion or 2 Good completions'
 });
-assert.strictEqual(regularCard.rows.length, 0);
+assert.strictEqual(regularCard.description, 'Your training plan is underway');
 assert.strictEqual(workouts.remainingProgressRequirement('horizontalPush', { points: 3, positiveExposures: 1 }), '1 Easy completion or 2 Good completions');
-assert.strictEqual(workouts.getProgressCardContent('new_exercise_unlocked', { recentUnlockedExercise: 'Full push-up' }).rows.length, 1);
+assert.strictEqual(workouts.getProgressCardContent('new_exercise_unlocked', { recentUnlockedExercise: 'Full push-up' }).description, 'Full push-up unlocked');
 const refinedStates = [
   ['regular', { currentLevelName: 'Assisted pull-up', nextExerciseName: 'Flex-arm hang', remainingRequirement: '2 Easy completions' }],
   ['new_user', { currentFocusName: 'Pull-up' }],
@@ -106,14 +106,12 @@ const refinedStates = [
   ['focus_achieved', { achievedFocusName: 'Pull-up achieved' }],
   ['returning_user', { currentFocusName: 'Pull-up' }]
 ].map(([stateName, data]) => workouts.getProgressCardContent(stateName, data));
-assert.ok(refinedStates.every(content => content.rows.length <= 1));
-assert.ok(refinedStates.every(content => content.rows.every(row => row.label !== 'Keep going' && row.label !== 'Strong pattern')));
-assert.ok(refinedStates.find(content => content.state === 'strong_pattern').rows.some(row => row.label === 'Consistency'));
-assert.ok(refinedStates.find(content => content.state === 'new_exercise_unlocked').rows.some(row => row.value === 'Full push-up'));
-assert.ok(workouts.getProgressCardContent('focus_achieved', { achievedFocusName: 'Pull-up achieved' }).rows.some(row => row.value === 'Pull-up achieved'));
+assert.ok(refinedStates.every(content => typeof content.description === 'string' && content.description.length > 0));
+assert.strictEqual(refinedStates.find(content => content.state === 'strong_pattern').description, '4 workouts completed this month');
+assert.strictEqual(refinedStates.find(content => content.state === 'new_exercise_unlocked').description, 'Full push-up unlocked');
+assert.strictEqual(workouts.getProgressCardContent('focus_achieved', { achievedFocusName: 'Pull-up achieved' }).description, 'Pull-up achieved');
 const generalCard = workouts.getProgressCardContent('regular', { recentProgressSummary: '3 successful completions this month' });
-assert.ok(!generalCard.rows.some(row => row.label === 'Next exercise'));
-assert.ok(generalCard.rows.some(row => row.value === '3 successful completions this month'));
+assert.strictEqual(generalCard.description, '3 successful completions this month');
 
 const activeWeekHistory = [
   { date: '2025-12-29T12:00:00' },

@@ -2170,11 +2170,11 @@ function renderProgressCard(data) {
   const card = document.getElementById('dynamicProgressCard');
   const mascot = document.getElementById('progressMascot');
   const headline = document.getElementById('progressCardHeadline');
-  const rows = document.getElementById('progressCardRows');
+  const description = document.getElementById('progressCardDescription');
   if (card) card.dataset.state = content.state;
   if (mascot) mascot.src = content.mascot;
   if (headline) headline.textContent = content.headline;
-  if (rows) rows.innerHTML = content.rows.map(row => `<div class="progress-insight-row"><span>${escapeHTML(row.label)}</span><strong>${escapeHTML(row.value)}</strong></div>`).join('');
+  if (description) description.textContent = content.description;
   const visitingProgress = document.getElementById('progress')?.classList.contains('active');
   if (visitingProgress && content.state === 'new_exercise_unlocked' && data.unlockEventId) {
     const ids = state.progressInsights?.acknowledgedUnlockIds || [];
