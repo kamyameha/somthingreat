@@ -377,6 +377,12 @@ body.account-active .app {
   color: #ffffff;
 }
 
+.account-submenu-panel #accountGoalView,
+.account-submenu-panel #accountEquipmentView {
+  column-gap: 20px;
+  row-gap: 19px;
+}
+
 .account-submenu-panel .account-view.hidden {
   display: none !important;
 }

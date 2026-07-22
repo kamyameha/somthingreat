@@ -1054,7 +1054,6 @@ body.onboarding-active .app {
 }
 
 .focus-next-milestone {
-  margin-top: 12px;
   overflow-wrap: anywhere;
 }
 
@@ -1064,6 +1063,10 @@ body.onboarding-active .app {
   font-size: 16px;
   font-weight: 400;
   line-height: 1.2;
+}
+
+.activity-summary-line.focus-next-milestone {
+  margin-top: 12px;
 }
 
 .progress-screen .goal-hero h2 {
