@@ -1106,11 +1106,11 @@ body.onboarding-active .app {
 .progress-insight-card {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(150px, 180px);
+  grid-template-columns: minmax(0, 1fr) 150px;
   align-items: center;
   gap: 18px;
   margin: 0;
-  padding: 24px;
+  padding: 20px;
   border-radius: 20px;
   background: var(--main);
   color: #ffffff;
@@ -1118,10 +1118,11 @@ body.onboarding-active .app {
 
 .progress-mascot {
   display: block;
-  width: 100%;
+  width: 150px;
   height: auto;
   max-height: 134px;
   margin: 0;
+  justify-self: end;
   object-fit: contain;
 }
 

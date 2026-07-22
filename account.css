@@ -383,6 +383,24 @@ body.account-active .app {
   row-gap: 19px;
 }
 
+.account-submenu-panel .account-goal-options {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 19px 20px;
+}
+
+.account-submenu-panel .account-goal-options .option-row {
+  grid-column: span 2;
+  width: 100%;
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
+.account-submenu-panel .account-goal-options .option-row:nth-child(n + 4) {
+  grid-column: span 3;
+}
+
 .account-submenu-panel .account-view.hidden {
   display: none !important;
 }

@@ -26,11 +26,11 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.22.153746" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.22.153746" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.22.153746" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.22.153746" />
-  <link rel="stylesheet" href="account.css?v=2026.07.22.153746" />
+  <link rel="stylesheet" href="style.css?v=2026.07.22.154214" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.22.154214" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.22.154214" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.22.154214" />
+  <link rel="stylesheet" href="account.css?v=2026.07.22.154214" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
@@ -175,11 +175,13 @@
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
 		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Focus</h2>
           <p class="muted">Choose the main goal your workouts should prioritize.</p>
-          <label class="option-row"><input type="radio" name="accountGoal" value="pullup"> <span>Pull-up</span></label>
-          <label class="option-row"><input type="radio" name="accountGoal" value="muscleup"> <span>Muscle-up</span></label>
-          <label class="option-row"><input type="radio" name="accountGoal" value="lsit"> <span>L-Sit</span></label>
-          <label class="option-row"><input type="radio" name="accountGoal" value="handstand"> <span>Handstand</span></label>
-          <label class="option-row"><input type="radio" name="accountGoal" value="general"> <span>General fitness</span></label>
+          <div class="account-goal-options">
+            <label class="option-row"><input type="radio" name="accountGoal" value="pullup"> <span>Pull-up</span></label>
+            <label class="option-row"><input type="radio" name="accountGoal" value="muscleup"> <span>Muscle-up</span></label>
+            <label class="option-row"><input type="radio" name="accountGoal" value="lsit"> <span>L-Sit</span></label>
+            <label class="option-row"><input type="radio" name="accountGoal" value="handstand"> <span>Handstand</span></label>
+            <label class="option-row"><input type="radio" name="accountGoal" value="general"> <span>General fitness</span></label>
+          </div>
           <button id="saveAccountGoalBtn" class="primary-btn account-full-btn" type="button">Update goal</button>
           <p id="accountGoalMessage" class="auth-message" aria-live="polite"></p>
         </div>
@@ -552,12 +554,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.22.153746"></script>
-  <script src="workouts.js?v=2026.07.22.153746"></script>
-  <script src="state.js?v=2026.07.22.153746"></script>
-  <script src="account.js?v=2026.07.22.153746"></script>
-  <script src="render.js?v=2026.07.22.153746"></script>
-  <script src="app-version.js?v=2026.07.22.153746"></script>
-  <script src="app.js?v=2026.07.22.153746"></script>
+  <script src="auth.js?v=2026.07.22.154214"></script>
+  <script src="workouts.js?v=2026.07.22.154214"></script>
+  <script src="state.js?v=2026.07.22.154214"></script>
+  <script src="account.js?v=2026.07.22.154214"></script>
+  <script src="render.js?v=2026.07.22.154214"></script>
+  <script src="app-version.js?v=2026.07.22.154214"></script>
+  <script src="app.js?v=2026.07.22.154214"></script>
 </body>
 </html>
