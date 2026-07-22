@@ -2,7 +2,7 @@
   const STORAGE_KEY = 'camille-calisthenics-v4';
   const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
   const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
-  const STATE_SCHEMA_VERSION = 3;
+  const STATE_SCHEMA_VERSION = 4;
 
   function applyWorkoutCatalogMigrations(workoutModule) {
     if (!workoutModule || workoutModule.catalogMigrationsApplied) return;
@@ -159,6 +159,14 @@
       };
     }
 
+    function sanitizeRestAdvice(value) {
+      const source = value && typeof value === 'object' ? value : {};
+      return {
+        acknowledgedSequenceKey: typeof source.acknowledgedSequenceKey === 'string' ? source.acknowledgedSequenceKey : '',
+        lastShownDate: typeof source.lastShownDate === 'string' ? source.lastShownDate : ''
+      };
+    }
+
     function sanitizeCustomChecklist(checklist) {
       if (!checklist || typeof checklist !== 'object') return null;
       const type = ['rounds', 'minutes'].includes(checklist.type) ? checklist.type : 'rounds';
@@ -231,13 +239,20 @@
         recovery: null,
         pendingSessionRecords: [],
         progressInsights: sanitizeProgressInsights(null),
+        restAdvice: sanitizeRestAdvice(null),
         todayEmptyStateDismissed: false
       };
     }
 
     function migrateState(rawState) {
       if (!rawState || typeof rawState !== 'object') return defaultState();
-      return { ...rawState, schemaVersion: STATE_SCHEMA_VERSION };
+      const previousVersion = Number(rawState.schemaVersion || 0);
+      const migrated = { ...rawState };
+      if (previousVersion < 4) {
+        if (Number(migrated.rotationIndex) === 1) migrated.rotationIndex = 2;
+        else if (Number(migrated.rotationIndex) === 2) migrated.rotationIndex = 1;
+      }
+      return { ...migrated, schemaVersion: STATE_SCHEMA_VERSION };
     }
 
     function sanitizeState(nextState) {
@@ -263,6 +278,7 @@
       nextState.recovery = sanitizeRecovery(nextState.recovery);
       nextState.pendingSessionRecords = sanitizePendingSessionRecords(nextState.pendingSessionRecords);
       nextState.progressInsights = sanitizeProgressInsights(nextState.progressInsights);
+      nextState.restAdvice = sanitizeRestAdvice(nextState.restAdvice);
       nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
       nextState.schemaVersion = STATE_SCHEMA_VERSION;
 
@@ -322,6 +338,7 @@
         recovery: state.recovery,
         pendingSessionRecords: state.pendingSessionRecords,
         progressInsights: state.progressInsights,
+        restAdvice: state.restAdvice,
         todayEmptyStateDismissed: state.todayEmptyStateDismissed
       };
     }

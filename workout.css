@@ -666,19 +666,32 @@ body.workout-active .bottom-nav {
 }
 
 .exercise-card-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 24px;
+  display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 33px;
 }
 
 .exercise-card-header h3 {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
   color: #ffffff;
   font-size: 18px;
   font-weight: 500;
   line-height: 1.15;
+}
+
+.exercise-card-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.workout-accordion-card .active-swap-btn {
+  flex: 0 0 24px;
+  background-color: #ffffff;
 }
 
 .workout-accordion-card .exercise-help-btn {
@@ -902,8 +915,13 @@ body.workout-active .bottom-nav {
 }
 
 .custom-checklist-card {
-  margin: 51px 0 0;
+  margin: var(--section-gap) 0 0;
   padding: 0;
+}
+
+.today-info-action {
+  width: 100%;
+  margin-top: 20px;
 }
 
 .custom-checklist-card h2 {

@@ -258,7 +258,21 @@
           return;
         }
         countedTarget = checklist.items.filter(Boolean).length;
-      } else countedTarget = Math.max(1, Math.min(checklist.target, Math.ceil(currentElapsed(readActivityTimer()) / 60)));
+        if (!countedTarget) {
+          showCompletionScreen({ title: 'Nothing saved yet', message: 'Complete at least one round before saving this activity.', cancelLabel: 'Go back' });
+          return;
+        }
+      } else {
+        countedTarget = Math.min(checklist.target, Math.floor(currentElapsed(readActivityTimer()) / 60));
+        if (!countedTarget) {
+          showCompletionScreen({ title: 'Nothing saved yet', message: 'Complete at least one full minute before saving this activity.', cancelLabel: 'Go back' });
+          return;
+        }
+        if (!skipIncompleteConfirm && countedTarget < checklist.target) {
+          showCompletionScreen({ title: 'Almost there!', message: 'Only completed minutes will be counted. Save this progress or go back to continue.', actionLabel: 'Save progress', cancelLabel: 'Go back', onConfirm: () => completeCustomChecklist(true) });
+          return;
+        }
+      }
       const prescription = customChecklistUnitLabel(checklist.type, countedTarget);
       state.history.push({ type: 'custom', date: new Date().toISOString(), workout: checklist.name, mode: 'custom', customType: checklist.type, target: countedTarget, exercises: [{ name: checklist.name, prescription, trackKey: 'custom', isAddOn: false }] });
       stopActivityTimerInterval();
@@ -270,7 +284,7 @@
       renderProgress();
       renderActivity();
       renderAccount();
-      showWorkoutStatus('Activity saved.', 'Your activity counter is saved in your history.');
+      showCompletionScreen({ title: 'Well done!', message: 'Your activity counter is saved in your history.', autoClose: true });
       updateUpdateBanner();
     };
 

@@ -342,7 +342,7 @@ function getTracks() {
 }
 
 function getRotation() {
-  return workoutModule.getRotation(getProfile());
+  return workoutModule.getRotation(getProfile(), state);
 }
 
 function hasCompletedProfile() {
@@ -905,7 +905,16 @@ function renderToday() {
 
   const emptyState = document.getElementById('todayEmptyState');
   if (emptyState) {
-    const shouldShowEmptyState = countableHistory().length === 0 && !state.todayEmptyStateDismissed;
+    const advice = currentRestAdvice();
+    const adviceSeen = advice && (state.restAdvice?.acknowledgedSequenceKey === advice.key || state.restAdvice?.lastShownDate === advice.today);
+    const shouldShowAdvice = Boolean(advice && !adviceSeen);
+    const shouldShowEmptyState = shouldShowAdvice || (countableHistory().length === 0 && !state.todayEmptyStateDismissed);
+    emptyState.dataset.mode = shouldShowAdvice ? 'rest-advice' : 'welcome';
+    emptyState.querySelector('h2').textContent = shouldShowAdvice ? 'Rest might help' : 'You’re set.';
+    emptyState.querySelector('p').textContent = shouldShowAdvice
+      ? "You've trained 3 days in a row. Taking a rest day can help your body recover."
+      : 'Start with how you feel today, and Somthingreat will shape the workout from there.';
+    document.getElementById('todayInfoAction')?.classList.toggle('hidden', !shouldShowAdvice);
     emptyState.classList.toggle('hidden', !shouldShowEmptyState);
   }
 }
@@ -1106,7 +1115,12 @@ function completeCustomChecklist(skipIncompleteConfirm = false) {
 }
 
 function dismissTodayEmptyState() {
-  state.todayEmptyStateDismissed = true;
+  const advice = currentRestAdvice();
+  if (document.getElementById('todayEmptyState')?.dataset.mode === 'rest-advice' && advice) {
+    state.restAdvice = { acknowledgedSequenceKey: advice.key, lastShownDate: advice.today };
+  } else {
+    state.todayEmptyStateDismissed = true;
+  }
   saveState();
   renderToday();
 }
@@ -1215,16 +1229,42 @@ function previewSwapCandidates(exercise) {
   const sourceTrack = tracks[trackKey] || [];
   const recovery = typeof getActiveRecovery === 'function' ? getActiveRecovery() : null;
   const usedIds = new Set((state.generated?.exercises || []).map(item => item?.id).filter(Boolean));
-  const allowed = sourceTrack.filter(candidate => {
-    if (!candidate || candidate.id === exercise.id || usedIds.has(candidate.id)) return false;
-    if (recovery && !workoutModule.isExerciseAllowedForRecovery(candidate, recovery)) return false;
-    if (!workoutModule.isExerciseEligibleForGeneration(candidate, getProfile(), state, recovery)) return false;
-    return true;
+  return workoutModule.getValidSwapCandidates(exercise, sourceTrack, {
+    usedIds,
+    recovery,
+    unlockedLevel: state.levels?.[trackKey]?.level || 0,
+    profile: getProfile(),
+    state
   });
-  return allowed.sort((a, b) =>
-    Math.abs((a.difficulty || 1) - (exercise.difficulty || 1)) -
-    Math.abs((b.difficulty || 1) - (exercise.difficulty || 1))
-  );
+}
+
+function activeSwapCandidates(exercise) {
+  if (!exercise || exercise.isAddOn) return [];
+  const key = exerciseSessionKey(exercise);
+  if ((state.current?.sets?.[key] || []).some(Boolean) || state.current?.ratings?.[key]) return [];
+  const trackKey = exercise.progressionTrackKey || exercise.trackKey;
+  return workoutModule.getValidSwapCandidates(exercise, getTracks()[trackKey] || [], {
+    usedIds: new Set((state.current?.exercises || []).map(item => item?.id).filter(Boolean)),
+    recovery: typeof getActiveRecovery === 'function' ? getActiveRecovery() : null,
+    unlockedLevel: state.levels?.[trackKey]?.level || 0,
+    profile: getProfile(),
+    state
+  });
+}
+
+function swapActiveExercise(index) {
+  const current = state.current?.exercises?.[index];
+  const candidates = activeSwapCandidates(current);
+  if (!current || !candidates.length) return;
+  const replacement = workoutModule.createSwapReplacement(current, candidates[0], state.current.mode,
+    typeof getActiveRecovery === 'function' ? getActiveRecovery() : null, { profile: getProfile(), state });
+  const key = exerciseSessionKey(current, index);
+  replacement.sessionKey = key;
+  state.current.exercises[index] = replacement;
+  state.current.sets[key] = Array.from({ length: replacement.setCount || 1 }, () => false);
+  delete state.current.ratings[key];
+  saveState();
+  renderExercises();
 }
 
 function swapPreviewExercise(index) {
@@ -1474,6 +1514,9 @@ function renderExercises() {
     }).join('');
     const help = exercise.isAddOn ? null : getExerciseHelp(exerciseName);
     const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exerciseName)}" aria-label="Help with ${escapeHTML(exerciseName)}">?</button>` : '';
+    const swapButton = activeSwapCandidates(exercise).length
+      ? `<button class="preview-icon-btn preview-swap-btn active-swap-btn" type="button" data-active-index="${index}" aria-label="Change ${escapeHTML(exerciseName)}"></button>`
+      : '';
     const ratingBlock = exercise.isAddOn ? '' : `
       <p class="rating-label">How was it?</p>
       <div class="rating-row" data-track="${exerciseKey}">
@@ -1491,7 +1534,7 @@ function renderExercises() {
       <div class="exercise-card-body">
         <div class="exercise-card-header">
           <h3>${escapeHTML(exerciseName)} - ${escapeHTML(exercise.prescription)}</h3>
-          ${helpButton}
+          <div class="exercise-card-actions">${swapButton}${helpButton}</div>
         </div>
         <div class="set-list">${setRows}</div>
         ${ratingBlock}
@@ -1970,7 +2013,7 @@ function getGoalJourneyTitle(goal) {
 
 function hasCountableWorkoutProgress(item) {
   if (!item) return false;
-  if (item.customType) return true;
+  if (item.type === 'custom' || item.customType) return false;
   // Legacy workouts did not store completedCount. Earlier sanitization turned
   // that missing value into 0, so a zero cannot be treated as definitive when
   // the historical entry still contains performed exercises.
@@ -1983,6 +2026,34 @@ function hasCountableWorkoutProgress(item) {
 
 function countableHistory() {
   return state.history.filter(hasCountableWorkoutProgress);
+}
+
+function isFullyCompletedWorkout(item) {
+  if (!hasCountableWorkoutProgress(item)) return false;
+  const exercises = (item.exercises || []).filter(exercise => !exercise.isAddOn);
+  return exercises.length > 0 && exercises.every(exercise => exercise.completionStatus === 'completed');
+}
+
+function localDateKey(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function currentRestAdvice() {
+  const days = [...new Set(state.history.filter(isFullyCompletedWorkout).map(item => localDateKey(item.date)).filter(Boolean))].sort();
+  const today = localDateKey(new Date());
+  if (!days.includes(today)) return null;
+  let start = days.length - 1;
+  while (start > 0) {
+    const current = new Date(`${days[start]}T12:00:00`);
+    const previous = new Date(`${days[start - 1]}T12:00:00`);
+    if ((current - previous) !== 86400000) break;
+    start -= 1;
+  }
+  const sequence = days.slice(start);
+  if (sequence.length < 3) return null;
+  return { key: sequence[0], today };
 }
 
 function historyEntryId(item = {}) {
@@ -2043,37 +2114,17 @@ function latestUnacknowledgedUnlock(trackKeys) {
 
 function progressPatternData() {
   const recentSuccessful = currentMonthProgressResults().length;
-  const now = new Date();
-  const currentMonthWorkouts = countableHistory().filter(item => {
-    const date = new Date(item.date);
-    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
-  }).length;
   const recentProgressSummary = recentSuccessful > 0
     ? `${recentSuccessful} successful completion${recentSuccessful === 1 ? '' : 's'} this month`
     : null;
-  const strongPattern = recentSuccessful >= 6
-    ? recentProgressSummary
-    : currentMonthWorkouts >= 4
-      ? `${currentMonthWorkouts} workouts completed this month`
-      : null;
+  const activeWeeks = workoutModule.consecutiveActiveWeeks(countableHistory());
+  const strongPattern = activeWeeks > 0 ? `${activeWeeks} active week${activeWeeks === 1 ? '' : 's'} in a row` : null;
   return { recentProgressSummary, strongPattern };
 }
 
 function recommendedFocus(goal, profile) {
   if (goal === 'pullup' && profile?.equipment?.includes('pullupBar')) return 'Muscle-up';
   return null;
-}
-
-function returningProgressInsight() {
-  const history = countableHistory().slice().sort((a, b) => new Date(b.date) - new Date(a.date));
-  const lastWorkout = history[0];
-  if (!lastWorkout) return { active: false, workoutId: '' };
-  const workoutId = historyEntryId(lastWorkout);
-  const inactiveFor21Days = Date.now() - new Date(lastWorkout.date).getTime() >= 21 * 86400000;
-  return {
-    active: inactiveFor21Days && state.progressInsights?.returningSeenWorkoutId !== workoutId,
-    workoutId
-  };
 }
 
 function buildProgressCardData(goal, profile, trackKey, track) {
@@ -2085,10 +2136,7 @@ function buildProgressCardData(goal, profile, trackKey, track) {
     : [trackKey];
   const unlocked = latestUnacknowledgedUnlock(generalTrackKeys);
   const pattern = progressPatternData();
-  const returning = returningProgressInsight();
   const focusAchieved = goal === 'general' ? generalProgress.achieved : workoutModule.isTrackMastered(trackKey, trackState, track);
-  const nextIndex = unlocked?.trackKey === trackKey ? unlocked.index + 1 : level + 1;
-  const nextExerciseName = track?.[nextIndex]?.name || (!focusAchieved ? track?.[level]?.name : null) || null;
   const completedWorkoutCount = countableHistory().length;
   return {
     focusAchieved,
@@ -2099,14 +2147,10 @@ function buildProgressCardData(goal, profile, trackKey, track) {
     unlockEventId: unlocked?.id || null,
     strongPattern: pattern.strongPattern,
     recentProgressSummary: pattern.recentProgressSummary,
-    isReturningUser: returning.active,
-    returningWorkoutId: returning.workoutId,
     completedWorkoutCount,
     currentFocusName: goalLabels[goal] || 'Pull-up',
     currentLevelName: track?.[level]?.name || null,
-    nextExerciseName,
-    planContinuationMessage: 'Continue with your next workout',
-    remainingRequirement: trackKey ? workoutModule.remainingProgressRequirement(trackKey, trackState) : null
+    planContinuationMessage: 'Continue with your next workout'
   };
 }
 
@@ -2125,10 +2169,6 @@ function renderProgressCard(data) {
   if (visitingProgress && content.state === 'new_exercise_unlocked' && data.unlockEventId) {
     const ids = state.progressInsights?.acknowledgedUnlockIds || [];
     state.progressInsights = { ...(state.progressInsights || {}), acknowledgedUnlockIds: [...new Set([...ids, data.unlockEventId])].slice(-100) };
-    saveState();
-  }
-  if (visitingProgress && content.state === 'returning_user' && data.returningWorkoutId) {
-    state.progressInsights = { ...(state.progressInsights || {}), returningSeenWorkoutId: data.returningWorkoutId };
     saveState();
   }
 }
@@ -2153,6 +2193,13 @@ function renderProgress() {
     focusDots.classList.toggle('hidden', !dotCount);
     focusDots.innerHTML = progressDotsMarkup(dotCount, filledDots);
     focusDots.setAttribute('aria-label', dotCount ? `${filledDots} of ${dotCount} focus levels reached` : 'No capability progression available');
+  }
+  const milestone = document.getElementById('focusNextMilestone');
+  const focusAchieved = goal === 'general' ? generalProgress?.achieved : workoutModule.isTrackMastered(goalTrackKey, state.levels?.[goalTrackKey] || {}, track);
+  const nextMilestone = goal !== 'general' && !focusAchieved ? track[level + 1]?.name : null;
+  if (milestone) {
+    milestone.classList.toggle('hidden', !nextMilestone);
+    milestone.textContent = nextMilestone ? `Next milestone: ${nextMilestone}` : '';
   }
   renderProgressCard(buildProgressCardData(goal, profile, goalTrackKey, track));
 
@@ -3308,6 +3355,12 @@ document.addEventListener('click', event => {
   const exerciseHelpButton = event.target.closest('.exercise-help-btn');
   if (exerciseHelpButton) showExerciseHelp(exerciseHelpButton.dataset.exerciseName);
 
+  const activeSwapButton = event.target.closest('.active-swap-btn');
+  if (activeSwapButton) {
+    swapActiveExercise(Number(activeSwapButton.dataset.activeIndex));
+    return;
+  }
+
   const exerciseToggle = event.target.closest('.exercise-chip-toggle');
   if (exerciseToggle) {
     const trackKey = exerciseToggle.dataset.track;
@@ -3365,7 +3418,7 @@ document.addEventListener('click', event => {
 
   const feelButton = event.target.closest('.feel-btn');
   if (feelButton) selectEnergy(feelButton.dataset.feel);
-  if (event.target.id === 'dismissTodayEmptyState') dismissTodayEmptyState();
+  if (event.target.id === 'dismissTodayEmptyState' || event.target.id === 'todayInfoAction') dismissTodayEmptyState();
   if (event.target.id === 'dismissWorkoutStatusBtn') dismissWorkoutStatus();
   if (event.target.id === 'openCustomChecklistBtn') openCustomChecklistForm();
   if (event.target.id === 'cancelCustomChecklistFormBtn') {

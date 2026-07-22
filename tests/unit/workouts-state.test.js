@@ -89,14 +89,13 @@ assert.strictEqual(workouts.getMasteringSkillProgress('handstand', { level: 12, 
 assert.strictEqual(workouts.getProgressCardState({ focusAchieved: true, recentUnlockedExercise: 'X', strongPattern: 'Y' }), 'focus_achieved');
 assert.strictEqual(workouts.getProgressCardState({ recentUnlockedExercise: 'X', strongPattern: 'Y' }), 'new_exercise_unlocked');
 assert.strictEqual(workouts.getProgressCardState({ strongPattern: 'Y', isReturningUser: true }), 'strong_pattern');
-assert.strictEqual(workouts.getProgressCardState({ isReturningUser: true, completedWorkoutCount: 0 }), 'returning_user');
+assert.strictEqual(workouts.getProgressCardState({ isReturningUser: true, completedWorkoutCount: 0 }), 'new_user');
 assert.strictEqual(workouts.getProgressCardState({ completedWorkoutCount: 0 }), 'new_user');
 assert.strictEqual(workouts.getProgressCardState({ completedWorkoutCount: 1 }), 'regular');
 const regularCard = workouts.getProgressCardContent('regular', {
   nextExerciseName: 'Flex-arm hang', remainingRequirement: '1 Easy completion or 2 Good completions'
 });
-assert.strictEqual(regularCard.rows.length, 2);
-assert.strictEqual(regularCard.rows[0].value, 'Flex-arm hang');
+assert.strictEqual(regularCard.rows.length, 0);
 assert.strictEqual(workouts.remainingProgressRequirement('horizontalPush', { points: 3, positiveExposures: 1 }), '1 Easy completion or 2 Good completions');
 assert.strictEqual(workouts.getProgressCardContent('new_exercise_unlocked', { recentUnlockedExercise: 'Full push-up' }).rows.length, 1);
 const refinedStates = [
@@ -107,14 +106,23 @@ const refinedStates = [
   ['focus_achieved', { achievedFocusName: 'Pull-up achieved' }],
   ['returning_user', { currentFocusName: 'Pull-up' }]
 ].map(([stateName, data]) => workouts.getProgressCardContent(stateName, data));
-assert.ok(refinedStates.every(content => content.rows.length <= 2));
+assert.ok(refinedStates.every(content => content.rows.length <= 1));
 assert.ok(refinedStates.every(content => content.rows.every(row => row.label !== 'Keep going' && row.label !== 'Strong pattern')));
 assert.ok(refinedStates.find(content => content.state === 'strong_pattern').rows.some(row => row.label === 'Consistency'));
-assert.ok(refinedStates.find(content => content.state === 'new_exercise_unlocked').rows.some(row => /away$/.test(row.value)));
-assert.ok(workouts.getProgressCardContent('focus_achieved', { achievedFocusName: 'Pull-up achieved' }).rows.some(row => row.value === 'Choose a new focus'));
+assert.ok(refinedStates.find(content => content.state === 'new_exercise_unlocked').rows.some(row => row.value === 'Full push-up'));
+assert.ok(workouts.getProgressCardContent('focus_achieved', { achievedFocusName: 'Pull-up achieved' }).rows.some(row => row.value === 'Pull-up achieved'));
 const generalCard = workouts.getProgressCardContent('regular', { recentProgressSummary: '3 successful completions this month' });
 assert.ok(!generalCard.rows.some(row => row.label === 'Next exercise'));
-assert.ok(generalCard.rows.some(row => row.value === 'Continue with your next workout'));
+assert.ok(generalCard.rows.some(row => row.value === '3 successful completions this month'));
+
+const activeWeekHistory = [
+  { date: '2025-12-29T12:00:00' },
+  { date: '2026-01-05T12:00:00' },
+  { date: '2026-01-12T12:00:00' }
+];
+assert.strictEqual(workouts.consecutiveActiveWeeks(activeWeekHistory, new Date('2026-01-14T12:00:00')), 3);
+assert.strictEqual(workouts.consecutiveActiveWeeks(activeWeekHistory.slice(0, 2), new Date('2026-01-14T12:00:00')), 2, 'current-week grace');
+assert.deepStrictEqual(Array.from(workouts.getRotation(null, {}).map(item => item.name)), ['Push', 'Legs & core', 'Pull', 'Skills']);
 const generalLevels = workouts.createDefaultLevels();
 assert.strictEqual(workouts.getGeneralFitnessProgress(generalLevels).completedStages, 0);
 ['horizontalPush', 'verticalPull', 'squat', 'antiExtension'].forEach(key => {
@@ -130,6 +138,19 @@ const skillsWorkout = workouts.getTodayWorkout({
 });
 assert.ok(skillsWorkout.exercises.some(item => item.progressionTrackKey === 'pistolSquat'));
 assert.ok(skillsWorkout.exercises.some(item => item.progressionTrackKey === 'handstandPushup'));
+const integratedCoreTracks = new Set(['antiExtension', 'compression', 'lateralCore', 'lsit']);
+for (let rotationIndex = 0; rotationIndex < 4; rotationIndex += 1) {
+  for (const mode of ['great', 'normal', 'tired', 'exhausted']) {
+    const workout = workouts.getTodayWorkout({
+      mode,
+      state: { rotationIndex, levels: workouts.createDefaultLevels() },
+      profile: { goal: 'pullup', equipment: ['floor', 'pullupBar'] }
+    });
+    assert.ok(workout.exercises.some(item => integratedCoreTracks.has(item.progressionTrackKey)), `integrated core: ${workout.workoutName} ${mode}`);
+    assert.ok(workout.exercises.length <= workouts.energyOptions[mode].exerciseCount, `energy budget: ${workout.workoutName} ${mode}`);
+    assert.notStrictEqual(workout.workoutName, 'Core');
+  }
+}
 
 assert.strictEqual(workouts.prescriptionToString({ sets: 3, seconds: 20 }), '3 × 20s');
 assert.strictEqual(workouts.prescriptionToString({ sets: 3, reps: 8 }), '3 × 8');
@@ -138,6 +159,11 @@ assert.strictEqual(workouts.prescriptionToString(workouts.normalizePrescriptionD
 const obsoleteStructuredRange = { sets: 3, ['reps' + 'Min']: 6, ['reps' + 'Max']: 10 };
 assert.strictEqual(workouts.prescriptionToString(workouts.normalizePrescriptionData(obsoleteStructuredRange, legacyRangeLabel, 3)), '3 × 8');
 const pike = workouts.normalizeExercise({ ...catalog('pike-hold'), trackKey: 'handstand', progressionTrackKey: 'handstand' });
+const pushTrack = workouts.movementTracks.horizontalPush;
+const unlockedSwaps = workouts.getValidSwapCandidates(pushTrack[2], pushTrack, { unlockedLevel: 2 });
+assert.ok(unlockedSwaps.length > 0, 'eligible unlocked exercise has a swap');
+assert.ok(unlockedSwaps.every(item => pushTrack.indexOf(item) <= 2), 'locked later stages are excluded from swaps');
+assert.deepStrictEqual(Array.from(workouts.getValidSwapCandidates(pushTrack[0], pushTrack, { unlockedLevel: 0 })), [], 'valid non-swappable first stage');
 assert.strictEqual(workouts.executableRounds(pike).length, 3);
 assert.ok(workouts.executableRounds(pike).every(round => round.seconds === 20));
 
@@ -357,6 +383,7 @@ assert.strictEqual(fullResult.exerciseId, 'full-muscle-up');
 assert.strictEqual(fullResult.progressionTrackKey, 'muscleupFull');
 
 const appSource = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+const renderSource = fs.readFileSync(path.join(root, 'render.js'), 'utf8');
 const indexSource = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 assert.ok(appSource.includes("['Success looks like', distinctSuccess]"));
 assert.ok(appSource.includes(".filter(([, values]) => Array.isArray(values) && values.some(Boolean))"));
@@ -367,16 +394,21 @@ assert.ok(appSource.includes("handstandPushup: 'Handstand push-up'"));
 assert.ok(appSource.includes("pistolSquat: 'Pistol squat'"));
 const focusLabelsSource = appSource.match(/const goalLabels = \{([\s\S]*?)\n\};/)?.[1] || '';
 assert.ok(!/pistolSquat|handstandPushup/.test(focusLabelsSource));
-assert.ok(appSource.includes('21 * 86400000'));
+assert.ok(!appSource.includes('21 * 86400000'));
 assert.ok(appSource.includes('30 * 86400000'));
 assert.ok(appSource.includes('acknowledgedUnlockIds'));
 assert.ok(appSource.includes("returningSeenWorkoutId: ''"));
 assert.ok(appSource.includes("goal === 'general' ? null : getGoalTrackKey(goal)"));
 assert.ok(appSource.includes("const dotCount = goal === 'general' ? 0 : track.length"));
+assert.ok(appSource.includes("item.type === 'custom' || item.customType"));
+assert.ok(appSource.includes("Rest might help"));
+assert.ok(renderSource.includes('Math.floor(currentElapsed(readActivityTimer()) / 60)'));
+assert.ok(renderSource.includes("showCompletionScreen({ title: 'Well done!'"));
 assert.ok(appSource.includes('getMasteringSkillProgress(key, item, exerciseTrack)'));
 assert.ok(!appSource.includes("Number(item.level || 0) + 1"));
 assert.ok(indexSource.includes('dynamicProgressCard'));
 assert.ok(indexSource.includes('focusProgressDots'));
+assert.ok(indexSource.includes('focusNextMilestone'));
 assert.ok(indexSource.includes('Mastering skills'));
 
 assert.deepStrictEqual(Array.from(workouts.distinctSuccessCriteria(['Same sentence.'], ['same sentence!'])), []);
@@ -402,6 +434,7 @@ assert.ok(sanitized.levels.pistolSquat);
 assert.ok(sanitized.levels.handstandPushup);
 assert.deepStrictEqual(Array.from(sanitized.progressInsights.acknowledgedUnlockIds), []);
 assert.strictEqual(sanitized.progressInsights.returningSeenWorkoutId, '');
+assert.strictEqual(sanitized.restAdvice.acknowledgedSequenceKey, '');
 assert.strictEqual(sanitized.history[0].exercises[0].completedSets, 2);
 assert.strictEqual(sanitized.history[0].exercises[0].targetSets, 3);
 assert.strictEqual(sanitized.history[0].exercises[0].exerciseId, 'pike-hold');
@@ -418,5 +451,10 @@ legacyRangeState.history.push({
 const sanitizedLegacyRange = stateStore.sanitizeState(legacyRangeState);
 assert.deepStrictEqual(JSON.parse(JSON.stringify(sanitizedLegacyRange.history[0].exercises[0].prescriptionData)), { sets: 3, perSide: false, reps: 8 });
 assert.strictEqual(sanitizedLegacyRange.history[0].exercises[0].prescription, '3 × 8');
+
+const migratedPull = stateStore.sanitizeState({ ...stateStore.defaultState(), schemaVersion: 3, rotationIndex: 1 });
+const migratedLegs = stateStore.sanitizeState({ ...stateStore.defaultState(), schemaVersion: 3, rotationIndex: 2 });
+assert.strictEqual(migratedPull.rotationIndex, 2);
+assert.strictEqual(migratedLegs.rotationIndex, 1);
 
 console.log(`Validated ${workouts.exerciseCatalog.length} exercises and workout lifecycle regression cases.`);

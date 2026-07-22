@@ -1994,7 +1994,7 @@
       {
         name: 'Skills',
         focusLabel: goal === 'muscleup' ? muscleGate.label : '',
-        tracks: unique([skillTrack, 'pistolSquat', 'handstandPushup', 'lsit', goal === 'lsit' ? 'compression' : goal === 'handstand' ? 'verticalPush' : 'horizontalPull', 'antiExtension'])
+        tracks: unique([skillTrack, 'pistolSquat', 'antiExtension', 'handstandPushup', 'lsit', goal === 'lsit' ? 'compression' : goal === 'handstand' ? 'verticalPush' : 'horizontalPull'])
       }
     ];
   }
