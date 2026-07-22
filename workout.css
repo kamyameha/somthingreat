@@ -7,7 +7,7 @@
   box-shadow: none;
 }
 
-.exercise-help-content { display: grid; gap: 14px; max-height: min(68vh, 560px); overflow-y: auto; }
+.exercise-help-content { display: grid; gap: 12px; max-height: min(68vh, 560px); overflow-y: auto; }
 .exercise-help-section h3 { margin: 0 0 6px; font-size: .82rem; letter-spacing: .02em; }
 .exercise-help-section p, .exercise-help-section ul { margin: 0; }
 .exercise-help-section ul { padding-left: 18px; }
@@ -15,15 +15,15 @@
 
 .today-empty-state {
   position: relative;
-  padding: 20px;
-  margin-bottom: 34px;
+  padding: 24px;
+  margin-bottom: 36px;
   border-radius: var(--radius);
   background: var(--main);
   color: #ffffff;
 }
 
 .workout-complete-state {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 #energyCard .today-empty-state h2,
@@ -79,7 +79,7 @@
   grid-template-columns: repeat(2, 172px);
   gap: 12px;
   justify-content: center;
-  margin-top: 34px;
+  margin-top: 36px;
 }
 
 .energy-option {
@@ -168,8 +168,8 @@
   min-height: 52px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 12px;
+  padding: 12px 18px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--soft);
@@ -294,7 +294,7 @@
 }
 
 .add-on-panel {
-  margin-top: 14px;
+  margin-top: 12px;
   padding: 10px 0 0;
   border-top: 1px solid rgba(255, 255, 255, 0.32);
   background: transparent;
@@ -310,7 +310,7 @@
 .add-on-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 9px 0;
   font-weight: 700;
 }
@@ -332,7 +332,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
   min-height: 36px;
   padding: 4px 8px;
   font-weight: 900;
@@ -398,14 +398,14 @@
   justify-content: space-between;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .exercise-help-btn {
   min-height: 36px;
   flex: 0 0 auto;
   margin: 0;
-  padding: 7px 14px;
+  padding: 6px 12px;
   border-radius: 999px;
   background: #ffffff;
   color: var(--muted-text);
@@ -424,9 +424,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   margin: var(--space-2) 0;
-  padding: 12px 14px;
+  padding: 12px 18px;
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--soft);
@@ -456,7 +456,7 @@
 }
 
 .rating-label {
-  margin: 14px 0 var(--space-2);
+  margin: 12px 0 var(--space-2);
   font-weight: 900;
 }
 
@@ -481,7 +481,7 @@
 
 .exercise-help-card {
   position: relative;
-  padding: 20px;
+  padding: 24px;
 }
 
 .exercise-help-card .eyebrow {
@@ -522,7 +522,7 @@
   height: 321px;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: 24px;
   border: 0;
   border-radius: 20px;
   background: #f7f7f7;
@@ -556,7 +556,7 @@ body.workout-active {
 
 body.workout-active .app {
   width: min(393px, 100%);
-  padding: 0 20px 44px;
+  padding: 0 24px 48px;
   background: #ffffff;
 }
 
@@ -566,7 +566,7 @@ body.workout-active .bottom-nav {
 }
 
 .workout-started-title p {
-  margin: 0 0 19px;
+  margin: 0 0 18px;
   padding-top: var(--space-5);
   color: var(--main);
   font-size: 16px;
@@ -576,7 +576,7 @@ body.workout-active .bottom-nav {
 
 #exerciseList {
   display: grid;
-  gap: 19px;
+  gap: 18px;
 }
 
 .workout-accordion-card {
@@ -659,7 +659,7 @@ body.workout-active .bottom-nav {
 
 .workout-accordion-card.open .exercise-card-body {
   display: block;
-  padding: 20px;
+  padding: 24px;
   border-radius: 20px;
   background: var(--main);
   color: #ffffff;
@@ -724,7 +724,7 @@ body.workout-active .bottom-nav {
 
 .set-list {
   display: grid;
-  gap: 19px;
+  gap: 18px;
 }
 
 .workout-accordion-card .set-row {
@@ -746,7 +746,7 @@ body.workout-active .bottom-nav {
 
 .workout-accordion-card .set-row.has-help {
   grid-template-columns: minmax(0, 1fr) 26px 30px;
-  gap: 14px;
+  gap: 12px;
 }
 
 .workout-accordion-card .set-row.completed {
@@ -797,8 +797,8 @@ body.workout-active .bottom-nav {
 
 .workout-accordion-card .rating-label {
   margin: 0;
-  padding-top: 44px;
-  padding-bottom: 19px;
+  padding-top: 48px;
+  padding-bottom: 18px;
   color: #ffffff;
   font-size: 16px;
   font-weight: 400;
@@ -808,14 +808,14 @@ body.workout-active .bottom-nav {
 .workout-accordion-card .rating-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   margin: 0;
 }
 
 .workout-accordion-card .rating-row button {
   height: 46px;
   min-height: 46px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 1px solid #ffffff;
   border-radius: 20px;
   background: transparent;
@@ -857,7 +857,7 @@ body.workout-active .bottom-nav {
   width: 100%;
   height: 46px;
   min-height: 46px;
-  margin-top: 44px;
+  margin-top: 48px;
   padding: 0;
   border-radius: 20px;
   background: var(--main);
@@ -873,8 +873,8 @@ body.workout-active .bottom-nav {
 }
 
 .energy-check-screen h1 {
-  margin: 0 0 28px;
-  padding-top: 44px;
+  margin: 0 0 24px;
+  padding-top: 48px;
   color: var(--main);
   font-size: 40px;
   line-height: 1.1;
@@ -925,7 +925,7 @@ body.workout-active .bottom-nav {
 }
 
 .custom-checklist-card h2 {
-  margin: 0 0 28px;
+  margin: 0 0 24px;
   color: var(--main);
   font-size: 24px;
   line-height: 1.1;
@@ -939,7 +939,7 @@ body.workout-active .bottom-nav {
 .custom-checklist-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 19px;
+  gap: 18px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -955,7 +955,7 @@ body.workout-active .bottom-nav {
   width: 100%;
   height: 46px;
   min-height: 46px;
-  padding: 0 20px;
+  padding: 0 24px;
   border: 1px solid rgba(1, 45, 237, 0.35);
   border-radius: 20px;
   background: transparent;
@@ -980,8 +980,8 @@ body.workout-active .bottom-nav {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 19px;
-  margin: 0 0 14px;
+  gap: 18px;
+  margin: 0 0 12px;
 }
 
 .custom-type-row label {
@@ -991,7 +991,7 @@ body.workout-active .bottom-nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 20px;
+  padding: 0 24px;
   border: 1px solid var(--main);
   border-radius: 20px;
   background: transparent;
@@ -1013,7 +1013,7 @@ body.workout-active .bottom-nav {
 
 .custom-checklist-form .panel-message {
   grid-column: 1 / -1;
-  margin: -19px 0 0;
+  margin: -18px 0 0;
 }
 
 .custom-checklist-form .panel-message:empty {
@@ -1049,7 +1049,7 @@ body.workout-active .bottom-nav {
   height: 353px;
   min-height: 353px;
   margin: 0 auto;
-  padding: 20px 0 10px;
+  padding: 24px 0 12px;
   display: grid;
   place-items: center;
   border-radius: 20px;
@@ -1066,8 +1066,8 @@ body.workout-active .bottom-nav {
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: start;
-  gap: 19px;
-  margin-top: 14px;
+  gap: 18px;
+  margin-top: 12px;
   color: var(--main);
 }
 
@@ -1118,7 +1118,7 @@ body.workout-active .bottom-nav {
 .add-on-panel {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 19px;
+  gap: 18px;
   margin: 41px 0 0;
   padding: 0;
   border: 0;
@@ -1175,8 +1175,8 @@ body.workout-active .bottom-nav {
 .selected-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 19px;
-  margin-top: 44px;
+  gap: 18px;
+  margin-top: 48px;
 }
 
 .selected-actions .primary-btn,
@@ -1203,7 +1203,7 @@ body.workout-active .bottom-nav {
   z-index: 70;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: 24px;
   background: rgba(178, 180, 184, 0.7);
 }
 
@@ -1215,7 +1215,7 @@ body.workout-active .bottom-nav {
   position: relative;
   width: min(353px, 100%);
   min-height: 382px;
-  padding: 20px;
+  padding: 24px;
   border-radius: 20px;
   background: #f7f7f7;
   color: #000000;
@@ -1360,7 +1360,7 @@ body.workout-active .bottom-nav {
   width: 100%;
   height: 46px;
   min-height: 46px;
-  margin-top: 44px;
+  margin-top: 48px;
   padding: 0;
   border: 0;
   border-radius: 20px;
@@ -1381,7 +1381,7 @@ body.workout-active .bottom-nav {
   z-index: 70;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: 24px;
   background: rgba(178, 180, 184, 0.7);
 }
 
@@ -1392,7 +1392,7 @@ body.workout-active .bottom-nav {
 .custom-checklist-modal {
   position: relative;
   width: min(353px, 100%);
-  padding: 20px;
+  padding: 24px;
   border-radius: 20px;
   background: #f7f7f7;
   color: #000000;
@@ -1404,7 +1404,7 @@ body.workout-active .bottom-nav {
 }
 
 .custom-checklist-modal h2 {
-  margin: 0 42px 44px 0;
+  margin: 0 36px 48px 0;
   color: #000000;
   font-size: 20px;
   font-weight: 700;
@@ -1414,7 +1414,7 @@ body.workout-active .bottom-nav {
 .custom-checklist-items {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 19px;
+  gap: 18px;
   margin: 0;
 }
 
@@ -1472,8 +1472,8 @@ body.workout-active .bottom-nav {
 .custom-checklist-actions {
   display: flex;
   align-items: center;
-  gap: 19px;
-  margin-top: 44px;
+  gap: 18px;
+  margin-top: 48px;
 }
 
 .custom-checklist-actions .primary-btn,
@@ -1509,7 +1509,7 @@ body.workout-active .bottom-nav {
 .custom-edit-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 19px;
+  gap: 18px;
 }
 
 .custom-edit-grid .text-input {
@@ -1533,7 +1533,7 @@ body.workout-active .bottom-nav {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 19px;
+  gap: 18px;
   margin: 9px 0 21px;
 }
 
@@ -1566,7 +1566,7 @@ body.workout-active .bottom-nav {
 
 .custom-edit-grid .panel-message {
   grid-column: 1 / -1;
-  margin: -19px 0 0;
+  margin: -18px 0 0;
 }
 
 .custom-edit-grid .custom-checklist-actions {

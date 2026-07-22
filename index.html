@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="auth-loading">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -26,16 +26,20 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.22.150055" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.22.150055" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.22.150055" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.22.150055" />
-  <link rel="stylesheet" href="account.css?v=2026.07.22.150055" />
+  <link rel="stylesheet" href="style.css?v=2026.07.22.152550" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.22.152550" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.22.152550" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.22.152550" />
+  <link rel="stylesheet" href="account.css?v=2026.07.22.152550" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
 </head>
 <body>
+  <section id="authLoadingScreen" class="auth-loading-screen" aria-label="Loading">
+    <img class="welcome-star auth-loading-star" src="Assets/Animations/start1.png" alt="" />
+  </section>
+
   <section id="welcomeScreen" class="welcome-screen">
     <div class="welcome-inner">
 
@@ -468,7 +472,7 @@
       <section class="hero-card goal-hero">
         <h2 id="goalHeroTitle">Pull-up</h2>
         <div id="focusProgressDots" class="progress-dots focus-progress-dots" aria-label="Focus progression"></div>
-        <p id="focusNextMilestone" class="focus-next-milestone hidden"></p>
+        <p id="focusNextMilestone" class="activity-summary-line focus-next-milestone hidden"></p>
       </section>
 
       <section id="dynamicProgressCard" class="progress-insight-card" aria-live="polite">
@@ -485,9 +489,9 @@
 
     <section id="activity" class="screen activity-screen">
       <section class="card activity-summary-card">
-        <h3 id="historyYearSummary">This year: 0 workouts</h3>
-        <h3 id="historyMonthSummary">This month: 0 workouts</h3>
-        <h3 id="historyEnergySummary" class="hidden"></h3>
+        <h3 id="historyYearSummary" class="activity-summary-line">This year: 0 workouts</h3>
+        <h3 id="historyMonthSummary" class="activity-summary-line">This month: 0 workouts</h3>
+        <h3 id="historyEnergySummary" class="activity-summary-line hidden"></h3>
       </section>
 
       <section class="card activity-calendar-card">
@@ -546,12 +550,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.22.150055"></script>
-  <script src="workouts.js?v=2026.07.22.150055"></script>
-  <script src="state.js?v=2026.07.22.150055"></script>
-  <script src="account.js?v=2026.07.22.150055"></script>
-  <script src="render.js?v=2026.07.22.150055"></script>
-  <script src="app-version.js?v=2026.07.22.150055"></script>
-  <script src="app.js?v=2026.07.22.150055"></script>
+  <script src="auth.js?v=2026.07.22.152550"></script>
+  <script src="workouts.js?v=2026.07.22.152550"></script>
+  <script src="state.js?v=2026.07.22.152550"></script>
+  <script src="account.js?v=2026.07.22.152550"></script>
+  <script src="render.js?v=2026.07.22.152550"></script>
+  <script src="app-version.js?v=2026.07.22.152550"></script>
+  <script src="app.js?v=2026.07.22.152550"></script>
 </body>
 </html>

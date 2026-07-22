@@ -123,6 +123,23 @@ const activeWeekHistory = [
 assert.strictEqual(workouts.consecutiveActiveWeeks(activeWeekHistory, new Date('2026-01-14T12:00:00')), 3);
 assert.strictEqual(workouts.consecutiveActiveWeeks(activeWeekHistory.slice(0, 2), new Date('2026-01-14T12:00:00')), 2, 'current-week grace');
 assert.deepStrictEqual(Array.from(workouts.getRotation(null, {}).map(item => item.name)), ['Push', 'Legs & core', 'Pull', 'Skills']);
+const rotationCases = [
+  ['Push', 1],
+  ['Legs & core', 2],
+  ['Legs + Core', 2],
+  ['Pull', 3],
+  ['Skills', 0]
+];
+rotationCases.forEach(([workoutName, expected]) => {
+  assert.strictEqual(workouts.nextRotationIndexFromHistory([{ date: '2026-07-20T12:00:00Z', workout: workoutName, type: 'workout' }], 0), expected, `rotation after ${workoutName}`);
+});
+const rotationHistory = [
+  { date: '2026-07-20T09:00:00Z', workout: 'Push', type: 'workout', completedCount: 1 },
+  { date: '2026-07-20T10:00:00Z', workout: 'Counter', type: 'custom', customType: 'rounds' },
+  { date: '2026-07-20T11:00:00Z', workout: 'Pull', type: 'workout', completedCount: 1 }
+];
+assert.strictEqual(workouts.nextRotationIndexFromHistory(rotationHistory, 0), 3, 'latest same-day workout wins and counters are ignored');
+assert.strictEqual(workouts.getTodayWorkout({ mode: 'normal', state: { rotationIndex: 2, history: [rotationHistory[0]], levels: workouts.createDefaultLevels() }, profile: { goal: 'pullup', equipment: ['floor'] } }).workoutName, 'Legs & core', 'history overrides stale index');
 const generalLevels = workouts.createDefaultLevels();
 assert.strictEqual(workouts.getGeneralFitnessProgress(generalLevels).completedStages, 0);
 ['horizontalPush', 'verticalPull', 'squat', 'antiExtension'].forEach(key => {
@@ -164,6 +181,20 @@ const unlockedSwaps = workouts.getValidSwapCandidates(pushTrack[2], pushTrack, {
 assert.ok(unlockedSwaps.length > 0, 'eligible unlocked exercise has a swap');
 assert.ok(unlockedSwaps.every(item => pushTrack.indexOf(item) <= 2), 'locked later stages are excluded from swaps');
 assert.deepStrictEqual(Array.from(workouts.getValidSwapCandidates(pushTrack[0], pushTrack, { unlockedLevel: 0 })), [], 'valid non-swappable first stage');
+const swapAudit = workouts.getSwapCandidateAudit({ ...pushTrack[2], trackKey: 'horizontalPush', progressionTrackKey: 'horizontalPush' }, {
+  profile: { goal: 'pullup', equipment: ['floor'] },
+  state: { levels: { horizontalPush: { level: 2 } } },
+  unlockedLevel: 2
+});
+assert.ok(swapAudit.candidateCountBeforeFiltering >= swapAudit.candidateCountAfterEquipment);
+assert.ok(swapAudit.candidateCountAfterEquipment >= swapAudit.candidateCountAfterRecovery);
+assert.ok(swapAudit.candidateCountAfterRecovery >= swapAudit.candidateCountAfterProgression);
+assert.ok(swapAudit.candidateCountFinal > 0);
+const lockedSwapAudit = workouts.getSwapCandidateAudit({ ...pushTrack[0], trackKey: 'horizontalPush', progressionTrackKey: 'horizontalPush' }, {
+  profile: { goal: 'pullup', equipment: ['floor'] }, state: { levels: { horizontalPush: { level: 0 } } }, unlockedLevel: 0
+});
+assert.strictEqual(lockedSwapAudit.candidateCountFinal, 0);
+assert.match(lockedSwapAudit.reason, /locked progression stages/);
 assert.strictEqual(workouts.executableRounds(pike).length, 3);
 assert.ok(workouts.executableRounds(pike).every(round => round.seconds === 20));
 
@@ -409,6 +440,10 @@ assert.ok(!appSource.includes("Number(item.level || 0) + 1"));
 assert.ok(indexSource.includes('dynamicProgressCard'));
 assert.ok(indexSource.includes('focusProgressDots'));
 assert.ok(indexSource.includes('focusNextMilestone'));
+assert.ok(indexSource.includes('authLoadingScreen'));
+assert.ok(indexSource.includes('activity-summary-line focus-next-milestone'));
+assert.ok(appSource.includes('if (!authResolved)'));
+assert.ok(appSource.includes("querySelectorAll('.welcome-star')"));
 assert.ok(indexSource.includes('Mastering skills'));
 
 assert.deepStrictEqual(Array.from(workouts.distinctSuccessCriteria(['Same sentence.'], ['same sentence!'])), []);

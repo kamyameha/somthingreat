@@ -53,32 +53,32 @@ body.logged-out {
 .logged-out .auth-content {
   position: static;
   width: 100%;
-  margin: 0 0 44px;
+  margin: 0 0 48px;
 }
 
 #loggedOutAccount h2 {
   color: var(--main);
   font-size: 40px;
   line-height: 1.08;
-  margin: 0 0 44px;
+  margin: 0 0 48px;
   font-weight: 700;
 }
 
 #loggedOutAccount .muted {
   color: var(--main);
-  margin: 0 0 38px;
+  margin: 0 0 36px;
 }
 
 .logged-out #authResetForm h2,
 .password-recovery-mode #authResetForm h2 {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .logged-out #authResetForm .muted,
 .password-recovery-mode #authResetForm .muted {
   font-size: 18px;
   line-height: 1.2;
-  margin-bottom: 44px;
+  margin-bottom: 48px;
 }
 
 #loggedOutAccount .text-input,
@@ -86,7 +86,7 @@ body.logged-out {
   width: 100%;
   height: 46px;
   min-height: 46px;
-  margin: 0 0 19px;
+  margin: 0 0 18px;
   border-radius: var(--radius);
 }
 
@@ -159,7 +159,7 @@ body.logged-out {
 }
 
 .google-auth-btn {
-  margin-top: 19px;
+  margin-top: 18px;
   padding: 0;
   display: grid;
   place-items: center;
@@ -178,7 +178,7 @@ body.logged-out {
 .logged-out #authWelcome .auth-switch,
 .logged-out #authLoginForm .auth-switch {
   width: 100%;
-  margin: 71px 0 50px;
+  margin: 72px 0 48px;
   padding: 0;
   text-align: center;
   font-size: 16px;
@@ -196,8 +196,8 @@ body.logged-out {
 #loggedOutAccount .auth-message {
   width: 100%;
   min-height: 0;
-  margin: -32px 0 20px;
-  padding: 0 4px;
+  margin: -36px 0 18px;
+  padding: 0 6px;
   text-align: center;
   pointer-events: auto;
 }

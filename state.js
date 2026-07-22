@@ -266,6 +266,9 @@
       nextState.levels = sanitizeLevels(nextState.levels, nextState.profile);
       nextState.history = sanitizeHistory(nextState.history);
       nextState.rotationIndex = Number.isFinite(Number(nextState.rotationIndex)) ? Math.max(0, Math.round(Number(nextState.rotationIndex))) : 0;
+      if (typeof workoutModule.nextRotationIndexFromHistory === 'function') {
+        nextState.rotationIndex = workoutModule.nextRotationIndexFromHistory(nextState.history, nextState.rotationIndex);
+      }
       nextState.current = workoutModule.sanitizeWorkout(nextState.current);
       nextState.generated = workoutModule.sanitizeWorkout(nextState.generated);
       nextState.customChecklist = sanitizeCustomChecklist(nextState.customChecklist);

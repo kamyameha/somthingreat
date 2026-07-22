@@ -1999,6 +1999,24 @@
     ];
   }
 
+  function rotationIndexForWorkoutName(name) {
+    const normalized = String(name || '').trim().toLowerCase().replace(/\s*\+\s*/g, ' & ');
+    if (normalized === 'push') return 0;
+    if (['legs', 'legs & core'].includes(normalized)) return 1;
+    if (normalized === 'pull') return 2;
+    if (normalized === 'skills') return 3;
+    return -1;
+  }
+
+  function nextRotationIndexFromHistory(history = [], fallbackIndex = 0) {
+    const latest = (history || [])
+      .map((item, position) => ({ item, position, time: Date.parse(item?.date), workoutIndex: rotationIndexForWorkoutName(item?.workout) }))
+      .filter(entry => entry.item?.type !== 'custom' && !entry.item?.customType && Number.isFinite(entry.time) && entry.workoutIndex >= 0)
+      .sort((first, second) => second.time - first.time || second.position - first.position)[0];
+    if (!latest) return Math.max(0, Math.min(Number(fallbackIndex || 0), 3));
+    return (latest.workoutIndex + 1) % 4;
+  }
+
   function getEnergyConfig(mode = 'normal') {
     return Object.values(energyOptions).find(option => option.mode === mode) || energyOptions.normal;
   }
@@ -2091,6 +2109,47 @@
         Math.abs((first.difficulty || 1) - (exercise.difficulty || 1)) -
         Math.abs((second.difficulty || 1) - (exercise.difficulty || 1))
       ));
+  }
+
+  function getSwapCandidateAudit(exercise, options = {}) {
+    const trackKey = exercise?.progressionTrackKey || exercise?.trackKey || '';
+    const canonicalTrack = movementTracks[trackKey] || baseTracks[trackKey] || [];
+    const equipmentTrack = getTracks(options.profile || null, options.state || {})[trackKey] || [];
+    const usedIds = options.usedIds instanceof Set ? options.usedIds : new Set(options.usedIds || []);
+    const recovery = options.recovery || null;
+    const unlockedLevel = Math.max(0, Math.min(Number(options.unlockedLevel || 0), Math.max(0, equipmentTrack.length - 1)));
+    const beforeFiltering = canonicalTrack.filter(candidate => candidate?.id && candidate.id !== exercise?.id);
+    const afterEquipment = equipmentTrack.filter(candidate => candidate?.id && candidate.id !== exercise?.id);
+    const afterRecovery = afterEquipment.filter(candidate => isExerciseAllowedForRecovery(candidate, recovery));
+    const afterProgression = afterRecovery.filter(candidate => {
+      const index = equipmentTrack.findIndex(item => item.id === candidate.id);
+      return index >= 0 && index <= unlockedLevel && isExerciseEligibleForGeneration(candidate, options.profile || null, options.state || {}, recovery);
+    });
+    const finalCandidates = afterProgression
+      .filter(candidate => !usedIds.has(candidate.id))
+      .sort((first, second) => (
+        Math.abs((first.difficulty || 1) - (exercise?.difficulty || 1)) -
+        Math.abs((second.difficulty || 1) - (exercise?.difficulty || 1))
+      ));
+    let reason = '';
+    if (exercise?.isAddOn) reason = 'Workout add-ons are intentionally not swappable.';
+    else if (!beforeFiltering.length) reason = 'No alternative exists in the same progression family.';
+    else if (!afterEquipment.length) reason = 'All same-family alternatives require unavailable equipment.';
+    else if (!afterRecovery.length) reason = 'All equipment-compatible alternatives conflict with the active recovery setting.';
+    else if (!afterProgression.length) reason = 'All compatible alternatives are locked progression stages.';
+    else if (!finalCandidates.length) reason = 'Every eligible alternative is already used in this workout.';
+    return {
+      exerciseId: exercise?.id || '',
+      exerciseName: exercise?.name || '',
+      category: trackKey,
+      candidateCountBeforeFiltering: beforeFiltering.length,
+      candidateCountAfterEquipment: afterEquipment.length,
+      candidateCountAfterRecovery: afterRecovery.length,
+      candidateCountAfterProgression: afterProgression.length,
+      candidateCountFinal: finalCandidates.length,
+      reason,
+      finalCandidates
+    };
   }
 
   function executableRounds(exercise) {
@@ -2404,7 +2463,8 @@
 
   function getTodayWorkout({ mode = 'normal', state = {}, profile = null } = {}) {
     const rotation = getRotation(profile, state);
-    const workout = rotation[(state.rotationIndex || 0) % rotation.length];
+    const rotationIndex = nextRotationIndexFromHistory(state.history, state.rotationIndex);
+    const workout = rotation[rotationIndex % rotation.length];
     const config = getEnergyConfig(mode);
     const recovery = getActiveRecovery(state);
     const preferredTracks = buildWorkoutTracks(workout, config.exerciseCount, profile, state);
@@ -2844,6 +2904,8 @@
     migrateLevels,
     getTracks,
     getRotation,
+    rotationIndexForWorkoutName,
+    nextRotationIndexFromHistory,
     getGoalTrackKey,
     getMuscleUpGate,
     advancedSkillEligibility,
@@ -2860,6 +2922,7 @@
     replaceWorkoutExercise,
     createSwapReplacement,
     getValidSwapCandidates,
+    getSwapCandidateAudit,
     executableRounds,
     exerciseResult,
     applyExerciseResultToProgression,

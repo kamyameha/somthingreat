@@ -27,6 +27,7 @@ const recoveryAuthClient = SUPABASE_READY
 
 let currentUser = null;
 let currentProfileId = null;
+let authResolved = false;
 let syncTimer = null;
 let welcomeDismissed = false;
 let waitingServiceWorker = null;
@@ -243,9 +244,16 @@ function setWelcomeVisible(visible) {
   if (!visible) syncBottomNavVisibility();
 }
 
+function setAuthResolved(resolved = true) {
+  authResolved = Boolean(resolved);
+  document.documentElement.classList.toggle('auth-loading', !authResolved);
+  document.body.classList.toggle('auth-loading', !authResolved);
+  document.getElementById('authLoadingScreen')?.setAttribute('aria-hidden', authResolved ? 'true' : 'false');
+}
+
 function setupStarAnimation() {
-  const star = document.getElementById('welcomeStar');
-  if (!star) return;
+  const stars = Array.from(document.querySelectorAll('.welcome-star'));
+  if (!stars.length) return;
 
   const frames = [
     'Assets/Animations/start1.png',
@@ -254,11 +262,11 @@ function setupStarAnimation() {
   ];
 
   let frame = 0;
-  star.src = frames[frame];
+  stars.forEach(star => { star.src = frames[frame]; });
 
   window.setInterval(() => {
     frame = (frame + 1) % frames.length;
-    star.src = frames[frame];
+    stars.forEach(star => { star.src = frames[frame]; });
   }, 600);
 }
 
@@ -266,6 +274,10 @@ function updateWelcomeGate() {
   // Recovery links must bypass the animated welcome screen and go straight
   // to the password reset form. Otherwise the user lands on Welcome instead
   // of seeing the reset fields.
+  if (!authResolved) {
+    setWelcomeVisible(false);
+    return;
+  }
   setWelcomeVisible(!welcomeDismissed && !currentUser && !passwordRecoveryMode);
 }
 
@@ -1224,18 +1236,16 @@ function generateWorkout() {
 
 function previewSwapCandidates(exercise) {
   if (!exercise || exercise.isAddOn) return [];
-  const tracks = getTracks();
   const trackKey = exercise.progressionTrackKey || exercise.trackKey;
-  const sourceTrack = tracks[trackKey] || [];
   const recovery = typeof getActiveRecovery === 'function' ? getActiveRecovery() : null;
   const usedIds = new Set((state.generated?.exercises || []).map(item => item?.id).filter(Boolean));
-  return workoutModule.getValidSwapCandidates(exercise, sourceTrack, {
+  return workoutModule.getSwapCandidateAudit(exercise, {
     usedIds,
     recovery,
     unlockedLevel: state.levels?.[trackKey]?.level || 0,
     profile: getProfile(),
     state
-  });
+  }).finalCandidates;
 }
 
 function activeSwapCandidates(exercise) {
@@ -1243,13 +1253,13 @@ function activeSwapCandidates(exercise) {
   const key = exerciseSessionKey(exercise);
   if ((state.current?.sets?.[key] || []).some(Boolean) || state.current?.ratings?.[key]) return [];
   const trackKey = exercise.progressionTrackKey || exercise.trackKey;
-  return workoutModule.getValidSwapCandidates(exercise, getTracks()[trackKey] || [], {
+  return workoutModule.getSwapCandidateAudit(exercise, {
     usedIds: new Set((state.current?.exercises || []).map(item => item?.id).filter(Boolean)),
     recovery: typeof getActiveRecovery === 'function' ? getActiveRecovery() : null,
     unlockedLevel: state.levels?.[trackKey]?.level || 0,
     profile: getProfile(),
     state
-  });
+  }).finalCandidates;
 }
 
 function swapActiveExercise(index) {
@@ -1953,7 +1963,7 @@ function completeWorkoutNow(showFullConfirmation = true) {
     })),
     progressionEvents
   });
-  state.rotationIndex = (state.rotationIndex + 1) % getRotation().length;
+  state.rotationIndex = workoutModule.nextRotationIndexFromHistory(state.history, state.rotationIndex);
   state.progressInsights = { ...(state.progressInsights || {}), returningSeenWorkoutId: '' };
   state.current = null;
   state.selectedEnergy = null;
@@ -3111,6 +3121,7 @@ function renderActivity() {
 
 async function initCloudSync() {
   if (!supabaseClient) {
+    setAuthResolved(true);
     renderAll();
     return;
   }
@@ -3124,12 +3135,17 @@ async function initCloudSync() {
     await ensureRecoverySession();
     setAuthMode('reset');
   } else {
-    const { data } = await supabaseClient.auth.getSession();
-    currentUser = data.session?.user || null;
+    try {
+      const { data } = await supabaseClient.auth.getSession();
+      currentUser = data?.session?.user || null;
+    } catch (error) {
+      currentUser = null;
+    }
     currentProfileId = null;
     if (currentUser) await loadCloudState();
   }
 
+	  setAuthResolved(true);
 	  renderAll();
 
 	  supabaseClient.auth.onAuthStateChange(async (event, session) => {
@@ -3148,6 +3164,7 @@ async function initCloudSync() {
 
 	    // Do not block the UI on cloud sync. If Supabase profile/state loading is slow,
 	    // users must still leave the auth screen instead of staying on “Logging in...”.
+	    setAuthResolved(true);
 	    renderAll();
 	    if (currentUser && !passwordRecoveryMode) loadCloudStateInBackground();
 	  });
