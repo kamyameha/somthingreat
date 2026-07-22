@@ -1988,9 +1988,9 @@
     const muscleGate = getMuscleUpGate(profile, state);
     const skillTrack = getGoalTrackKey(goal, profile, state);
     return [
-      { name: 'Push', tracks: ['horizontalPush', 'dipStrength', 'verticalPush', 'antiExtension'] },
-      { name: 'Pull', tracks: ['horizontalPull', 'verticalPull', 'scapularPull', 'antiExtension'] },
-      { name: 'Legs + Core', tracks: ['squat', 'posteriorChain', 'unilateral', 'compression', 'calves'] },
+      { name: 'Push', tracks: ['horizontalPush', 'dipStrength', 'antiExtension', 'verticalPush'] },
+      { name: 'Legs & core', tracks: ['squat', 'posteriorChain', 'compression', 'unilateral', 'calves'] },
+      { name: 'Pull', tracks: ['horizontalPull', 'verticalPull', 'antiExtension', 'scapularPull'] },
       {
         name: 'Skills',
         focusLabel: goal === 'muscleup' ? muscleGate.label : '',
@@ -2071,6 +2071,26 @@
       basePrescription: replacement.prescription,
       source: 'user-swap'
     });
+  }
+
+  function getValidSwapCandidates(exercise, track = [], options = {}) {
+    if (!exercise || exercise.isAddOn || !Array.isArray(track) || !track.length) return [];
+    const usedIds = options.usedIds instanceof Set ? options.usedIds : new Set(options.usedIds || []);
+    const recovery = options.recovery || null;
+    const unlockedLevel = Math.max(0, Math.min(Number(options.unlockedLevel || 0), track.length - 1));
+    return track
+      .filter((candidate, index) => (
+        candidate &&
+        candidate.id !== exercise.id &&
+        !usedIds.has(candidate.id) &&
+        index <= unlockedLevel &&
+        isExerciseEligibleForGeneration(candidate, options.profile || null, options.state || {}, recovery) &&
+        isExerciseAllowedForRecovery(candidate, recovery)
+      ))
+      .sort((first, second) => (
+        Math.abs((first.difficulty || 1) - (exercise.difficulty || 1)) -
+        Math.abs((second.difficulty || 1) - (exercise.difficulty || 1))
+      ));
   }
 
   function executableRounds(exercise) {
@@ -2366,10 +2386,10 @@
     const tracks = getTracks(profile, state);
     const recovery = getActiveRecovery(state);
     const fillByWorkout = {
-      Push: ['horizontalPush', 'dipStrength', 'verticalPush', 'antiExtension', 'squat'],
-      Pull: ['horizontalPull', 'verticalPull', 'scapularPull', 'antiExtension', 'posteriorChain'],
-      'Legs + Core': ['squat', 'posteriorChain', 'unilateral', 'compression', 'calves', 'antiExtension'],
-      Skills: ['pistolSquat', 'handstandPushup', 'handstand', 'lsit', 'verticalPull', 'horizontalPull', 'antiExtension', 'posteriorChain']
+      Push: ['horizontalPush', 'dipStrength', 'antiExtension', 'verticalPush', 'squat'],
+      Pull: ['horizontalPull', 'verticalPull', 'antiExtension', 'scapularPull', 'posteriorChain'],
+      'Legs & core': ['squat', 'posteriorChain', 'compression', 'unilateral', 'calves', 'antiExtension'],
+      Skills: ['pistolSquat', 'handstandPushup', 'antiExtension', 'handstand', 'lsit', 'verticalPull', 'horizontalPull', 'posteriorChain']
     };
     const selected = [];
     [...workout.tracks, ...(fillByWorkout[workout.name] || [])].forEach(trackKey => {
@@ -2467,6 +2487,7 @@
     regular: 'Assets/Progress/mascot-progress-regular.svg',
     new_user: 'Assets/Progress/mascot-progress-new-user.svg',
     new_exercise_unlocked: 'Assets/Progress/mascot-progress-unlocked.svg',
+    exercise_progressed: 'Assets/Progress/mascot-progress-regular.svg',
     strong_pattern: 'Assets/Progress/mascot-progress-strong-pattern.svg',
     focus_achieved: 'Assets/Progress/mascot-progress-focus-achieved.svg',
     returning_user: 'Assets/Progress/mascot-progress-returning.svg'
@@ -2590,50 +2611,62 @@
     return { stages, completedStages };
   }
 
+  function isoWeekStart(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    const local = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const day = (local.getDay() + 6) % 7;
+    local.setDate(local.getDate() - day);
+    local.setHours(0, 0, 0, 0);
+    return local;
+  }
+
+  function consecutiveActiveWeeks(history = [], now = new Date()) {
+    const currentWeek = isoWeekStart(now);
+    if (!currentWeek) return 0;
+    const activeWeeks = new Set((history || []).map(item => isoWeekStart(item?.date)).filter(Boolean).map(date => date.getTime()));
+    const currentIsActive = activeWeeks.has(currentWeek.getTime());
+    const cursor = new Date(currentWeek);
+    if (!currentIsActive) cursor.setDate(cursor.getDate() - 7);
+    let count = 0;
+    while (activeWeeks.has(cursor.getTime())) {
+      count += 1;
+      cursor.setDate(cursor.getDate() - 7);
+    }
+    return count;
+  }
+
   function getProgressCardState(progressData = {}) {
     if (progressData.focusAchieved) return 'focus_achieved';
     if (progressData.recentUnlockedExercise) return 'new_exercise_unlocked';
+    if (progressData.exerciseProgressSummary) return 'exercise_progressed';
     if (progressData.strongPattern) return 'strong_pattern';
-    if (progressData.isReturningUser) return 'returning_user';
     if (Number(progressData.completedWorkoutCount || 0) === 0) return 'new_user';
     return 'regular';
   }
 
   function getProgressCardContent(cardState, progressData = {}) {
-    const rows = [];
     let headline = "You're on track!";
-    const push = (label, value) => {
-      if (label && value && rows.length < 2) rows.push({ label, value });
-    };
-    const comingNext = progressData.nextExerciseName
-      ? `${progressData.nextExerciseName}${progressData.remainingRequirement ? ` · ${progressData.remainingRequirement} away` : ''}`
-      : null;
-
-    if (cardState === 'new_user') {
-      headline = "Let's get started!";
-      push('Your focus', progressData.currentFocusName);
-      push('First step', "Complete today's workout");
+    let event = null;
+    if (cardState === 'focus_achieved') {
+      headline = 'You did it!';
+      event = { label: 'Focus achieved', value: progressData.achievedFocusName };
     } else if (cardState === 'new_exercise_unlocked') {
       headline = 'Nice work!';
-      push('New exercise unlocked', progressData.recentUnlockedExercise);
-      push('Coming next', comingNext);
+      event = { label: 'New exercise unlocked', value: progressData.recentUnlockedExercise };
+    } else if (cardState === 'exercise_progressed') {
+      headline = "You're getting stronger!";
+      event = { label: 'Recent progress', value: progressData.exerciseProgressSummary };
     } else if (cardState === 'strong_pattern') {
       headline = "You're building momentum!";
-      push('Consistency', progressData.strongPattern);
-      push('Coming next', comingNext);
-    } else if (cardState === 'focus_achieved') {
-      headline = 'You did it!';
-      push('Focus achieved', progressData.achievedFocusName);
-      push(progressData.recommendedFocusName ? 'Recommended next focus' : "What's next", progressData.recommendedFocusName || 'Choose a new focus');
-    } else if (cardState === 'returning_user') {
-      headline = 'Welcome back!';
-      push('Your focus', progressData.currentFocusName);
-      push('Next step', 'Continue with your next workout');
-    } else {
-      push(progressData.recentProgressSummary ? 'Recent progress' : 'Current level', progressData.recentProgressSummary || progressData.currentLevelName);
-      if (comingNext) push('Coming next', comingNext);
-      else push('Next step', progressData.planContinuationMessage || 'Continue with your next workout');
+      event = { label: 'Consistency', value: progressData.strongPattern };
+    } else if (cardState === 'new_user') {
+      headline = "Let's get started!";
+      event = { label: 'Your focus', value: progressData.currentFocusName };
+    } else if (progressData.recentProgressSummary) {
+      event = { label: 'Recent progress', value: progressData.recentProgressSummary };
     }
+    const rows = event?.label && event?.value ? [event] : [];
     return { state: cardState, mascot: progressMascotByState[cardState] || progressMascotByState.regular, headline, rows };
   }
 
@@ -2826,6 +2859,7 @@
     prescriptionToString,
     replaceWorkoutExercise,
     createSwapReplacement,
+    getValidSwapCandidates,
     executableRounds,
     exerciseResult,
     applyExerciseResultToProgression,
@@ -2847,6 +2881,8 @@
     isTrackMastered,
     masteringSkillStages,
     getMasteringSkillProgress,
+    isoWeekStart,
+    consecutiveActiveWeeks,
     getProgressCardState,
     getProgressCardContent,
     applyRating,
