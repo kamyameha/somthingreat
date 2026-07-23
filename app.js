@@ -57,11 +57,12 @@ let energyPointerStart = null;
 let energyScrollGesture = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support']);
-const TODAY_PREVIEW_DELAY_MS = 600;
-const TODAY_MASCOT_FRAME_A_MS = 2800;
-const TODAY_MASCOT_FRAME_B_MS = 250;
-const TODAY_MASCOT_REACTION_B_MS = 300;
-const TODAY_MASCOT_REACTION_A_MS = 550;
+const TODAY_PREVIEW_DELAY_MS = 2250;
+const TODAY_REDUCED_PREVIEW_DELAY_MS = 600;
+const TODAY_MASCOT_FRAME_A_MS = 3200;
+const TODAY_MASCOT_FRAME_B_MS = 1200;
+const TODAY_MASCOT_REACTION_B_MS = 250;
+const TODAY_MASCOT_REACTION_A_MS = 1200;
 const TODAY_MASCOT_FRAMES = {
   empty: ['Assets/EnergyCheck/empty-state-a.svg', 'Assets/EnergyCheck/empty-state-b.svg'],
   great: ['Assets/EnergyCheck/great-a.svg', 'Assets/EnergyCheck/great-b.svg'],
@@ -316,8 +317,20 @@ function currentTodayMascotFrames() {
 }
 
 function setTodayMascotFrame(frameIndex = 0) {
-  const mascot = document.getElementById('todayMascot');
-  if (mascot) mascot.src = currentTodayMascotFrames()[frameIndex] || currentTodayMascotFrames()[0];
+  const frames = [
+    document.getElementById('todayMascotFrameA'),
+    document.getElementById('todayMascotFrameB')
+  ];
+  frames.forEach((frame, index) => frame?.classList.toggle('is-visible', index === frameIndex));
+}
+
+function syncTodayMascotSources() {
+  const [frameA, frameB] = currentTodayMascotFrames();
+  const mascotA = document.getElementById('todayMascotFrameA');
+  const mascotB = document.getElementById('todayMascotFrameB');
+  if (mascotA && mascotA.getAttribute('src') !== frameA) mascotA.src = frameA;
+  if (mascotB && mascotB.getAttribute('src') !== frameB) mascotB.src = frameB;
+  setTodayMascotFrame(0);
 }
 
 function startTodayMascotIdle() {
@@ -999,7 +1012,16 @@ function syncTodayEnergyUI() {
     option.classList.toggle('selected', selected);
     option.setAttribute('aria-pressed', selected ? 'true' : 'false');
   });
-  setTodayMascotFrame(0);
+  syncTodayMascotSources();
+  positionInitialEnergySelector();
+}
+
+function positionInitialEnergySelector() {
+  const grid = document.querySelector('.energy-grid');
+  const normal = grid?.querySelector('[data-feel="normal"]');
+  if (!grid || !normal || state.selectedEnergy || grid.dataset.initialPositioned === 'true') return;
+  grid.scrollLeft = normal.offsetLeft - ((grid.clientWidth - normal.offsetWidth) / 2);
+  grid.dataset.initialPositioned = 'true';
 }
 
 function resetTodaySession() {
@@ -1020,6 +1042,8 @@ function resetTodaySession() {
   state.includeRestTimer = false;
   state.restTimerSeconds = 60;
   document.getElementById('generatedWorkoutCard')?.classList.add('hidden');
+  const energyGrid = document.querySelector('.energy-grid');
+  if (energyGrid) energyGrid.dataset.initialPositioned = 'false';
   syncTodayEnergyUI();
   if (hadTemporaryState) saveState();
 }
@@ -1248,11 +1272,12 @@ function selectEnergy(feel) {
   });
   playTodayMascotReaction();
 
+  const previewDelay = prefersReducedMotion() ? TODAY_REDUCED_PREVIEW_DELAY_MS : TODAY_PREVIEW_DELAY_MS;
   todayPreviewTimer = window.setTimeout(() => {
     todayPreviewTimer = null;
     if (state.selectedEnergy !== feel) return;
     generateWorkout();
-  }, TODAY_PREVIEW_DELAY_MS);
+  }, previewDelay);
 }
 
 function updateAddOnSummary() {
