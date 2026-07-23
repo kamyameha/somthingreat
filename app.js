@@ -50,8 +50,25 @@ let onboardingConfirmationReady = false;
 let accountHistoryDismissedDayKey = null;
 let recoveryFormEditing = false;
 let detailedSessionFlushInProgress = false;
+let todayPreviewTimer = null;
+let todayMascotTimer = null;
+let todayReactionTimers = [];
+let energyPointerStart = null;
+let energyScrollGesture = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support']);
+const TODAY_PREVIEW_DELAY_MS = 600;
+const TODAY_MASCOT_FRAME_A_MS = 2800;
+const TODAY_MASCOT_FRAME_B_MS = 250;
+const TODAY_MASCOT_REACTION_B_MS = 300;
+const TODAY_MASCOT_REACTION_A_MS = 550;
+const TODAY_MASCOT_FRAMES = {
+  empty: ['Assets/EnergyCheck/empty-state-a.svg', 'Assets/EnergyCheck/empty-state-b.svg'],
+  great: ['Assets/EnergyCheck/great-a.svg', 'Assets/EnergyCheck/great-b.svg'],
+  normal: ['Assets/EnergyCheck/normal-a.svg', 'Assets/EnergyCheck/normal-b.svg'],
+  tired: ['Assets/EnergyCheck/tired-a.svg', 'Assets/EnergyCheck/tired-b.svg'],
+  exhausted: ['Assets/EnergyCheck/exhausted-a.svg', 'Assets/EnergyCheck/exhausted-b.svg']
+};
 
 function clearLegacyPasswordSession() {
   try {
@@ -268,6 +285,66 @@ function setupStarAnimation() {
     frame = (frame + 1) % frames.length;
     stars.forEach(star => { star.src = frames[frame]; });
   }, 600);
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+}
+
+function preloadTodayMascots() {
+  Object.values(TODAY_MASCOT_FRAMES).flat().forEach(src => {
+    const image = new Image();
+    image.src = src;
+  });
+}
+
+function clearTodayMascotTimers() {
+  clearTimeout(todayMascotTimer);
+  todayMascotTimer = null;
+  todayReactionTimers.forEach(timer => clearTimeout(timer));
+  todayReactionTimers = [];
+}
+
+function clearTodaySelectionTimers() {
+  clearTimeout(todayPreviewTimer);
+  todayPreviewTimer = null;
+  clearTodayMascotTimers();
+}
+
+function currentTodayMascotFrames() {
+  return TODAY_MASCOT_FRAMES[state?.selectedEnergy || 'empty'] || TODAY_MASCOT_FRAMES.empty;
+}
+
+function setTodayMascotFrame(frameIndex = 0) {
+  const mascot = document.getElementById('todayMascot');
+  if (mascot) mascot.src = currentTodayMascotFrames()[frameIndex] || currentTodayMascotFrames()[0];
+}
+
+function startTodayMascotIdle() {
+  clearTodayMascotTimers();
+  setTodayMascotFrame(0);
+  if (prefersReducedMotion()) return;
+
+  const showFrameB = () => {
+    setTodayMascotFrame(1);
+    todayMascotTimer = window.setTimeout(() => {
+      setTodayMascotFrame(0);
+      todayMascotTimer = window.setTimeout(showFrameB, TODAY_MASCOT_FRAME_A_MS);
+    }, TODAY_MASCOT_FRAME_B_MS);
+  };
+
+  todayMascotTimer = window.setTimeout(showFrameB, TODAY_MASCOT_FRAME_A_MS);
+}
+
+function playTodayMascotReaction() {
+  clearTodayMascotTimers();
+  setTodayMascotFrame(0);
+  if (prefersReducedMotion()) return;
+
+  todayReactionTimers = [
+    window.setTimeout(() => setTodayMascotFrame(1), TODAY_MASCOT_REACTION_B_MS),
+    window.setTimeout(() => startTodayMascotIdle(), TODAY_MASCOT_REACTION_A_MS)
+  ];
 }
 
 function updateWelcomeGate() {
@@ -867,27 +944,18 @@ function togglePasswordVisibility(button) {
 }
 
 function renderToday() {
+  const todayIsActive = document.getElementById('today')?.classList.contains('active');
   document.documentElement.classList.remove('workout-active');
   document.body.classList.remove('workout-active');
+  document.documentElement.classList.toggle('today-active', Boolean(todayIsActive));
+  document.body.classList.toggle('today-active', Boolean(todayIsActive));
   document.querySelector('.topbar')?.classList.remove('hidden');
   document.getElementById('exerciseList').innerHTML = '';
   document.getElementById('completeBtn').classList.add('hidden');
   hideCustomChecklistViews();
 
-  if (state.customChecklist) {
-    document.getElementById('energyCard').classList.remove('hidden');
-    document.getElementById('customChecklistCard')?.classList.remove('hidden');
-    document.getElementById('customChecklistForm')?.classList.remove('hidden');
-    document.getElementById('selectedEnergyCard').classList.add('hidden');
-    document.getElementById('generatedWorkoutCard').classList.add('hidden');
-    document.getElementById('exercisePreview').classList.add('hidden');
-    renderCustomChecklist();
-    return;
-  }
-
   if (state.current) {
     document.getElementById('energyCard').classList.add('hidden');
-    document.getElementById('selectedEnergyCard').classList.add('hidden');
     document.getElementById('generatedWorkoutCard').classList.add('hidden');
     document.getElementById('exercisePreview').classList.add('hidden');
     renderExercises();
@@ -895,40 +963,65 @@ function renderToday() {
   }
 
   if (state.generated) {
-    document.getElementById('energyCard').classList.add('hidden');
-    document.getElementById('selectedEnergyCard').classList.remove('hidden');
+    document.getElementById('energyCard').classList.remove('hidden');
     document.getElementById('generatedWorkoutCard').classList.remove('hidden');
     document.getElementById('exercisePreview').classList.add('hidden');
+    syncTodayEnergyUI();
     renderGeneratedWorkout();
     return;
   }
 
-  if (state.selectedEnergy) {
-    renderSelectedEnergy();
-    return;
-  }
-
   document.getElementById('energyCard').classList.remove('hidden');
-  document.getElementById('customChecklistCard')?.classList.remove('hidden');
-  document.getElementById('customChecklistForm')?.classList.remove('hidden');
-  document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
+  syncTodayEnergyUI();
 
   const emptyState = document.getElementById('todayEmptyState');
   if (emptyState) {
     const advice = currentRestAdvice();
     const adviceSeen = advice && (state.restAdvice?.acknowledgedSequenceKey === advice.key || state.restAdvice?.lastShownDate === advice.today);
     const shouldShowAdvice = Boolean(advice && !adviceSeen);
-    const shouldShowEmptyState = shouldShowAdvice || (countableHistory().length === 0 && !state.todayEmptyStateDismissed);
     emptyState.dataset.mode = shouldShowAdvice ? 'rest-advice' : 'welcome';
     emptyState.querySelector('h2').textContent = shouldShowAdvice ? 'Rest might help' : 'You’re set.';
     emptyState.querySelector('p').textContent = shouldShowAdvice
       ? "You've trained 3 days in a row. Taking a rest day can help your body recover."
       : 'Start with how you feel today, and Somthingreat will shape the workout from there.';
     document.getElementById('todayInfoAction')?.classList.toggle('hidden', !shouldShowAdvice);
-    emptyState.classList.toggle('hidden', !shouldShowEmptyState);
+    emptyState.classList.toggle('hidden', !shouldShowAdvice);
   }
+
+  if (todayIsActive && !todayMascotTimer && !todayReactionTimers.length) startTodayMascotIdle();
+}
+
+function syncTodayEnergyUI() {
+  document.querySelectorAll('.energy-option').forEach(option => {
+    const selected = option.dataset.feel === state.selectedEnergy;
+    option.classList.toggle('selected', selected);
+    option.setAttribute('aria-pressed', selected ? 'true' : 'false');
+  });
+  setTodayMascotFrame(0);
+}
+
+function resetTodaySession() {
+  clearTodaySelectionTimers();
+  const hadTemporaryState = Boolean(
+    state.selectedEnergy ||
+    state.generated ||
+    state.includeWarmup ||
+    state.includeStretch ||
+    state.includeExerciseTimer ||
+    state.includeRestTimer
+  );
+  state.selectedEnergy = null;
+  state.generated = null;
+  state.includeWarmup = false;
+  state.includeStretch = false;
+  state.includeExerciseTimer = false;
+  state.includeRestTimer = false;
+  state.restTimerSeconds = 60;
+  document.getElementById('generatedWorkoutCard')?.classList.add('hidden');
+  syncTodayEnergyUI();
+  if (hadTemporaryState) saveState();
 }
 
 function hideCustomChecklistViews() {
@@ -1138,6 +1231,8 @@ function dismissTodayEmptyState() {
 }
 
 function selectEnergy(feel) {
+  if (!energyOptions[feel]) return;
+  clearTodaySelectionTimers();
   state.selectedEnergy = feel;
   state.generated = null;
   state.includeWarmup = false;
@@ -1145,61 +1240,19 @@ function selectEnergy(feel) {
   state.includeExerciseTimer = false;
   state.includeRestTimer = false;
   state.restTimerSeconds = 60;
-  saveState();
-  renderSelectedEnergy();
-}
+  renderToday();
+  document.querySelector(`.energy-option[data-feel="${feel}"]`)?.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'nearest',
+    inline: 'center'
+  });
+  playTodayMascotReaction();
 
-function renderSelectedEnergy() {
-  const option = energyOptions[state.selectedEnergy || 'normal'];
-  const previewWorkout = getTodayWorkout(option.mode);
-
-  hideCustomChecklistViews();
-  document.getElementById('energyCard').classList.add('hidden');
-  document.getElementById('selectedEnergyCard').classList.remove('hidden');
-  document.getElementById('generatedWorkoutCard').classList.add('hidden');
-  document.getElementById('exercisePreview').classList.add('hidden');
-  document.getElementById('selectedEnergyCard').dataset.energy = state.selectedEnergy || 'normal';
-
-  const mascot = document.getElementById('selectedEnergyMascot');
-  if (mascot) mascot.src = option.icon || 'Assets/Energy/normal-icon.png';
-
-  const pill = document.getElementById('selectedEnergyPill');
-  if (pill) pill.textContent = option.title;
-
-  const stars = document.getElementById('selectedEnergyStars');
-  if (stars) {
-    stars.innerHTML = '';
-  }
-
-  const workoutName = document.getElementById('selectedWorkoutName');
-  if (workoutName) workoutName.textContent = previewWorkout.workoutName;
-
-  const workoutMeta = document.getElementById('selectedWorkoutMeta');
-  if (workoutMeta) {
-    const volumeMap = {
-      great: 'full volume',
-      normal: 'reduced volume',
-      tired: 'reduced volume',
-      reduced: 'reduced volume',
-      exhausted: 'minimum volume',
-      minimum: 'minimum volume'
-    };
-    const volume = volumeMap[previewWorkout.mode] || 'standard volume';
-    const count = (previewWorkout.exercises || []).filter(Boolean).length;
-    workoutMeta.innerHTML = `${escapeHTML(previewWorkout.workoutName)}: ${escapeHTML(volume)}<br>${count} exercises`;
-  }
-
-  const warmupInput = document.getElementById('includeWarmup');
-  const stretchInput = document.getElementById('includeStretch');
-  const exerciseTimerInput = document.getElementById('includeExerciseTimer');
-  const restTimerInput = document.getElementById('includeRestTimer');
-  const restTimerOptions = document.getElementById('restTimerOptions');
-  if (warmupInput) warmupInput.checked = Boolean(state.includeWarmup);
-  if (stretchInput) stretchInput.checked = Boolean(state.includeStretch);
-  if (exerciseTimerInput) exerciseTimerInput.checked = Boolean(state.includeExerciseTimer);
-  if (restTimerInput) restTimerInput.checked = Boolean(state.includeRestTimer);
-  if (restTimerOptions) restTimerOptions.classList.add('hidden');
-  updateAddOnSummary();
+  todayPreviewTimer = window.setTimeout(() => {
+    todayPreviewTimer = null;
+    if (state.selectedEnergy !== feel) return;
+    generateWorkout();
+  }, TODAY_PREVIEW_DELAY_MS);
 }
 
 function updateAddOnSummary() {
@@ -1223,15 +1276,28 @@ function workoutToolSummary(workout) {
   return `${base} · ${timerParts.join(' · ')}`;
 }
 
-function generateWorkout() {
-  const option = energyOptions[state.selectedEnergy || 'normal'];
+function generateWorkout({ render = true } = {}) {
+  const option = energyOptions[state.selectedEnergy];
+  if (!option) return;
   const baseWorkout = getTodayWorkout(option.mode);
   state.generated = applyWorkoutAddOns(baseWorkout);
   state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
   state.generated.includeRestTimer = Boolean(state.includeRestTimer);
   state.generated.restTimerSeconds = 60;
   saveState();
-  renderGeneratedWorkout();
+  if (render) renderGeneratedWorkout();
+}
+
+function updateGeneratedWorkoutAddOns() {
+  if (!state.generated) return;
+  const baseWorkout = {
+    ...state.generated,
+    exercises: (state.generated.exercises || []).filter(exercise => !exercise?.isAddOn)
+  };
+  state.generated = applyWorkoutAddOns(baseWorkout);
+  state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
+  state.generated.includeRestTimer = Boolean(state.includeRestTimer);
+  state.generated.restTimerSeconds = 60;
 }
 
 function previewSwapCandidates(exercise) {
@@ -1296,14 +1362,24 @@ function swapPreviewExercise(index) {
 }
 
 function renderGeneratedWorkout() {
-  const generated = state.generated || getTodayWorkout('normal');
+  const generated = state.generated;
+  if (!generated) return;
   hideCustomChecklistViews();
-  document.getElementById('energyCard').classList.add('hidden');
-  document.getElementById('selectedEnergyCard').classList.remove('hidden');
+  document.getElementById('energyCard').classList.remove('hidden');
   document.getElementById('generatedWorkoutCard').classList.remove('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
   document.getElementById('workoutName').textContent = generated.workoutName;
-  document.getElementById('workoutMeta').textContent = generated.includeExerciseTimer ? 'Includes exercise timers' : 'Workout is ready';
+  document.getElementById('workoutMeta').textContent = workoutToolSummary(generated);
+
+  const warmupInput = document.getElementById('includeWarmup');
+  const stretchInput = document.getElementById('includeStretch');
+  const exerciseTimerInput = document.getElementById('includeExerciseTimer');
+  const restTimerInput = document.getElementById('includeRestTimer');
+  if (warmupInput) warmupInput.checked = Boolean(state.includeWarmup);
+  if (stretchInput) stretchInput.checked = Boolean(state.includeStretch);
+  if (exerciseTimerInput) exerciseTimerInput.checked = Boolean(state.includeExerciseTimer);
+  if (restTimerInput) restTimerInput.checked = Boolean(state.includeRestTimer);
+  updateAddOnSummary();
 
   const preview = document.getElementById('previewList');
   preview.innerHTML = '';
@@ -1326,6 +1402,29 @@ function renderGeneratedWorkout() {
   });
 }
 
+document.addEventListener('pointerdown', event => {
+  if (!event.target.closest('.energy-grid')) return;
+  energyPointerStart = { x: event.clientX, y: event.clientY };
+  energyScrollGesture = false;
+}, { passive: true });
+
+document.addEventListener('pointermove', event => {
+  if (!energyPointerStart) return;
+  if (Math.hypot(event.clientX - energyPointerStart.x, event.clientY - energyPointerStart.y) > 8) {
+    energyScrollGesture = true;
+  }
+}, { passive: true });
+
+document.addEventListener('pointerup', () => {
+  energyPointerStart = null;
+  window.setTimeout(() => { energyScrollGesture = false; }, 0);
+}, { passive: true });
+
+document.addEventListener('pointercancel', () => {
+  energyPointerStart = null;
+  energyScrollGesture = false;
+}, { passive: true });
+
 document.addEventListener('click', event => {
   const swapButton = event.target.closest('.preview-swap-btn');
   if (!swapButton) return;
@@ -1335,7 +1434,7 @@ document.addEventListener('click', event => {
 });
 
 function startWorkout() {
-  if (!state.generated) generateWorkout();
+  if (!state.generated && state.selectedEnergy) generateWorkout({ render: false });
   state.generated = sanitizeWorkout(state.generated);
   if (!state.generated) {
     state.selectedEnergy = null;
@@ -1479,7 +1578,6 @@ function shouldStartRestTimerAfterSet(trackKey) {
 function renderExercises() {
   hideCustomChecklistViews();
   document.getElementById('energyCard').classList.add('hidden');
-  document.getElementById('selectedEnergyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
   document.documentElement.classList.add('workout-active');
@@ -2688,6 +2786,9 @@ function openAccountMain() {
   const loggedIn = document.getElementById('loggedInAccount');
   if (!panel || !currentUser) return;
 
+  resetTodaySession();
+  document.documentElement.classList.remove('today-active');
+  document.body.classList.remove('today-active');
   hideNormalAppChrome();
   hideAccountSubmenuPanel();
   hideAllAccountViews();
@@ -2729,6 +2830,9 @@ function openAccountSubmenu(view) {
   const submenuContent = document.getElementById('accountSubmenuContent');
   if (!submenuPanel || !submenuContent || !currentUser) return;
 
+  resetTodaySession();
+  document.documentElement.classList.remove('today-active');
+  document.body.classList.remove('today-active');
   hideNormalAppChrome();
   hideAllAccountViews();
   hideAccountMainPanel();
@@ -3434,7 +3538,8 @@ document.addEventListener('click', event => {
   }
 
   const feelButton = event.target.closest('.feel-btn');
-  if (feelButton) selectEnergy(feelButton.dataset.feel);
+  if (feelButton && !energyScrollGesture) selectEnergy(feelButton.dataset.feel);
+  if (feelButton) energyScrollGesture = false;
   if (event.target.id === 'dismissTodayEmptyState' || event.target.id === 'todayInfoAction') dismissTodayEmptyState();
   if (event.target.id === 'dismissWorkoutStatusBtn') dismissWorkoutStatus();
   if (event.target.id === 'openCustomChecklistBtn') openCustomChecklistForm();
@@ -3457,21 +3562,15 @@ document.addEventListener('click', event => {
     renderCustomChecklist();
   }
 
-  if (event.target.id === 'changeEnergyBtn') {
-    state.selectedEnergy = null;
-    state.generated = null;
-    saveState();
-    renderToday();
-  }
-
   if (['includeWarmup', 'includeStretch', 'includeExerciseTimer', 'includeRestTimer'].includes(event.target.id)) {
     state.includeWarmup = Boolean(document.getElementById('includeWarmup')?.checked);
     state.includeStretch = Boolean(document.getElementById('includeStretch')?.checked);
     state.includeExerciseTimer = Boolean(document.getElementById('includeExerciseTimer')?.checked);
     state.includeRestTimer = Boolean(document.getElementById('includeRestTimer')?.checked);
     state.restTimerSeconds = 60;
+    updateGeneratedWorkoutAddOns();
     saveState();
-    renderSelectedEnergy();
+    renderGeneratedWorkout();
     updateAddOnSummary();
   }
 
@@ -3481,11 +3580,10 @@ document.addEventListener('click', event => {
     updateAddOnSummary();
   }
 
-  if (event.target.id === 'generateWorkoutBtn') generateWorkout();
-  if (event.target.id === 'regenerateWorkoutBtn') {
+  if (event.target.id === 'closeWorkoutPreviewBtn') {
     state.generated = null;
     saveState();
-    renderSelectedEnergy();
+    renderToday();
   }
   if (event.target.id === 'startWorkoutBtn') startWorkout();
 
@@ -3582,6 +3680,8 @@ document.addEventListener('click', event => {
   if (event.target.id === 'startOnboardingPlanBtn') finishOnboarding();
 
   if (event.target.matches('.nav-btn')) {
+    const nextScreen = event.target.dataset.screen;
+    if (nextScreen !== 'today') resetTodaySession();
     document.querySelectorAll('.nav-btn').forEach(b => {
       b.classList.remove('active');
       b.removeAttribute('aria-current');
@@ -3590,11 +3690,13 @@ document.addEventListener('click', event => {
     event.target.setAttribute('aria-current', 'page');
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(event.target.dataset.screen).classList.add('active');
-    if (event.target.dataset.screen === 'today') {
+    if (nextScreen === 'today') {
       renderToday();
     } else {
       document.body.classList.remove('workout-active');
       document.documentElement.classList.remove('workout-active');
+      document.body.classList.remove('today-active');
+      document.documentElement.classList.remove('today-active');
       document.querySelector('.topbar')?.classList.remove('hidden');
       syncBottomNavVisibility();
     }
@@ -3681,6 +3783,7 @@ function registerServiceWorker() {
 
 registerServiceWorker();
 
+preloadTodayMascots();
 setupStarAnimation();
 renderAll();
 initCloudSync();

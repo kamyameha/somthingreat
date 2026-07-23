@@ -296,13 +296,26 @@
       return nextState;
     }
 
+    function withoutTemporaryTodayState(nextState) {
+      return {
+        ...nextState,
+        selectedEnergy: null,
+        generated: null,
+        includeWarmup: false,
+        includeStretch: false,
+        includeExerciseTimer: false,
+        includeRestTimer: false,
+        restTimerSeconds: 60
+      };
+    }
+
     function loadState() {
       const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || localStorage.getItem(OLDER_LEGACY_STORAGE_KEY);
       if (!saved) return defaultState();
       try {
         const parsed = JSON.parse(saved);
         const merged = { ...defaultState(), ...parsed };
-        return sanitizeState(merged);
+        return withoutTemporaryTodayState(sanitizeState(merged));
       } catch {
         return defaultState();
       }
@@ -310,19 +323,20 @@
 
     function saveState(state) {
       const cleanState = sanitizeState(state);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanState));
-      if (typeof onSave === 'function') onSave(cleanState);
+      const persistentState = withoutTemporaryTodayState(cleanState);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(persistentState));
+      if (typeof onSave === 'function') onSave(persistentState);
       return cleanState;
     }
 
     function writeLocalState(state) {
       const cleanState = sanitizeState(state);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanState));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(withoutTemporaryTodayState(cleanState)));
       return cleanState;
     }
 
     function publicState(state) {
-      return {
+      return withoutTemporaryTodayState({
         schemaVersion: STATE_SCHEMA_VERSION,
         rotationIndex: state.rotationIndex,
         levels: state.levels,
@@ -343,7 +357,7 @@
         progressInsights: state.progressInsights,
         restAdvice: state.restAdvice,
         todayEmptyStateDismissed: state.todayEmptyStateDismissed
-      };
+      });
     }
 
     return {
