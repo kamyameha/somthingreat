@@ -1598,11 +1598,13 @@ body.workout-active .bottom-nav {
 /* Today energy check */
 html.today-active,
 body.today-active {
+  background: #ffffff;
   overflow: hidden;
 }
 
 body.today-active .app {
   min-height: 100dvh;
+  background: #ffffff;
 }
 
 body.today-active .topbar {
@@ -1675,7 +1677,7 @@ body.today-active #today {
 
 .energy-option.selected,
 .energy-option[aria-pressed="true"] {
-  border: 2px solid #ffffff;
+  border: 1px solid #ffffff;
   background: var(--main);
   color: #ffffff;
 }
@@ -1684,7 +1686,7 @@ body.today-active #today {
   position: fixed;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
 }
 
@@ -1698,16 +1700,6 @@ body.today-active #today {
   max-height: none;
   transform: scale(0.97) translate(-433.756px, -493.44px);
   transform-origin: top left;
-}
-
-.today-mascot-frame {
-  opacity: 0;
-  transition: opacity 320ms cubic-bezier(0.45, 0, 0.55, 1);
-  will-change: opacity;
-}
-
-.today-mascot-frame.is-visible {
-  opacity: 1;
 }
 
 .activity-counter-reserved {
@@ -1769,10 +1761,6 @@ body.today-active #today {
 @media (prefers-reduced-motion: reduce) {
   .energy-grid {
     scroll-behavior: auto;
-  }
-
-  .today-mascot-frame {
-    transition: none;
   }
 
   .generated-workout-overlay:not(.hidden),

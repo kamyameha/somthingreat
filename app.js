@@ -57,12 +57,11 @@ let energyPointerStart = null;
 let energyScrollGesture = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support']);
-const TODAY_PREVIEW_DELAY_MS = 1100;
+const TODAY_PREVIEW_DELAY_MS = 700;
 const TODAY_REDUCED_PREVIEW_DELAY_MS = 600;
-const TODAY_MASCOT_FRAME_A_MS = 3200;
-const TODAY_MASCOT_FRAME_B_MS = 650;
-const TODAY_MASCOT_REACTION_B_MS = 90;
-const TODAY_MASCOT_REACTION_A_MS = 520;
+const TODAY_MASCOT_FRAME_MS = 600;
+const TODAY_MASCOT_REACTION_B_MS = 200;
+const TODAY_MASCOT_REACTION_A_MS = 600;
 const TODAY_MASCOT_FRAMES = {
   empty: ['Assets/EnergyCheck/empty-state-a.svg', 'Assets/EnergyCheck/empty-state-b.svg'],
   great: ['Assets/EnergyCheck/great-a.svg', 'Assets/EnergyCheck/great-b.svg'],
@@ -317,19 +316,13 @@ function currentTodayMascotFrames() {
 }
 
 function setTodayMascotFrame(frameIndex = 0) {
-  const frames = [
-    document.getElementById('todayMascotFrameA'),
-    document.getElementById('todayMascotFrameB')
-  ];
-  frames.forEach((frame, index) => frame?.classList.toggle('is-visible', index === frameIndex));
+  const mascot = document.getElementById('todayMascot');
+  const frames = currentTodayMascotFrames();
+  const nextFrame = frames[frameIndex] || frames[0];
+  if (mascot && mascot.getAttribute('src') !== nextFrame) mascot.src = nextFrame;
 }
 
 function syncTodayMascotSources() {
-  const [frameA, frameB] = currentTodayMascotFrames();
-  const mascotA = document.getElementById('todayMascotFrameA');
-  const mascotB = document.getElementById('todayMascotFrameB');
-  if (mascotA && mascotA.getAttribute('src') !== frameA) mascotA.src = frameA;
-  if (mascotB && mascotB.getAttribute('src') !== frameB) mascotB.src = frameB;
   setTodayMascotFrame(0);
 }
 
@@ -338,15 +331,14 @@ function startTodayMascotIdle() {
   setTodayMascotFrame(0);
   if (prefersReducedMotion()) return;
 
-  const showFrameB = () => {
-    setTodayMascotFrame(1);
-    todayMascotTimer = window.setTimeout(() => {
-      setTodayMascotFrame(0);
-      todayMascotTimer = window.setTimeout(showFrameB, TODAY_MASCOT_FRAME_A_MS);
-    }, TODAY_MASCOT_FRAME_B_MS);
+  let frame = 0;
+  const showNextFrame = () => {
+    frame = (frame + 1) % currentTodayMascotFrames().length;
+    setTodayMascotFrame(frame);
+    todayMascotTimer = window.setTimeout(showNextFrame, TODAY_MASCOT_FRAME_MS);
   };
 
-  todayMascotTimer = window.setTimeout(showFrameB, TODAY_MASCOT_FRAME_A_MS);
+  todayMascotTimer = window.setTimeout(showNextFrame, TODAY_MASCOT_FRAME_MS);
 }
 
 function playTodayMascotReaction() {
@@ -962,6 +954,7 @@ function renderToday() {
   document.body.classList.remove('workout-active');
   document.documentElement.classList.toggle('today-active', Boolean(todayIsActive));
   document.body.classList.toggle('today-active', Boolean(todayIsActive));
+  if (todayIsActive) setThemeColor('#ffffff');
   document.querySelector('.topbar')?.classList.remove('hidden');
   document.getElementById('exerciseList').innerHTML = '';
   document.getElementById('completeBtn').classList.add('hidden');
@@ -1276,6 +1269,7 @@ function selectEnergy(feel) {
   todayPreviewTimer = window.setTimeout(() => {
     todayPreviewTimer = null;
     if (state.selectedEnergy !== feel) return;
+    clearTodayMascotTimers();
     generateWorkout();
   }, previewDelay);
 }
