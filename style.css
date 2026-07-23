@@ -149,6 +149,18 @@ h3 {
   padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(74px + env(safe-area-inset-bottom));
 }
 
+body:not(.logged-out):not(.welcome-active):not(.onboarding-active):not(.confirmation-active):not(.account-active):not(.workout-active):not(.today-active) {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body:not(.logged-out):not(.welcome-active):not(.onboarding-active):not(.confirmation-active):not(.account-active):not(.workout-active):not(.today-active) .app {
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -1632,7 +1644,7 @@ textarea::placeholder {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  column-gap: 24px;
+  column-gap: 20px;
   row-gap: 18px;
   color: #ffffff;
 }

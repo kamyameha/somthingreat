@@ -648,6 +648,13 @@ function syncBottomNavVisibility(profileDone = hasCompletedProfile()) {
   bottomNav.classList.toggle('hidden', shouldHide);
 }
 
+function resetMainRouteScroll() {
+  const app = document.querySelector('.app');
+  const root = document.scrollingElement;
+  if (app) app.scrollTop = 0;
+  if (root) root.scrollTop = 0;
+}
+
 function openAccountModal() {
   openAccountMain();
 }
@@ -3748,6 +3755,7 @@ document.addEventListener('click', event => {
 
   if (event.target.matches('.nav-btn')) {
     const nextScreen = event.target.dataset.screen;
+    resetMainRouteScroll();
     if (nextScreen !== 'today') resetTodaySession();
     document.querySelectorAll('.nav-btn').forEach(b => {
       b.classList.remove('active');
