@@ -26,11 +26,11 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.22.154214" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.22.154214" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.22.154214" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.22.154214" />
-  <link rel="stylesheet" href="account.css?v=2026.07.22.154214" />
+  <link rel="stylesheet" href="style.css?v=2026.07.23.095604" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.23.095604" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.23.095604" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.23.095604" />
+  <link rel="stylesheet" href="account.css?v=2026.07.23.095604" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
@@ -366,21 +366,23 @@
           <h2>Well done for today.</h2>
           <p>You showed up, and that counts. Your progress is saved.</p>
         </div>
-        <h1>How are you feeling today?</h1>
         <div class="energy-grid" role="group" aria-label="Choose your energy level">
-          <button class="feel-btn energy-option" type="button" data-feel="great"><span>Great</span></button>
-          <button class="feel-btn energy-option" type="button" data-feel="normal"><span>Normal</span></button>
-          <button class="feel-btn energy-option" type="button" data-feel="tired"><span>Tired</span></button>
-          <button class="feel-btn energy-option" type="button" data-feel="exhausted"><span>Exhausted</span></button>
+          <button class="feel-btn energy-option" type="button" data-feel="great" aria-pressed="false"><span>Great</span></button>
+          <button class="feel-btn energy-option" type="button" data-feel="normal" aria-pressed="false"><span>Normal</span></button>
+          <button class="feel-btn energy-option" type="button" data-feel="tired" aria-pressed="false"><span>Tired</span></button>
+          <button class="feel-btn energy-option" type="button" data-feel="exhausted" aria-pressed="false"><span>Exhausted</span></button>
+        </div>
+        <div class="today-mascot-stage" aria-hidden="true">
+          <img id="todayMascot" class="today-mascot" src="Assets/EnergyCheck/empty-state-a.svg" alt="" />
         </div>
       </section>
 
-      <section id="customChecklistCard" class="custom-checklist-card">
+      <section id="customChecklistCard" class="custom-checklist-card activity-counter-reserved hidden">
         <h2>Custom checklist</h2>
         <p class="muted">Use rounds or minutes for stairs, walks, circuits, mobility, or whatever you want to count.</p>
       </section>
 
-      <section id="customChecklistForm" class="custom-checklist-form">
+      <section id="customChecklistForm" class="custom-checklist-form activity-counter-reserved hidden">
         <textarea id="customChecklistNameInput" class="text-input custom-checklist-name-input" placeholder="Activity" maxlength="40" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" rows="1" name="sg-activity-label"></textarea>
         <input id="customChecklistTargetInput" class="text-input" type="number" inputmode="numeric" min="1" max="240" placeholder="How many?" autocomplete="new-password" enterkeyhint="done" name="sg-activity-count">
         <div class="custom-type-row" role="group" aria-label="Checklist type">
@@ -424,38 +426,18 @@
         </div>
       </section>
 
-      <section id="selectedEnergyCard" class="selected-energy-stack hidden">
-        <div class="selected-energy-mascot-card">
-          <img id="selectedEnergyMascot" class="selected-energy-mascot" src="Assets/Energy/normal-icon.png" alt="" aria-hidden="true" />
-        </div>
-        <div class="selected-energy-meta">
-          <div>
-            <div id="selectedEnergyStars" class="energy-stars" aria-hidden="true"></div>
-            <p id="selectedEnergyPill" class="energy-pill">Normal</p>
-          </div>
-          <p id="selectedWorkoutMeta" class="selected-workout-meta">Pull: reduced volume<br>4 exercises</p>
-        </div>
-        <div class="selected-workout-preview">
-          <h2 id="selectedWorkoutName" class="hidden">Push</h2>
-          <div class="add-on-panel" aria-label="Workout add-ons">
+      <section id="generatedWorkoutCard" class="generated-workout-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="workoutName">
+        <div class="generated-workout-modal">
+          <button class="generated-close-btn" id="closeWorkoutPreviewBtn" type="button" aria-label="Close">×</button>
+          <h2 id="workoutName">Legs + core</h2>
+          <p id="workoutMeta">Includes exercise timers</p>
+          <div class="add-on-panel preview-add-on-panel" aria-label="Workout add-ons">
             <label class="add-on-row"><input id="includeWarmup" type="checkbox"> <span>2 min warm-up</span><i aria-hidden="true"></i></label>
             <label class="add-on-row"><input id="includeStretch" type="checkbox"> <span>2 min stretch</span><i aria-hidden="true"></i></label>
             <label class="add-on-row"><input id="includeExerciseTimer" type="checkbox"> <span>Exercise timer</span><i aria-hidden="true"></i></label>
             <label class="add-on-row"><input id="includeRestTimer" type="checkbox"> <span>Rest timer</span><i aria-hidden="true"></i></label>
             <p id="sessionTotalPreview" class="add-on-summary hidden">Workout only</p>
           </div>
-          <div class="selected-actions">
-            <button class="primary-btn" id="generateWorkoutBtn" type="button">Generate</button>
-            <button class="secondary-btn" id="changeEnergyBtn" type="button">Go back</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="generatedWorkoutCard" class="generated-workout-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="workoutName">
-        <div class="generated-workout-modal">
-          <button class="generated-close-btn" id="regenerateWorkoutBtn" type="button" aria-label="Close">×</button>
-          <h2 id="workoutName">Legs + core</h2>
-          <p id="workoutMeta">Includes exercise timers</p>
           <div id="previewList" class="generated-preview-list"></div>
           <button class="primary-btn" id="startWorkoutBtn" type="button">Start</button>
         </div>
@@ -554,12 +536,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.22.154214"></script>
-  <script src="workouts.js?v=2026.07.22.154214"></script>
-  <script src="state.js?v=2026.07.22.154214"></script>
-  <script src="account.js?v=2026.07.22.154214"></script>
-  <script src="render.js?v=2026.07.22.154214"></script>
-  <script src="app-version.js?v=2026.07.22.154214"></script>
-  <script src="app.js?v=2026.07.22.154214"></script>
+  <script src="auth.js?v=2026.07.23.095604"></script>
+  <script src="workouts.js?v=2026.07.23.095604"></script>
+  <script src="state.js?v=2026.07.23.095604"></script>
+  <script src="account.js?v=2026.07.23.095604"></script>
+  <script src="render.js?v=2026.07.23.095604"></script>
+  <script src="app-version.js?v=2026.07.23.095604"></script>
+  <script src="app.js?v=2026.07.23.095604"></script>
 </body>
 </html>

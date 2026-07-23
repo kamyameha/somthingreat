@@ -490,4 +490,23 @@ const migratedLegs = stateStore.sanitizeState({ ...stateStore.defaultState(), sc
 assert.strictEqual(migratedPull.rotationIndex, 2);
 assert.strictEqual(migratedLegs.rotationIndex, 1);
 
+const temporaryTodayState = stateStore.defaultState();
+temporaryTodayState.selectedEnergy = 'great';
+temporaryTodayState.generated = workouts.getTodayWorkout({ mode: 'great', state: temporaryTodayState, profile: null });
+temporaryTodayState.includeWarmup = true;
+temporaryTodayState.includeStretch = true;
+temporaryTodayState.includeExerciseTimer = true;
+temporaryTodayState.includeRestTimer = true;
+const inMemoryTodayState = stateStore.saveState(temporaryTodayState);
+const persistedTodayState = JSON.parse(storage.get(stateStore.storageKey));
+assert.strictEqual(inMemoryTodayState.selectedEnergy, 'great');
+assert.ok(inMemoryTodayState.generated);
+assert.strictEqual(persistedTodayState.selectedEnergy, null);
+assert.strictEqual(persistedTodayState.generated, null);
+assert.strictEqual(persistedTodayState.includeWarmup, false);
+assert.strictEqual(persistedTodayState.includeStretch, false);
+assert.strictEqual(persistedTodayState.includeExerciseTimer, false);
+assert.strictEqual(persistedTodayState.includeRestTimer, false);
+assert.strictEqual(stateStore.loadState().selectedEnergy, null);
+
 console.log(`Validated ${workouts.exerciseCatalog.length} exercises and workout lifecycle regression cases.`);

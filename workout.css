@@ -1594,3 +1594,145 @@ body.workout-active .bottom-nav {
     margin-bottom: var(--space-6);
   }
 }
+
+/* Today energy check */
+html.today-active,
+body.today-active {
+  overflow: hidden;
+}
+
+body.today-active .app {
+  min-height: 100dvh;
+}
+
+body.today-active .topbar {
+  position: relative;
+  z-index: 3;
+  justify-content: flex-end;
+}
+
+body.today-active .brand-block {
+  display: none;
+}
+
+body.today-active #today {
+  position: relative;
+  min-height: calc(100dvh - 84px - env(safe-area-inset-bottom));
+}
+
+.energy-check-screen {
+  position: relative;
+  z-index: 1;
+}
+
+.energy-grid {
+  position: relative;
+  z-index: 2;
+  width: calc(100% + (2 * var(--screen-x)));
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin: 0 calc(-1 * var(--screen-x));
+  padding: 0 18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-padding-inline: 18px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-inline: contain;
+  touch-action: pan-x;
+}
+
+.energy-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.energy-option,
+.energy-option[data-feel] {
+  width: 116px;
+  min-width: 116px;
+  max-width: 116px;
+  height: 52px;
+  min-height: 52px;
+  flex: 0 0 116px;
+  padding: 0 18px;
+  border: 1px solid var(--main);
+  border-radius: 20px;
+  background: #ffffff;
+  color: var(--main);
+}
+
+.energy-option span {
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.energy-option.selected,
+.energy-option[aria-pressed="true"] {
+  border-color: var(--main);
+  background: var(--main);
+  color: #ffffff;
+}
+
+.today-mascot-stage {
+  position: fixed;
+  top: 64px;
+  bottom: 0;
+  left: 50%;
+  z-index: 0;
+  width: min(100vw, var(--app-width));
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.today-mascot {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 640px;
+  height: 682px;
+  max-width: none;
+  object-fit: fill;
+  transform: translateX(-50%);
+}
+
+.activity-counter-reserved {
+  display: none !important;
+}
+
+.generated-workout-modal {
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.generated-workout-modal > p {
+  margin-bottom: 20px;
+}
+
+.preview-add-on-panel {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 32px;
+}
+
+.preview-add-on-panel .add-on-row {
+  height: 42px;
+  min-height: 42px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.preview-add-on-panel .add-on-row i {
+  width: 16px;
+  height: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .energy-grid {
+    scroll-behavior: auto;
+  }
+}
