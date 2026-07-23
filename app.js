@@ -57,12 +57,12 @@ let energyPointerStart = null;
 let energyScrollGesture = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support']);
-const TODAY_PREVIEW_DELAY_MS = 2250;
+const TODAY_PREVIEW_DELAY_MS = 1100;
 const TODAY_REDUCED_PREVIEW_DELAY_MS = 600;
 const TODAY_MASCOT_FRAME_A_MS = 3200;
-const TODAY_MASCOT_FRAME_B_MS = 1200;
-const TODAY_MASCOT_REACTION_B_MS = 250;
-const TODAY_MASCOT_REACTION_A_MS = 1200;
+const TODAY_MASCOT_FRAME_B_MS = 650;
+const TODAY_MASCOT_REACTION_B_MS = 90;
+const TODAY_MASCOT_REACTION_A_MS = 520;
 const TODAY_MASCOT_FRAMES = {
   empty: ['Assets/EnergyCheck/empty-state-a.svg', 'Assets/EnergyCheck/empty-state-b.svg'],
   great: ['Assets/EnergyCheck/great-a.svg', 'Assets/EnergyCheck/great-b.svg'],

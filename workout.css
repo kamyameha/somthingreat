@@ -1682,32 +1682,27 @@ body.today-active #today {
 
 .today-mascot-stage {
   position: fixed;
-  top: 0;
-  left: 50%;
+  inset: 0;
   z-index: 0;
-  width: 393px;
-  height: 852px;
-  overflow: visible;
+  overflow: hidden;
   pointer-events: none;
-  transform: translateX(-50%);
-  transform-origin: center center;
 }
 
 .today-mascot {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 393px;
-  height: 852px;
+  top: 50%;
+  left: 50%;
+  width: auto;
+  height: 987px;
   max-width: none;
-  object-fit: fill;
-  transform: none;
-  transform-origin: center center;
+  max-height: none;
+  transform: scale(0.97) translate(-433.756px, -493.44px);
+  transform-origin: top left;
 }
 
 .today-mascot-frame {
   opacity: 0;
-  transition: opacity 700ms cubic-bezier(0.45, 0, 0.55, 1);
+  transition: opacity 320ms cubic-bezier(0.45, 0, 0.55, 1);
   will-change: opacity;
 }
 
