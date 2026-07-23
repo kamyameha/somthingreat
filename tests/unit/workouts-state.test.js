@@ -120,9 +120,10 @@ const activeWeekHistory = [
 ];
 assert.strictEqual(workouts.consecutiveActiveWeeks(activeWeekHistory, new Date('2026-01-14T12:00:00')), 3);
 assert.strictEqual(workouts.consecutiveActiveWeeks(activeWeekHistory.slice(0, 2), new Date('2026-01-14T12:00:00')), 2, 'current-week grace');
-assert.deepStrictEqual(Array.from(workouts.getRotation(null, {}).map(item => item.name)), ['Push', 'Legs & core', 'Pull', 'Skills']);
+assert.deepStrictEqual(Array.from(workouts.getRotation(null, {}).map(item => item.name)), ['Push', 'Lower Body', 'Pull', 'Skills']);
 const rotationCases = [
   ['Push', 1],
+  ['Lower Body', 2],
   ['Legs & core', 2],
   ['Legs + Core', 2],
   ['Pull', 3],
@@ -137,7 +138,8 @@ const rotationHistory = [
   { date: '2026-07-20T11:00:00Z', workout: 'Pull', type: 'workout', completedCount: 1 }
 ];
 assert.strictEqual(workouts.nextRotationIndexFromHistory(rotationHistory, 0), 3, 'latest same-day workout wins and counters are ignored');
-assert.strictEqual(workouts.getTodayWorkout({ mode: 'normal', state: { rotationIndex: 2, history: [rotationHistory[0]], levels: workouts.createDefaultLevels() }, profile: { goal: 'pullup', equipment: ['floor'] } }).workoutName, 'Legs & core', 'history overrides stale index');
+assert.strictEqual(workouts.getTodayWorkout({ mode: 'normal', state: { rotationIndex: 2, history: [rotationHistory[0]], levels: workouts.createDefaultLevels() }, profile: { goal: 'pullup', equipment: ['floor'] } }).workoutName, 'Lower Body', 'history overrides stale index');
+assert.strictEqual(workouts.workoutDisplayName('Legs & core'), 'Lower Body', 'legacy workout names use the new display label');
 const generalLevels = workouts.createDefaultLevels();
 assert.strictEqual(workouts.getGeneralFitnessProgress(generalLevels).completedStages, 0);
 ['horizontalPush', 'verticalPull', 'squat', 'antiExtension'].forEach(key => {
@@ -440,6 +442,10 @@ assert.ok(indexSource.includes('focusProgressDots'));
 assert.ok(indexSource.includes('focusNextMilestone'));
 assert.ok(indexSource.includes('authLoadingScreen'));
 assert.ok(indexSource.includes('activity-summary-line focus-next-milestone'));
+assert.strictEqual((indexSource.match(/id="onboardingConfirmation"/g) || []).length, 1);
+assert.ok(indexSource.includes("<h2>You're set.</h2>"));
+assert.ok(indexSource.includes("Choose today's energy to generate a workout."));
+assert.ok(indexSource.includes('class="today-recovery-modal hidden"'));
 assert.ok(appSource.includes('if (!authResolved)'));
 assert.ok(appSource.includes("querySelectorAll('.welcome-star')"));
 assert.ok(indexSource.includes('Mastering skills'));

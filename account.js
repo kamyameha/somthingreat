@@ -1,5 +1,6 @@
 (function () {
   const SOUND_KEY = 'somthingreat-timer-sound';
+  const workoutModule = window.SomthingreatWorkouts;
 
   function escapeHTML(value = '') {
     return String(value).replace(/[&<>"']/g, char => ({
@@ -61,7 +62,7 @@
       ? monthItems.map(item => {
         const label = item.type === 'custom'
           ? `${item.workout || 'Custom checklist'} · Custom checklist`
-          : `${item.workout || 'Workout'} · ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
+          : `${workoutModule.workoutDisplayName(item.workout || 'Workout')} · ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
         return `<div class="history-item"><strong>${escapeHTML(item.parsedDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</strong><span>${escapeHTML(label)}</span></div>`;
       }).join('')
       : '<p class="muted">No workouts completed this month yet.</p>';

@@ -363,6 +363,41 @@ body.account-active .app {
   -webkit-mask: url("Assets/x.svg") center / 26px 26px no-repeat;
 }
 
+.account-panel.account-modal.account-main-mode .menu-close-btn,
+.account-submenu-panel .menu-close-btn,
+.today-recovery-modal .menu-close-btn {
+  min-width: 26px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0;
+  line-height: 0;
+}
+
+.account-panel.account-modal.account-main-mode .menu-close-btn,
+.account-submenu-panel .menu-close-btn {
+  color: #ffffff;
+}
+
+.today-recovery-modal .menu-close-btn {
+  color: var(--main);
+}
+
+.account-panel.account-modal.account-main-mode .menu-close-btn::before,
+.account-submenu-panel .menu-close-btn::before,
+.today-recovery-modal .menu-close-btn::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 26px;
+  background: currentColor;
+  mask: url("Assets/x.svg") center / 26px 26px no-repeat;
+  -webkit-mask: url("Assets/x.svg") center / 26px 26px no-repeat;
+}
+
 .account-submenu-panel #accountGoalView,
 .account-submenu-panel #accountEquipmentView,
 .account-submenu-panel #accountRecoveryView,

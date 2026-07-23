@@ -74,6 +74,58 @@
   mask: url("Assets/x.svg") center / 26px 26px no-repeat;
 }
 
+.today-recovery-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  width: 100vw;
+  height: 100dvh;
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(var(--space-5) + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: var(--main);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.today-recovery-modal.hidden {
+  display: none !important;
+}
+
+.today-recovery-close {
+  position: absolute;
+  top: calc(var(--space-5) + env(safe-area-inset-top));
+  right: var(--screen-x);
+  color: var(--main);
+}
+
+.today-recovery-content {
+  width: 100%;
+  max-width: 353px;
+}
+
+#energyCard .today-recovery-content h2,
+.today-recovery-content h2 {
+  margin: 0 48px 24px 0;
+  padding: 0;
+  color: var(--main);
+  font-size: 40px;
+  line-height: 1.08;
+  font-weight: 700;
+}
+
+#energyCard .today-recovery-content p,
+.today-recovery-content p {
+  margin: 0;
+  padding: 0;
+  color: var(--main);
+  font-size: 18px;
+  line-height: 1.3;
+  font-weight: 400;
+}
+
 .energy-grid {
   display: grid;
   grid-template-columns: repeat(2, 172px);

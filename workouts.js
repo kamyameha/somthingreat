@@ -1989,7 +1989,7 @@
     const skillTrack = getGoalTrackKey(goal, profile, state);
     return [
       { name: 'Push', tracks: ['horizontalPush', 'dipStrength', 'antiExtension', 'verticalPush'] },
-      { name: 'Legs & core', tracks: ['squat', 'posteriorChain', 'compression', 'unilateral', 'calves'] },
+      { name: 'Lower Body', tracks: ['squat', 'posteriorChain', 'compression', 'unilateral', 'calves'] },
       { name: 'Pull', tracks: ['horizontalPull', 'verticalPull', 'antiExtension', 'scapularPull'] },
       {
         name: 'Skills',
@@ -2002,10 +2002,14 @@
   function rotationIndexForWorkoutName(name) {
     const normalized = String(name || '').trim().toLowerCase().replace(/\s*\+\s*/g, ' & ');
     if (normalized === 'push') return 0;
-    if (['legs', 'legs & core'].includes(normalized)) return 1;
+    if (['lower body', 'legs', 'legs & core'].includes(normalized)) return 1;
     if (normalized === 'pull') return 2;
     if (normalized === 'skills') return 3;
     return -1;
+  }
+
+  function workoutDisplayName(name = '') {
+    return rotationIndexForWorkoutName(name) === 1 ? 'Lower Body' : String(name || '');
   }
 
   function nextRotationIndexFromHistory(history = [], fallbackIndex = 0) {
@@ -2447,7 +2451,7 @@
     const fillByWorkout = {
       Push: ['horizontalPush', 'dipStrength', 'antiExtension', 'verticalPush', 'squat'],
       Pull: ['horizontalPull', 'verticalPull', 'antiExtension', 'scapularPull', 'posteriorChain'],
-      'Legs & core': ['squat', 'posteriorChain', 'compression', 'unilateral', 'calves', 'antiExtension'],
+      'Lower Body': ['squat', 'posteriorChain', 'compression', 'unilateral', 'calves', 'antiExtension'],
       Skills: ['pistolSquat', 'handstandPushup', 'antiExtension', 'handstand', 'lsit', 'verticalPull', 'horizontalPull', 'posteriorChain']
     };
     const selected = [];
@@ -2905,6 +2909,7 @@
     getTracks,
     getRotation,
     rotationIndexForWorkoutName,
+    workoutDisplayName,
     nextRotationIndexFromHistory,
     getGoalTrackKey,
     getMuscleUpGate,

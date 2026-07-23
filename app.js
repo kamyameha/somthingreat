@@ -1052,6 +1052,11 @@ function renderToday() {
       : 'Start with how you feel today, and Somthingreat will shape the workout from there.';
     document.getElementById('todayInfoAction')?.classList.toggle('hidden', !shouldShowAdvice);
     emptyState.classList.toggle('hidden', !shouldShowAdvice);
+    emptyState.setAttribute('aria-hidden', shouldShowAdvice ? 'false' : 'true');
+    const appShell = document.querySelector('.app');
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (appShell) appShell.inert = shouldShowAdvice;
+    if (bottomNav) bottomNav.inert = shouldShowAdvice;
   }
 
   if (todayIsActive && !todayMascotTimer && !todayReactionTimers.length) startTodayMascotIdle();
@@ -1445,7 +1450,7 @@ function renderGeneratedWorkout() {
   document.getElementById('energyCard').classList.remove('hidden');
   document.getElementById('generatedWorkoutCard').classList.remove('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
-  document.getElementById('workoutName').textContent = generated.workoutName;
+  document.getElementById('workoutName').textContent = workoutModule.workoutDisplayName(generated.workoutName);
   document.getElementById('workoutMeta').textContent = workoutToolSummary(generated);
 
   const warmupInput = document.getElementById('includeWarmup');
@@ -3270,7 +3275,7 @@ function renderActivity() {
       const dateLabel = item.parsedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
       const label = item.type === 'custom'
         ? `${item.workout || 'Custom checklist'} - Custom`
-        : `${item.workout || 'Workout'} - ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
+        : `${workoutModule.workoutDisplayName(item.workout || 'Workout')} - ${energyOptions[item.mode]?.title || item.mode || 'Done'}`;
       const exercises = Array.isArray(item.exercises) ? item.exercises : [];
       const exerciseRows = exercises.map(exercise => {
         const detail = activityExerciseDetail(exercise);
