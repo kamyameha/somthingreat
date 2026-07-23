@@ -1719,7 +1719,7 @@ body.today-active #today {
   min-height: 52px;
   flex: 0 0 172px;
   padding: 0 18px;
-  border: 1px solid var(--main);
+  border: 1px solid transparent;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.65);
   color: var(--main);
@@ -1733,7 +1733,7 @@ body.today-active #today {
 
 .energy-option.selected,
 .energy-option[aria-pressed="true"] {
-  border: 1px solid #ffffff;
+  border-color: transparent;
   background: var(--accent);
   color: var(--main);
 }
