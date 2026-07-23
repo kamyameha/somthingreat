@@ -1721,7 +1721,7 @@ body.today-active #today {
   padding: 0 18px;
   border: 1px solid var(--main);
   border-radius: 20px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.65);
   color: var(--main);
 }
 
@@ -1734,8 +1734,14 @@ body.today-active #today {
 .energy-option.selected,
 .energy-option[aria-pressed="true"] {
   border: 1px solid #ffffff;
-  background: var(--main);
-  color: #ffffff;
+  background: var(--accent);
+  color: var(--main);
+}
+
+.energy-option:not(.selected):not([aria-pressed="true"]),
+.energy-option:not(.selected):not([aria-pressed="true"]):active {
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--main);
 }
 
 .today-mascot-stage {
