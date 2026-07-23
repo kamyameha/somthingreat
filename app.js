@@ -609,10 +609,10 @@ function setThemeColor(color = '#ffffff') {
 
 function syncScreenThemeColor() {
   const root = document.documentElement;
+  const isConfirmationScreen = root.classList.contains('confirmation-active');
   const isBlueScreen = root.classList.contains('onboarding-active') ||
-    root.classList.contains('confirmation-active') ||
     root.classList.contains('account-active');
-  setThemeColor(isBlueScreen ? '#012ded' : '#ffffff');
+  setThemeColor(isConfirmationScreen ? '#D2F672' : isBlueScreen ? '#012ded' : '#ffffff');
 }
 
 function setAccountActive(active) {

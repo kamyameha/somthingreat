@@ -1,6 +1,7 @@
 :root {
   --bg: #ffffff;
   --main: #012ded;
+  --accent: #D2F672;
   --card: #ffffff;
   --soft: rgba(1, 45, 237, 0.08);
   --border: rgba(1, 45, 237, 0.16);
@@ -497,7 +498,7 @@ button:disabled {
 
 .confirm-panel.workout-completion-panel {
   padding: 24px;
-  background: var(--main);
+  background: var(--accent);
 }
 
 .workout-completion-panel .confirm-card {
@@ -508,15 +509,15 @@ button:disabled {
   padding: 24px;
   border: 0;
   border-radius: 0;
-  background: var(--main);
+  background: var(--accent);
   box-shadow: none;
-  color: #ffffff;
+  color: var(--main);
   text-align: center;
 }
 
 .workout-completion-panel .confirm-card h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--main);
   font-size: 40px;
   line-height: 1.1;
   font-weight: 700;
@@ -525,7 +526,7 @@ button:disabled {
 .workout-completion-panel .confirm-card p {
   max-width: 353px;
   margin: 24px auto 0;
-  color: #ffffff;
+  color: var(--main);
   font-size: 18px;
   line-height: 1.2;
   font-weight: 400;
@@ -553,15 +554,15 @@ button:disabled {
 }
 
 .workout-completion-panel .confirm-actions .primary-btn {
-  border-color: #ffffff;
-  background: #ffffff;
-  color: var(--main);
+  border-color: var(--main);
+  background: var(--main);
+  color: var(--accent);
 }
 
 .workout-completion-panel .confirm-actions .ghost-btn {
-  border-color: #ffffff;
+  border-color: var(--main);
   background: transparent;
-  color: #ffffff;
+  color: var(--main);
 }
 
 .confirm-card {
@@ -612,7 +613,7 @@ body.onboarding-active {
 html.confirmation-active,
 html.confirmation-active body,
 body.confirmation-active {
-  background: var(--main);
+  background: var(--accent);
 }
 
 html.onboarding-active::before,
@@ -628,6 +629,11 @@ body.confirmation-active::before {
   background: var(--main);
   pointer-events: none;
   z-index: 10000;
+}
+
+html.confirmation-active::before,
+body.confirmation-active::before {
+  background: var(--accent);
 }
 
 body.onboarding-active .topbar,
@@ -1290,7 +1296,7 @@ body.onboarding-active .app {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #b2b4b8;
+  color: var(--accent);
   font-size: 16px;
   font-weight: 500;
 }
@@ -1521,7 +1527,7 @@ textarea::placeholder {
   border: 0;
   border-radius: 21px;
   background: transparent;
-  color: #8f9299;
+  color: var(--accent);
   font-size: 14px;
   font-weight: 500;
   line-height: 1;
@@ -1942,7 +1948,7 @@ label:active,
 .nav-btn:not(.active):focus-visible,
 .nav-btn:not(.active):active {
   background: transparent !important;
-  color: #8f9299 !important;
+  color: var(--accent) !important;
   box-shadow: none !important;
 }
 

@@ -689,8 +689,8 @@ body.workout-active .bottom-nav {
 
 .workout-accordion-card.completed .exercise-chip-toggle {
   border-color: var(--main);
-  background: var(--main);
-  color: #ffffff;
+  background: var(--accent);
+  color: var(--main);
 }
 
 .workout-accordion-card.completed .exercise-chip-toggle i {
