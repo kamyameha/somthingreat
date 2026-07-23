@@ -146,7 +146,7 @@ h3 {
 .app {
   max-width: var(--app-width);
   margin: 0 auto;
-  padding: var(--space-5) var(--screen-x) calc(74px + env(safe-area-inset-bottom));
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(74px + env(safe-area-inset-bottom));
 }
 
 .topbar {
@@ -1302,7 +1302,7 @@ body.onboarding-active .app {
   }
 
   .app {
-    padding-top: var(--space-6);
+    padding-top: calc(var(--space-6) + env(safe-area-inset-top));
   }
 
   .topbar {

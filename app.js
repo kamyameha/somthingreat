@@ -2856,9 +2856,6 @@ function openAccountMain() {
   const loggedIn = document.getElementById('loggedInAccount');
   if (!panel || !currentUser) return;
 
-  resetTodaySession();
-  document.documentElement.classList.remove('today-active');
-  document.body.classList.remove('today-active');
   hideNormalAppChrome();
   hideAccountSubmenuPanel();
   hideAllAccountViews();
@@ -2900,9 +2897,6 @@ function openAccountSubmenu(view) {
   const submenuContent = document.getElementById('accountSubmenuContent');
   if (!submenuPanel || !submenuContent || !currentUser) return;
 
-  resetTodaySession();
-  document.documentElement.classList.remove('today-active');
-  document.body.classList.remove('today-active');
   hideNormalAppChrome();
   hideAllAccountViews();
   hideAccountMainPanel();
