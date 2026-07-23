@@ -28,6 +28,10 @@ const recoveryAuthClient = SUPABASE_READY
 let currentUser = null;
 let currentProfileId = null;
 let authResolved = false;
+let authLoadingStartedAt = Date.now();
+let authenticatedAppReadyPromise = null;
+let preparedAuthUserId = null;
+let todayMascotPreloadPromise = null;
 let syncTimer = null;
 let welcomeDismissed = false;
 let waitingServiceWorker = null;
@@ -57,7 +61,8 @@ let energyPointerStart = null;
 let energyScrollGesture = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support']);
-const TODAY_PREVIEW_DELAY_MS = 700;
+const AUTH_LOADING_MIN_MS = 450;
+const TODAY_PREVIEW_DELAY_MS = 900;
 const TODAY_REDUCED_PREVIEW_DELAY_MS = 600;
 const TODAY_MASCOT_FRAME_MS = 600;
 const TODAY_MASCOT_REACTION_B_MS = 200;
@@ -268,6 +273,48 @@ function setAuthResolved(resolved = true) {
   document.getElementById('authLoadingScreen')?.setAttribute('aria-hidden', authResolved ? 'true' : 'false');
 }
 
+function beginAuthLoading() {
+  authLoadingStartedAt = Date.now();
+  setAuthResolved(false);
+}
+
+function waitForReadyPaint() {
+  return new Promise(resolve => {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+  });
+}
+
+async function revealPreparedApp() {
+  await preloadTodayMascots();
+  renderAll();
+  await waitForReadyPaint();
+  const remaining = AUTH_LOADING_MIN_MS - (Date.now() - authLoadingStartedAt);
+  if (remaining > 0) await new Promise(resolve => window.setTimeout(resolve, remaining));
+  setAuthResolved(true);
+}
+
+async function prepareAuthenticatedApp() {
+  if (!currentUser || passwordRecoveryMode) return;
+  if (preparedAuthUserId === currentUser.id && authResolved) return;
+  if (authenticatedAppReadyPromise) return authenticatedAppReadyPromise;
+
+  const userId = currentUser.id;
+  beginAuthLoading();
+  authenticatedAppReadyPromise = (async () => {
+    try {
+      await withTimeout(loadCloudState(), 12000, 'Cloud sync is taking too long. Local progress is still available.');
+    } catch (error) {
+      setSyncStatus(error.message || 'Could not load progress. Local progress is still available.');
+    }
+    await revealPreparedApp();
+    if (currentUser?.id === userId) preparedAuthUserId = userId;
+  })().finally(() => {
+    authenticatedAppReadyPromise = null;
+  });
+
+  return authenticatedAppReadyPromise;
+}
+
 function setupStarAnimation() {
   const stars = Array.from(document.querySelectorAll('.welcome-star'));
   if (!stars.length) return;
@@ -292,10 +339,14 @@ function prefersReducedMotion() {
 }
 
 function preloadTodayMascots() {
-  Object.values(TODAY_MASCOT_FRAMES).flat().forEach(src => {
+  if (todayMascotPreloadPromise) return todayMascotPreloadPromise;
+  todayMascotPreloadPromise = Promise.all(Object.values(TODAY_MASCOT_FRAMES).flat().map(src => new Promise(resolve => {
     const image = new Image();
+    image.onload = resolve;
+    image.onerror = resolve;
     image.src = src;
-  });
+  })));
+  return todayMascotPreloadPromise;
 }
 
 function clearTodayMascotTimers() {
@@ -3244,8 +3295,7 @@ function renderActivity() {
 
 async function initCloudSync() {
   if (!supabaseClient) {
-    setAuthResolved(true);
-    renderAll();
+    await revealPreparedApp();
     return;
   }
 
@@ -3268,12 +3318,13 @@ async function initCloudSync() {
     if (currentUser) await loadCloudState();
   }
 
-	  setAuthResolved(true);
-	  renderAll();
+	  await revealPreparedApp();
+	  if (currentUser) preparedAuthUserId = currentUser.id;
 
 	  supabaseClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session?.user || null;
     currentProfileId = null;
+    if (event === 'SIGNED_OUT') preparedAuthUserId = null;
     if (event === 'PASSWORD_RECOVERY') passwordRecoveryMode = true;
     if (hasRecoveryBootFlag()) passwordRecoveryMode = true;
     if (event === 'SIGNED_IN' && !passwordRecoveryMode) passwordRecoveryMode = false;
@@ -3285,8 +3336,11 @@ async function initCloudSync() {
       if (!currentUser) await ensureRecoverySession();
     }
 
-	    // Do not block the UI on cloud sync. If Supabase profile/state loading is slow,
-	    // users must still leave the auth screen instead of staying on “Logging in...”.
+	    if (event === 'SIGNED_IN' && currentUser && !passwordRecoveryMode) {
+	      await prepareAuthenticatedApp();
+	      return;
+	    }
+
 	    setAuthResolved(true);
 	    renderAll();
 	    if (currentUser && !passwordRecoveryMode) loadCloudStateInBackground();
@@ -3340,9 +3394,9 @@ async function login() {
       currentProfileId = null;
 
       setAuthMessage('Logged in. Loading your progress...', 'success');
-      renderAll();
-      loadCloudStateInBackground();
+      await prepareAuthenticatedApp();
     } catch (error) {
+      setAuthResolved(true);
       setAuthMessage(error.message || 'Login failed. Please try again.', 'error');
     }
   });

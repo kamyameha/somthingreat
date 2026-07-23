@@ -1683,11 +1683,20 @@ body.today-active #today {
 }
 
 .today-mascot-stage {
+  display: none;
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: visible;
   pointer-events: none;
+}
+
+body.today-active .today-mascot-stage {
+  display: block;
+}
+
+html.auth-loading .today-mascot-stage {
+  display: none !important;
 }
 
 .today-mascot {

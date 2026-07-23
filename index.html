@@ -26,18 +26,23 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.23.105221" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.23.105221" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.23.105221" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.23.105221" />
-  <link rel="stylesheet" href="account.css?v=2026.07.23.105221" />
+  <link rel="stylesheet" href="style.css?v=2026.07.23.110410" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.23.110410" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.23.110410" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.23.110410" />
+  <link rel="stylesheet" href="account.css?v=2026.07.23.110410" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
 </head>
 <body>
   <section id="authLoadingScreen" class="auth-loading-screen" aria-label="Loading">
-    <img class="welcome-star auth-loading-star" src="Assets/Animations/start1.png" alt="" />
+    <div class="auth-loading-content">
+      <img class="auth-loading-logo" src="Assets/somthingreat.svg" alt="Somthingreat" />
+      <div class="auth-loading-progress" role="progressbar" aria-label="Loading">
+        <span></span>
+      </div>
+    </div>
   </section>
 
   <section id="welcomeScreen" class="welcome-screen">
@@ -57,6 +62,10 @@
       </div>
     </div>
   </section>
+
+  <div class="today-mascot-stage" aria-hidden="true">
+    <img id="todayMascot" class="today-mascot" src="Assets/EnergyCheck/empty-state-a.svg" alt="" />
+  </div>
 
   <main class="app">
     <header class="topbar">
@@ -372,9 +381,6 @@
           <button class="feel-btn energy-option" type="button" data-feel="tired" aria-pressed="false"><span>Tired</span></button>
           <button class="feel-btn energy-option" type="button" data-feel="exhausted" aria-pressed="false"><span>Exhausted</span></button>
         </div>
-        <div class="today-mascot-stage" aria-hidden="true">
-          <img id="todayMascot" class="today-mascot" src="Assets/EnergyCheck/empty-state-a.svg" alt="" />
-        </div>
       </section>
 
       <section id="customChecklistCard" class="custom-checklist-card activity-counter-reserved hidden">
@@ -536,12 +542,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.23.105221"></script>
-  <script src="workouts.js?v=2026.07.23.105221"></script>
-  <script src="state.js?v=2026.07.23.105221"></script>
-  <script src="account.js?v=2026.07.23.105221"></script>
-  <script src="render.js?v=2026.07.23.105221"></script>
-  <script src="app-version.js?v=2026.07.23.105221"></script>
-  <script src="app.js?v=2026.07.23.105221"></script>
+  <script src="auth.js?v=2026.07.23.110410"></script>
+  <script src="workouts.js?v=2026.07.23.110410"></script>
+  <script src="state.js?v=2026.07.23.110410"></script>
+  <script src="account.js?v=2026.07.23.110410"></script>
+  <script src="render.js?v=2026.07.23.110410"></script>
+  <script src="app-version.js?v=2026.07.23.110410"></script>
+  <script src="app.js?v=2026.07.23.110410"></script>
 </body>
 </html>
