@@ -1599,12 +1599,16 @@ body.workout-active .bottom-nav {
 html.today-active,
 body.today-active {
   background: #ffffff;
-  overflow: hidden;
+  overflow: visible;
+  overscroll-behavior: none;
 }
 
 body.today-active .app {
+  height: 100dvh;
   min-height: 100dvh;
+  padding-top: calc(var(--space-5) + env(safe-area-inset-top));
   background: #ffffff;
+  overflow: hidden;
 }
 
 body.today-active .topbar {
@@ -1686,6 +1690,8 @@ body.today-active #today {
   display: none;
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100dvh;
   z-index: 0;
   overflow: visible;
   pointer-events: none;
