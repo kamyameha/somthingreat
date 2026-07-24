@@ -645,6 +645,18 @@ body.workout-active #today.active {
   gap: 0;
 }
 
+.workout-safe-area {
+  display: none;
+}
+
+body.workout-active .workout-safe-area {
+  display: block;
+  flex: 0 0 env(safe-area-inset-top);
+  width: 100%;
+  height: env(safe-area-inset-top);
+  background: #ffffff;
+}
+
 .workout-accordion-card {
   flex: 0 0 var(--workout-collapsed-height);
   width: 100%;
@@ -1904,27 +1916,12 @@ body.workout-active .app {
   width: 100%;
   max-width: none;
   padding-inline: 0;
-  background:
-    linear-gradient(
-      to bottom,
-      #ffffff 0,
-      #ffffff env(safe-area-inset-top),
-      #000000 env(safe-area-inset-top),
-      #000000 100%
-    ) !important;
+  background: #000000 !important;
 }
 
 html.workout-active .today-mascot-stage,
 body.workout-active .today-mascot-stage {
   display: none !important;
-}
-
-#exerciseList > .workout-accordion-card:first-child:not(.open) .exercise-chip-toggle {
-  padding-top: env(safe-area-inset-top);
-}
-
-#exerciseList > .workout-accordion-card:first-child.open .exercise-card-body {
-  padding-top: max(clamp(24px, 5vh, 48px), calc(env(safe-area-inset-top) + 20px));
 }
 
 .today-mascot {
