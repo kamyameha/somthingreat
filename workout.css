@@ -622,6 +622,15 @@ body.workout-active .bottom-nav {
   display: none !important;
 }
 
+.workout-active .today-mascot-stage {
+  display: none !important;
+}
+
+.workout-started-title {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
 .workout-started-title p {
   margin: 0 0 18px;
   padding-top: var(--space-5);
@@ -775,6 +784,12 @@ body.workout-active #today.active {
 
 .workout-accordion-card .active-swap-btn {
   flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: 24px;
+  max-height: 24px;
   background-color: var(--main);
 }
 

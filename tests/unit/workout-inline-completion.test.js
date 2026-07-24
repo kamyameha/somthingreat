@@ -72,6 +72,7 @@ assert.match(html, /id="completeBtn"[^>]*>Complete<\/button>/);
 assert.match(functionSource('renderWorkoutCompletionTile'), /if \(!tile\) \{\s*tile = document\.createElement\('section'\)/s);
 assert.match(functionSource('completeWorkout'), /openInlineWorkoutCompletion\(\)/);
 assert.doesNotMatch(functionSource('completeWorkout'), /showCompletionScreen/);
+assert.doesNotMatch(functionSource('completeWorkout'), /renderToday|completeWorkoutNow|completeWorkoutWithoutProgress/);
 assert.match(appSource, /if \(action === 'save' \|\| action === 'finish'\) completeWorkoutNow\(false\)/);
 assert.match(appSource, /if \(isWorkoutFullyComplete\(\)\) \{\s*workoutCompletionState = \{\s*mode: 'full'/s);
 assert.match(functionSource('markWorkoutSetDone'), /if \(isWorkoutFullyComplete\(\)\) \{\s*workoutCompletionState = \{\s*mode: 'full'/s);
@@ -85,6 +86,12 @@ assert.match(workout, /\.workout-accordion-card\.completed \.exercise-chip-toggl
 assert.match(workout, /\.workout-accordion-card\.workout-warmup-card \.exercise-chip-toggle\s*\{[^}]*background:\s*#ffffff/s);
 assert.match(workout, /\.workout-accordion-card\.open\s*\{[^}]*flex:\s*1 0 auto/s);
 assert.match(workout, /\.workout-completion-tile\.open\s*\{[^}]*flex:\s*1 0 auto/s);
+assert.match(workout, /\.workout-active \.today-mascot-stage\s*\{[^}]*display:\s*none !important/s);
+assert.match(functionSource('renderExercises'), /classList\.remove\('today-active'\)/);
+assert.match(workout, /\.workout-started-title\s*\{[^}]*width:\s*100%/s);
+assert.match(workout, /\.workout-accordion-card \.active-swap-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
+assert.match(workout, /\.workout-accordion-card \.exercise-help-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
+assert.match(workout, /\.set-control\s*\{[^}]*width:\s*26px;[^}]*height:\s*26px/s);
 assert.match(workout, /\.workout-accordion-card \.rating-row\s*\{[^}]*background:\s*rgba\(1,\s*45,\s*237,\s*0\.15\)/s);
 assert.match(workout, /\.workout-accordion-card \.rating-row button\.selected\s*\{[^}]*background:\s*var\(--main\);[^}]*color:\s*#ffffff/s);
 

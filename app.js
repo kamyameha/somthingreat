@@ -1715,6 +1715,8 @@ function renderExercises() {
   document.getElementById('energyCard').classList.add('hidden');
   document.getElementById('generatedWorkoutCard').classList.add('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
+  document.documentElement.classList.remove('today-active');
+  document.body.classList.remove('today-active');
   document.documentElement.classList.add('workout-active');
   document.body.classList.add('workout-active');
   document.querySelector('.topbar')?.classList.add('hidden');
@@ -3833,13 +3835,17 @@ document.addEventListener('click', event => {
     renderExercises();
   }
 
-  if (event.target.id === 'completeBtn') completeWorkout();
+  if (event.target.id === 'completeBtn') {
+    completeWorkout();
+    return;
+  }
   const completionAction = event.target.closest('[data-workout-completion-action]');
   if (completionAction) {
     const action = completionAction.dataset.workoutCompletionAction;
     if (action === 'back') restoreWorkoutFromCompletion();
     if (action === 'save' || action === 'finish') completeWorkoutNow(false);
     if (action === 'discard') completeWorkoutWithoutProgress();
+    return;
   }
 
 	  if (event.target.id === 'accountBtn' && currentUser) openAccountModal();
