@@ -1058,6 +1058,11 @@ function togglePasswordVisibility(button) {
 }
 
 function renderToday() {
+  if (state.current) {
+    renderExercises();
+    return;
+  }
+
   const todayIsActive = document.getElementById('today')?.classList.contains('active');
   document.documentElement.classList.remove('workout-active');
   document.body.classList.remove('workout-active');
@@ -1066,16 +1071,8 @@ function renderToday() {
   if (todayIsActive) setThemeColor('#ffffff');
   document.querySelector('.topbar')?.classList.remove('hidden');
   document.getElementById('exerciseList').innerHTML = '';
-  document.getElementById('completeBtn').classList.add('hidden');
+  document.getElementById('completeBtn')?.classList.add('hidden');
   hideCustomChecklistViews();
-
-  if (state.current) {
-    document.getElementById('energyCard').classList.add('hidden');
-    document.getElementById('generatedWorkoutCard').classList.add('hidden');
-    document.getElementById('exercisePreview').classList.add('hidden');
-    renderExercises();
-    return;
-  }
 
   if (state.generated) {
     document.getElementById('energyCard').classList.remove('hidden');
@@ -1724,11 +1721,6 @@ function renderExercises() {
 
   const list = document.getElementById('exerciseList');
   list.innerHTML = '';
-
-  const titleCard = document.createElement('div');
-  titleCard.className = 'workout-started-title';
-  titleCard.innerHTML = `<p>Today's workout</p>`;
-  list.appendChild(titleCard);
 
   state.current = sanitizeWorkout(state.current);
   if (!state.current) { renderToday(); return; }

@@ -607,13 +607,14 @@ body.workout-active {
 }
 
 body.workout-active .app {
-  width: min(393px, 100%);
+  width: 100%;
+  max-width: none;
   height: 100dvh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: 0 24px 48px;
-  background: transparent;
+  padding: 0;
+  background: #000000;
   overflow-y: auto;
 }
 
@@ -626,21 +627,8 @@ body.workout-active .bottom-nav {
   display: none !important;
 }
 
-.workout-started-title {
-  width: 100%;
-  flex: 0 0 auto;
-}
-
-.workout-started-title p {
-  margin: 0 0 18px;
-  padding-top: var(--space-5);
-  color: var(--main);
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.2;
-}
-
 body.workout-active #today.active {
+  width: 100%;
   min-height: 100%;
   display: flex;
   flex: 1 1 auto;
@@ -649,6 +637,7 @@ body.workout-active #today.active {
 
 #exerciseList {
   --workout-collapsed-height: 88px;
+  width: 100%;
   min-height: 0;
   display: flex;
   flex: 1 1 auto;
@@ -1897,6 +1886,23 @@ body.today-active .today-mascot-stage {
 }
 
 html.auth-loading .today-mascot-stage {
+  display: none !important;
+}
+
+html.workout-active,
+body.workout-active,
+body.workout-active .app {
+  background: #000000 !important;
+}
+
+body.workout-active .app {
+  width: 100%;
+  max-width: none;
+  padding-inline: 0;
+}
+
+html.workout-active .today-mascot-stage,
+body.workout-active .today-mascot-stage {
   display: none !important;
 }
 

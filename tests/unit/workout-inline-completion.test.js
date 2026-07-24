@@ -80,6 +80,7 @@ assert.match(functionSource('renderExercises'), /if \(!workoutCompletionState &&
 
 assert.match(workout, /--workout-collapsed-height:\s*88px/);
 assert.match(workout, /#exerciseList\s*\{[^}]*display:\s*flex;[^}]*gap:\s*0;/s);
+assert.match(workout, /#exerciseList\s*\{[^}]*width:\s*100%/s);
 assert.match(workout, /\.workout-accordion-card\s*\{[^}]*height:\s*var\(--workout-collapsed-height\)/s);
 assert.match(workout, /\.exercise-chip-toggle\s*\{[^}]*padding:\s*0 20px;/s);
 assert.match(workout, /\.workout-accordion-card\.completed \.exercise-chip-toggle\s*\{[^}]*background:\s*var\(--cream\)/s);
@@ -88,7 +89,21 @@ assert.match(workout, /\.workout-accordion-card\.open\s*\{[^}]*flex:\s*1 0 auto/
 assert.match(workout, /\.workout-completion-tile\.open\s*\{[^}]*flex:\s*1 0 auto/s);
 assert.match(workout, /\.workout-active \.today-mascot-stage\s*\{[^}]*display:\s*none !important/s);
 assert.match(functionSource('renderExercises'), /classList\.remove\('today-active'\)/);
-assert.match(workout, /\.workout-started-title\s*\{[^}]*width:\s*100%/s);
+assert.doesNotMatch(functionSource('renderExercises'), /Today's workout|workout-started-title/);
+const renderTodaySource = functionSource('renderToday');
+assert.ok(renderTodaySource.indexOf('if (state.current)') < renderTodaySource.indexOf('todayIsActive'));
+assert.match(renderTodaySource, /document\.getElementById\('completeBtn'\)\?\.classList\.add\('hidden'\)/);
+let activeWorkoutRenders = 0;
+const activeWorkoutContext = {
+  state: { current: { sessionId: 'active-workout' } },
+  renderExercises: () => { activeWorkoutRenders += 1; }
+};
+vm.createContext(activeWorkoutContext);
+vm.runInContext(`${renderTodaySource}; this.renderToday = renderToday;`, activeWorkoutContext);
+assert.doesNotThrow(() => activeWorkoutContext.renderToday());
+assert.equal(activeWorkoutRenders, 1);
+assert.match(workout, /body\.workout-active \.app\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*none;[^}]*padding:\s*0;[^}]*background:\s*#000000/s);
+assert.match(workout, /body\.workout-active \.app\s*\{[^}]*padding-inline:\s*0/s);
 assert.match(workout, /\.workout-accordion-card \.active-swap-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
 assert.match(workout, /\.workout-accordion-card \.exercise-help-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
 assert.match(workout, /\.set-control\s*\{[^}]*width:\s*26px;[^}]*height:\s*26px/s);
