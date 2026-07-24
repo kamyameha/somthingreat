@@ -26,6 +26,8 @@ assert.match(workout, /\.preview-add-on-panel\s*\{[^}]*margin:\s*48px 0;/s);
 assert.match(workout, /\.preview-add-on-panel \.add-on-row\s*\{[^}]*font-size:\s*16px;[^}]*font-weight:\s*400;/s);
 assert.match(workout, /\.preview-add-on-panel \.add-on-row i\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px;/s);
 assert.match(workout, /\.generated-close-btn\s*\{[^}]*width:\s*34px;[^}]*height:\s*34px;/s);
+assert.match(workout, /\.generated-close-btn::before\s*\{[^}]*display:\s*block;[^}]*align-self:\s*center;[^}]*justify-self:\s*center;/s);
+assert.match(workout, /\.generated-preview-list \.preview-row span\s*\{[^}]*color:\s*rgba\(1,\s*45,\s*237,\s*0\.35\)/s);
 assert.match(account, /\.today-recovery-modal \.menu-close-btn\s*\{[^}]*width:\s*34px;[^}]*height:\s*34px;/s);
 
 const modalBlackRules = workout.slice(

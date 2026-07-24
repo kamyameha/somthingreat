@@ -48,6 +48,7 @@ let timerInterval = null;
 let timerAutoClose = null;
 let activeTimer = null;
 let openExerciseTrackKey = null;
+let workoutCompletionState = null;
 let workoutWakeLock = null;
 let onboardingStep = 1;
 let onboardingConfirmationReady = false;
@@ -1594,6 +1595,7 @@ function startWorkout() {
     state.current.sets[exerciseKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
   });
   openExerciseTrackKey = exerciseSessionKey(state.current.exercises[0], 0) || null;
+  workoutCompletionState = null;
   state.generated = null;
   saveState();
   renderExercises();
@@ -1733,23 +1735,31 @@ function renderExercises() {
     sessionKey: exerciseSessionKey(exercise, index)
   }));
   requestWorkoutWakeLock();
-  if (!openExerciseTrackKey || !state.current.exercises.some(exercise => exerciseSessionKey(exercise) === openExerciseTrackKey)) {
+  if (!workoutCompletionState && isWorkoutFullyComplete()) {
+    workoutCompletionState = {
+      mode: 'full',
+      previousTrackKey: openExerciseTrackKey
+    };
+    openExerciseTrackKey = null;
+  }
+  if (!workoutCompletionState && (!openExerciseTrackKey || !state.current.exercises.some(exercise => exerciseSessionKey(exercise) === openExerciseTrackKey))) {
     openExerciseTrackKey = firstIncompleteExerciseKey();
   }
   state.current.exercises.forEach((exercise, index) => {
     const exerciseKey = exerciseSessionKey(exercise, index);
     const isOpen = exerciseKey === openExerciseTrackKey;
     const isComplete = isExerciseComplete(exercise);
+    const exerciseName = exerciseDisplayName(exercise);
     const chipPrescription = isComplete ? '' : `<em>${escapeHTML(exerciseChipPrescription(exercise))}</em>`;
     const card = document.createElement('div');
-    card.className = `exercise-card workout-accordion-card ${isOpen ? 'open' : ''} ${isComplete ? 'completed' : ''}`;
+    const isWarmup = exerciseName === 'Warm-up';
+    card.className = `exercise-card workout-accordion-card ${isOpen ? 'open' : ''} ${isComplete ? 'completed' : ''} ${isWarmup ? 'workout-warmup-card' : ''}`;
     card.dataset.track = exerciseKey;
     const selectedRating = state.current.ratings[exerciseKey];
     if (!state.current.sets) state.current.sets = {};
     if (!state.current.sets[exerciseKey]) state.current.sets[exerciseKey] = Array.from({ length: exercise.setCount || 1 }, () => false);
     const completedSets = state.current.sets[exerciseKey];
     const timedSeconds = state.current.includeExerciseTimer ? getTimedExerciseSeconds(exercise) : null;
-    const exerciseName = exerciseDisplayName(exercise);
     const setRows = Array.from({ length: exercise.setCount || completedSets.length || 1 }, (_, index) => {
       return setControlMarkup(exercise, exerciseKey, index, Boolean(completedSets[index]), timedSeconds);
     }).join('');
@@ -1783,8 +1793,85 @@ function renderExercises() {
     `;
     list.appendChild(card);
   });
-  document.getElementById('completeBtn').classList.remove('hidden');
+  renderWorkoutCompletionTile(list);
   restoreActiveWorkoutTimer();
+}
+
+function renderWorkoutCompletionTile(list) {
+  if (!list) return;
+  let tile = document.getElementById('workoutCompletionTile');
+  if (!tile) {
+    tile = document.createElement('section');
+    tile.id = 'workoutCompletionTile';
+    tile.className = 'workout-completion-tile';
+    tile.setAttribute('aria-live', 'polite');
+  }
+
+  tile.classList.remove('hidden', 'open', 'partial', 'full', 'empty');
+  if (!workoutCompletionState) {
+    tile.innerHTML = '<button id="completeBtn" class="workout-completion-trigger" type="button">Complete</button>';
+    list.appendChild(tile);
+    return;
+  }
+
+  const mode = workoutCompletionState.mode;
+  const content = mode === 'full'
+    ? {
+        title: 'Well done!',
+        message: 'You showed up and that counts. Your progress is saved.',
+        primaryLabel: 'Done',
+        primaryAction: 'finish'
+      }
+    : mode === 'empty'
+      ? {
+          title: 'Workout not completed',
+          message: 'If you complete this workout, as no exercise was marked as done, it will not count in your progress.',
+          primaryLabel: 'Complete',
+          primaryAction: 'discard'
+        }
+      : {
+          title: 'Almost there!',
+          message: 'Some items are unfinished and won’t be counted. Save this progress or go back to finish more.',
+          primaryLabel: 'Save progress',
+          primaryAction: 'save'
+        };
+
+  tile.classList.add('open', mode);
+  tile.innerHTML = `
+    <div class="workout-completion-content">
+      <h2>${escapeHTML(content.title)}</h2>
+      <p>${escapeHTML(content.message)}</p>
+      <div class="workout-completion-actions">
+        <button class="primary-btn" type="button" data-workout-completion-action="${content.primaryAction}">${escapeHTML(content.primaryLabel)}</button>
+        ${mode === 'full' ? '' : '<button class="ghost-btn" type="button" data-workout-completion-action="back">Go back</button>'}
+      </div>
+    </div>
+  `;
+  list.appendChild(tile);
+}
+
+function openInlineWorkoutCompletion() {
+  if (!state.current) return;
+  const previousTrackKey = openExerciseTrackKey || firstIncompleteExerciseKey();
+  const hasCompletedSet = (state.current.exercises || []).some(exercise => {
+    return !exercise.isAddOn && (state.current.sets?.[exerciseSessionKey(exercise)] || []).some(Boolean);
+  });
+  workoutCompletionState = {
+    mode: isWorkoutFullyComplete() ? 'full' : hasCompletedSet ? 'partial' : 'empty',
+    previousTrackKey
+  };
+  openExerciseTrackKey = null;
+  renderExercises();
+}
+
+function restoreWorkoutFromCompletion() {
+  if (!workoutCompletionState || !state.current) return;
+  const previousTrackKey = workoutCompletionState.previousTrackKey;
+  workoutCompletionState = null;
+  openExerciseTrackKey = (state.current.exercises || []).some(exercise => exerciseSessionKey(exercise) === previousTrackKey)
+    ? previousTrackKey
+    : firstIncompleteExerciseKey();
+  renderExercises();
 }
 function showConfirmPanel({ title, message, actionLabel, onConfirm }) {
   const panel = document.getElementById('confirmPanel');
@@ -1886,6 +1973,13 @@ function markWorkoutSetDone(trackKey, setIndex, done = true) {
     openNextIncompleteExercise(trackKey);
   } else {
     openExerciseTrackKey = trackKey;
+  }
+  if (isWorkoutFullyComplete()) {
+    workoutCompletionState = {
+      mode: 'full',
+      previousTrackKey: trackKey
+    };
+    openExerciseTrackKey = null;
   }
   saveState();
   renderExercises();
@@ -2030,31 +2124,7 @@ function isWorkoutFullyComplete() {
 
 function completeWorkout(skipMissingRatingConfirm = false) {
   if (!state.current) return;
-  const hasCompletedSet = (state.current.exercises || []).some(exercise => {
-    return !exercise.isAddOn && (state.current.sets?.[exerciseSessionKey(exercise)] || []).some(Boolean);
-  });
-  if (!hasCompletedSet) {
-    showCompletionScreen({
-      title: 'Workout not completed',
-      message: 'If you complete this workout, as no exercise was marked as done, it will not count in your progress.',
-      actionLabel: 'Complete',
-      cancelLabel: 'Go back',
-      onConfirm: completeWorkoutWithoutProgress
-    });
-    return;
-  }
-  if (!skipMissingRatingConfirm && !isWorkoutFullyComplete()) {
-    showCompletionScreen({
-      title: 'Almost there!',
-      message: 'Some items are unfinished and won’t be counted. Save this progress or go back to finish more.',
-      actionLabel: 'Save progress',
-      cancelLabel: 'Go back',
-      onConfirm: () => completeWorkoutNow(false)
-    });
-    return;
-  }
-
-  completeWorkoutNow();
+  openInlineWorkoutCompletion();
 }
 
 function completeWorkoutWithoutProgress() {
@@ -2063,6 +2133,7 @@ function completeWorkoutWithoutProgress() {
   state.selectedEnergy = null;
   state.generated = null;
   openExerciseTrackKey = null;
+  workoutCompletionState = null;
   releaseWorkoutWakeLock();
   saveState();
   renderToday();
@@ -2200,6 +2271,7 @@ function completeWorkoutNow(showFullConfirmation = true) {
   state.selectedEnergy = null;
   state.generated = null;
   openExerciseTrackKey = null;
+  workoutCompletionState = null;
   releaseWorkoutWakeLock();
   saveState();
   flushPendingSessionRecords();
@@ -3619,6 +3691,7 @@ document.addEventListener('click', event => {
 
   const exerciseToggle = event.target.closest('.exercise-chip-toggle');
   if (exerciseToggle) {
+    if (workoutCompletionState) return;
     const trackKey = exerciseToggle.dataset.track;
     openExerciseTrackKey = openExerciseTrackKey === trackKey ? null : trackKey;
     renderExercises();
@@ -3749,11 +3822,25 @@ document.addEventListener('click', event => {
     if (exercise && isExerciseComplete(exercise)) {
       openNextIncompleteExercise(row.dataset.track);
     }
+    if (isWorkoutFullyComplete()) {
+      workoutCompletionState = {
+        mode: 'full',
+        previousTrackKey: row.dataset.track
+      };
+      openExerciseTrackKey = null;
+    }
     saveState();
     renderExercises();
   }
 
   if (event.target.id === 'completeBtn') completeWorkout();
+  const completionAction = event.target.closest('[data-workout-completion-action]');
+  if (completionAction) {
+    const action = completionAction.dataset.workoutCompletionAction;
+    if (action === 'back') restoreWorkoutFromCompletion();
+    if (action === 'save' || action === 'finish') completeWorkoutNow(false);
+    if (action === 'discard') completeWorkoutWithoutProgress();
+  }
 
 	  if (event.target.id === 'accountBtn' && currentUser) openAccountModal();
 	  if (event.target.id === 'closeAccountModalBtn') closeAccountModal();

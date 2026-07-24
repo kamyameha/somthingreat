@@ -603,13 +603,18 @@
 }
 
 body.workout-active {
-  background: #ffffff;
+  background: #1e1e1e;
 }
 
 body.workout-active .app {
   width: min(393px, 100%);
+  height: 100dvh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   padding: 0 24px 48px;
-  background: #ffffff;
+  background: transparent;
+  overflow-y: auto;
 }
 
 body.workout-active .topbar,
@@ -626,13 +631,26 @@ body.workout-active .bottom-nav {
   line-height: 1.2;
 }
 
+body.workout-active #today.active {
+  min-height: 100%;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
 #exerciseList {
-  display: grid;
-  gap: 18px;
+  --workout-collapsed-height: 88px;
+  min-height: 0;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0;
 }
 
 .workout-accordion-card {
+  flex: 0 0 var(--workout-collapsed-height);
   width: 100%;
+  height: var(--workout-collapsed-height);
   margin: 0;
   padding: 0;
   border: 0;
@@ -643,15 +661,15 @@ body.workout-active .bottom-nav {
 
 .exercise-chip-toggle {
   width: 100%;
-  height: 46px;
-  min-height: 46px;
+  height: var(--workout-collapsed-height);
+  min-height: var(--workout-collapsed-height);
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 21px;
-  border: 1px solid var(--main);
+  padding: 0 20px;
+  border: 0;
   border-radius: 20px;
-  background: transparent;
+  background: #ffffff;
   color: var(--main);
   font-size: 18px;
   font-weight: 400;
@@ -688,9 +706,13 @@ body.workout-active .bottom-nav {
 }
 
 .workout-accordion-card.completed .exercise-chip-toggle {
-  border-color: var(--main);
-  background: var(--accent);
+  border-color: transparent;
+  background: var(--cream);
   color: var(--main);
+}
+
+.workout-accordion-card.workout-warmup-card .exercise-chip-toggle {
+  background: #ffffff;
 }
 
 .workout-accordion-card.completed .exercise-chip-toggle i {
@@ -705,16 +727,26 @@ body.workout-active .bottom-nav {
   display: none;
 }
 
+.workout-accordion-card.open {
+  height: auto;
+  min-height: min-content;
+  flex: 1 0 auto;
+  background: #ffffff;
+}
+
 .exercise-card-body {
   display: none;
 }
 
 .workout-accordion-card.open .exercise-card-body {
-  display: block;
-  padding: 24px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(24px, 5vh, 48px) 20px;
   border-radius: 20px;
-  background: var(--main);
-  color: #ffffff;
+  background: #ffffff;
+  color: var(--main);
 }
 
 .exercise-card-header {
@@ -728,7 +760,7 @@ body.workout-active .bottom-nav {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
-  color: #ffffff;
+  color: var(--main);
   font-size: 18px;
   font-weight: 500;
   line-height: 1.15;
@@ -743,7 +775,7 @@ body.workout-active .bottom-nav {
 
 .workout-accordion-card .active-swap-btn {
   flex: 0 0 24px;
-  background-color: #ffffff;
+  background-color: var(--main);
 }
 
 .workout-accordion-card .exercise-help-btn {
@@ -755,9 +787,9 @@ body.workout-active .bottom-nav {
   padding: 0;
   display: grid;
   place-items: center;
-  border: 0;
+  border: 1px solid var(--main);
   border-radius: 50%;
-  background: #ffffff;
+  background: transparent;
   color: var(--main);
   font-size: 18px;
   font-weight: 400;
@@ -769,9 +801,9 @@ body.workout-active .bottom-nav {
   height: 30px;
   min-width: 30px;
   min-height: 30px;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--main);
   background: transparent;
-  color: #ffffff;
+  color: var(--main);
 }
 
 .set-list {
@@ -790,10 +822,10 @@ body.workout-active .bottom-nav {
   gap: 12px;
   margin: 0;
   padding: 0 21px;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--main);
   border-radius: 20px;
   background: transparent;
-  color: #ffffff;
+  color: var(--main);
 }
 
 .workout-accordion-card .set-row.has-help {
@@ -802,8 +834,8 @@ body.workout-active .bottom-nav {
 }
 
 .workout-accordion-card .set-row.completed {
-  background: #ffffff;
-  color: var(--main);
+  background: var(--main);
+  color: #ffffff;
 }
 
 .workout-accordion-card .set-row span {
@@ -836,8 +868,8 @@ body.workout-active .bottom-nav {
 }
 
 .set-control.is-timer {
-  background-color: #ffffff;
-  color: #ffffff;
+  background-color: var(--main);
+  color: var(--main);
   -webkit-mask: url("Assets/clock.svg") center / contain no-repeat;
   mask: url("Assets/clock.svg") center / contain no-repeat;
 }
@@ -851,7 +883,7 @@ body.workout-active .bottom-nav {
   margin: 0;
   padding-top: 48px;
   padding-bottom: 18px;
-  color: #ffffff;
+  color: var(--main);
   font-size: 16px;
   font-weight: 400;
   line-height: 1.2;
@@ -860,26 +892,29 @@ body.workout-active .bottom-nav {
 .workout-accordion-card .rating-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 0;
   margin: 0;
+  padding: 4px;
+  border-radius: 20px;
+  background: rgba(1, 45, 237, 0.15);
 }
 
 .workout-accordion-card .rating-row button {
-  height: 46px;
-  min-height: 46px;
+  height: 40px;
+  min-height: 40px;
   padding: 0 12px;
-  border: 1px solid #ffffff;
-  border-radius: 20px;
+  border: 0;
+  border-radius: 18px;
   background: transparent;
-  color: #ffffff;
+  color: var(--main);
   font-size: 16px;
   font-weight: 400;
   line-height: 1;
 }
 
 .workout-accordion-card .rating-row button.selected {
-  background: #ffffff;
-  color: var(--main);
+  background: var(--main);
+  color: #ffffff;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -905,17 +940,96 @@ body.workout-active .bottom-nav {
   }
 }
 
-#completeBtn {
+.workout-completion-tile {
   width: 100%;
-  height: 46px;
-  min-height: 46px;
-  margin-top: 48px;
+  flex: 0 0 var(--workout-collapsed-height);
+  min-height: var(--workout-collapsed-height);
+  margin: 0;
+  border-radius: 20px;
+  background: var(--main);
+}
+
+.workout-completion-trigger {
+  width: 100%;
+  height: var(--workout-collapsed-height);
+  min-height: var(--workout-collapsed-height);
+  margin: 0;
   padding: 0;
+  border: 0;
   border-radius: 20px;
   background: var(--main);
   color: #ffffff;
   font-size: 16px;
   font-weight: 500;
+}
+
+.workout-completion-tile.open {
+  min-height: min-content;
+  flex: 1 0 auto;
+  display: flex;
+  background: var(--cream);
+  color: var(--main);
+}
+
+.workout-completion-content {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(32px, 7vh, 64px) 20px;
+  text-align: center;
+}
+
+.workout-completion-content h2 {
+  margin: 0;
+  color: var(--main);
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.workout-completion-content p {
+  max-width: 309px;
+  margin: 24px auto 0;
+  color: var(--main);
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 400;
+}
+
+.workout-completion-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 48px;
+}
+
+.workout-completion-tile.full .workout-completion-actions {
+  grid-template-columns: 1fr;
+}
+
+.workout-completion-actions button {
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  margin: 0;
+  padding: 0;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.workout-completion-actions .primary-btn {
+  border-color: var(--main);
+  background: var(--main);
+  color: var(--cream);
+}
+
+.workout-completion-actions .ghost-btn {
+  border-color: var(--main);
+  background: transparent;
+  color: var(--main);
 }
 
 /* Updated Today flow */
@@ -1294,8 +1408,12 @@ body.workout-active .bottom-nav {
 
 .generated-close-btn::before {
   content: "";
+  display: block;
   width: 24px;
   height: 24px;
+  margin: 0;
+  align-self: center;
+  justify-self: center;
   background: #ffffff;
   -webkit-mask: url("Assets/x.svg") center / contain no-repeat;
   mask: url("Assets/x.svg") center / contain no-repeat;
@@ -1354,7 +1472,7 @@ body.workout-active .bottom-nav {
 }
 
 .generated-preview-list .preview-row span {
-  color: #989898;
+  color: rgba(1, 45, 237, 0.35);
   font-size: 16px;
   font-weight: 400;
   text-align: left;
