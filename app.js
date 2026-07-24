@@ -164,6 +164,7 @@ async function checkCurrentAuthSession() {
     if (error || !data?.user) {
       currentUser = null;
       currentProfileId = null;
+      resetAuthUI('welcome');
       await signOutClient(supabaseClient);
       renderAll();
       setAuthMessage('Session expired. Log in again.', 'info');
@@ -252,8 +253,8 @@ function setWelcomeVisible(visible) {
 	  document.documentElement.classList.toggle('welcome-active', visible);
 	  document.body.classList.toggle('welcome-active', visible);
 	  if (visible) {
-	    document.documentElement.classList.remove('onboarding-active', 'confirmation-active', 'account-active', 'workout-active');
-	    document.body.classList.remove('onboarding-active', 'confirmation-active', 'account-active', 'workout-active');
+	    document.documentElement.classList.remove('onboarding-active', 'confirmation-active', 'account-active', 'workout-active', 'today-active');
+	    document.body.classList.remove('onboarding-active', 'confirmation-active', 'account-active', 'workout-active', 'today-active');
 	    document.getElementById('accountPanel')?.classList.remove('account-main-mode');
 	    hideAccountSubmenuPanel();
 	    syncScreenThemeColor();
@@ -931,6 +932,54 @@ async function loadCloudStateInBackground() {
   }
 }
 
+function applyLoggedOutAuthSurfaceState() {
+  const root = document.documentElement;
+  const body = document.body;
+  const panel = document.getElementById('accountPanel');
+  const submenuPanel = document.getElementById('accountSubmenuPanel');
+  const loggedOut = document.getElementById('loggedOutAccount');
+  const loggedIn = document.getElementById('loggedInAccount');
+  const app = document.querySelector('.app');
+  const bottomNav = document.querySelector('.bottom-nav');
+
+  root.classList.add('logged-out');
+  body.classList.add('logged-out');
+  root.classList.remove('onboarding-active', 'confirmation-active', 'account-active', 'workout-active', 'today-active', 'recovery-boot');
+  body.classList.remove('onboarding-active', 'confirmation-active', 'account-active', 'workout-active', 'today-active', 'password-recovery-mode');
+
+  panel?.classList.remove('hidden', 'account-modal', 'account-open', 'account-main-mode', 'account-password-mode');
+  panel?.setAttribute('aria-hidden', 'false');
+  hideAccountSubmenuPanel();
+  submenuPanel?.setAttribute('aria-hidden', 'true');
+  loggedOut?.classList.remove('hidden');
+  loggedIn?.classList.add('hidden');
+
+  document.querySelectorAll('.screen').forEach(screen => screen.classList.add('auth-locked'));
+  document.querySelector('.topbar')?.classList.remove('hidden');
+  bottomNav?.classList.add('hidden');
+  document.getElementById('accountBtn')?.classList.add('hidden');
+
+  if (app) app.inert = false;
+  if (bottomNav) bottomNav.inert = false;
+  ['todayEmptyState', 'generatedWorkoutCard', 'confirmPanel', 'exerciseHelpPanel', 'timerPanel'].forEach(id => {
+    document.getElementById(id)?.classList.add('hidden');
+  });
+  document.getElementById('todayEmptyState')?.setAttribute('aria-hidden', 'true');
+}
+
+function resetAuthUI(mode = 'welcome') {
+  passwordRecoveryMode = false;
+  clearRecoveryBootFlag();
+  welcomeDismissed = mode !== 'welcome';
+  clearTodaySelectionTimers();
+  clearAuthFields();
+  applyLoggedOutAuthSurfaceState();
+  setAuthMode(mode);
+  setAuthMessage('');
+  resetMainRouteScroll();
+  setThemeColor('#ffffff');
+}
+
 function setAuthMode(mode = 'welcome') {
 	  blurActiveAuthField();
 	  document.documentElement.classList.remove('account-active', 'workout-active');
@@ -944,6 +993,7 @@ function setAuthMode(mode = 'welcome') {
   if (!welcome || !login || !reset) return;
 
   const isReset = mode === 'reset';
+  if (!currentUser && !isReset) applyLoggedOutAuthSurfaceState();
   document.body.classList.toggle('password-recovery-mode', isReset);
 
   // Reset password is a standalone flow. It must never share the page with
@@ -3321,7 +3371,11 @@ async function initCloudSync() {
       currentUser = null;
     }
     currentProfileId = null;
-    if (currentUser) await loadCloudState();
+    if (currentUser) {
+      await loadCloudState();
+    } else {
+      resetAuthUI('welcome');
+    }
   }
 
 	  await revealPreparedApp();
@@ -3340,6 +3394,10 @@ async function initCloudSync() {
       setWelcomeVisible(false);
       setAuthMode('reset');
       if (!currentUser) await ensureRecoverySession();
+    }
+
+    if (!currentUser && !passwordRecoveryMode) {
+      resetAuthUI('welcome');
     }
 
 	    if (event === 'SIGNED_IN' && currentUser && !passwordRecoveryMode) {
@@ -3468,10 +3526,7 @@ async function logout() {
   await signOutClient(supabaseClient);
   currentUser = null;
   currentProfileId = null;
-  passwordRecoveryMode = false;
-  clearAuthFields();
-  welcomeDismissed = false;
-  setAuthMode('welcome');
+  resetAuthUI('welcome');
   renderAll();
 }
 
