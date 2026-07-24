@@ -730,6 +730,12 @@ body.workout-active .workout-safe-area {
   background: #ffffff;
 }
 
+#exerciseList > .workout-accordion-card:first-child,
+#exerciseList > .workout-accordion-card:first-child .exercise-chip-toggle,
+#exerciseList > .workout-accordion-card:first-child.open .exercise-card-body {
+  border-radius: 0 0 20px 20px;
+}
+
 .workout-accordion-card.completed .exercise-chip-toggle i {
   display: block;
 }
@@ -828,15 +834,15 @@ body.workout-active .workout-safe-area {
 }
 
 .set-list {
+  width: 100%;
   display: grid;
   gap: 18px;
 }
 
 .workout-accordion-card .set-row {
-  width: min(309px, 100%);
+  width: 100%;
   height: 46px;
   min-height: 46px;
-  margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 26px;
   align-items: center;
@@ -911,6 +917,7 @@ body.workout-active .workout-safe-area {
 }
 
 .workout-accordion-card .rating-row {
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0;

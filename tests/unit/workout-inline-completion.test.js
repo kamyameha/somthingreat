@@ -86,6 +86,7 @@ assert.match(workout, /\.exercise-chip-toggle\s*\{[^}]*padding:\s*0 20px;/s);
 assert.match(workout, /\.exercise-chip-toggle span\s*\{[^}]*min-height:\s*1\.25em;[^}]*overflow:\s*visible;[^}]*text-overflow:\s*clip;[^}]*white-space:\s*normal;[^}]*line-height:\s*1\.25;/s);
 assert.match(workout, /\.workout-accordion-card\.completed \.exercise-chip-toggle\s*\{[^}]*background:\s*var\(--cream\)/s);
 assert.match(workout, /\.workout-accordion-card\.workout-warmup-card \.exercise-chip-toggle\s*\{[^}]*background:\s*#ffffff/s);
+assert.match(workout, /#exerciseList > \.workout-accordion-card:first-child,[^}]*#exerciseList > \.workout-accordion-card:first-child \.exercise-chip-toggle,[^}]*#exerciseList > \.workout-accordion-card:first-child\.open \.exercise-card-body\s*\{[^}]*border-radius:\s*0 0 20px 20px/s);
 assert.match(workout, /\.workout-accordion-card\.open\s*\{[^}]*flex:\s*1 0 auto/s);
 assert.match(workout, /\.workout-completion-tile\.open\s*\{[^}]*flex:\s*1 0 auto/s);
 assert.match(workout, /\.workout-active \.today-mascot-stage\s*\{[^}]*display:\s*none !important/s);
@@ -112,9 +113,13 @@ assert.doesNotMatch(workout, /#exerciseList > \.workout-accordion-card:first-chi
 assert.match(workout, /\.workout-accordion-card \.active-swap-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
 assert.match(workout, /\.workout-accordion-card \.exercise-help-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
 assert.match(workout, /\.set-control\s*\{[^}]*width:\s*26px;[^}]*height:\s*26px/s);
+assert.match(workout, /\.set-list\s*\{[^}]*width:\s*100%/s);
+assert.match(workout, /\.workout-accordion-card \.set-row\s*\{[^}]*width:\s*100%/s);
+assert.doesNotMatch(workout, /\.workout-accordion-card \.set-row\s*\{[^}]*width:\s*min\(309px,\s*100%\)/s);
+assert.match(workout, /\.workout-accordion-card \.rating-row\s*\{[^}]*width:\s*100%/s);
 
 const resetAfterWorkoutSource = functionSource('resetTodayAfterWorkout');
-assert.match(resetAfterWorkoutSource, /state\.selectedEnergy = 'normal'/);
+assert.match(resetAfterWorkoutSource, /state\.selectedEnergy = null/);
 assert.match(resetAfterWorkoutSource, /state\.generated = null/);
 assert.match(resetAfterWorkoutSource, /energyGrid\.scrollLeft = 0/);
 assert.match(resetAfterWorkoutSource, /energyGrid\.dataset\.initialPositioned = 'false'/);

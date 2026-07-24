@@ -1131,7 +1131,7 @@ function positionInitialEnergySelector() {
 
 function resetTodayAfterWorkout() {
   clearTodaySelectionTimers();
-  state.selectedEnergy = 'normal';
+  state.selectedEnergy = null;
   state.generated = null;
   state.includeWarmup = false;
   state.includeStretch = false;
