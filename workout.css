@@ -1695,10 +1695,12 @@ body.today-active #today {
   flex-wrap: nowrap;
   gap: 20px;
   margin: 0 calc(-1 * var(--screen-x));
-  padding: 0;
+  padding: 0 max(0px, calc((100% + (2 * var(--screen-x)) - 172px) / 2));
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-padding-inline: 0;
+  scroll-behavior: smooth;
+  scroll-padding-inline: max(0px, calc((100% + (2 * var(--screen-x)) - 172px) / 2));
+  scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
@@ -1721,8 +1723,10 @@ body.today-active #today {
   padding: 0 18px;
   border: 1px solid transparent;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(210, 246, 114, 0.5);
   color: var(--main);
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
 }
 
 .energy-option span {
@@ -1740,7 +1744,7 @@ body.today-active #today {
 
 .energy-option:not(.selected):not([aria-pressed="true"]),
 .energy-option:not(.selected):not([aria-pressed="true"]):active {
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(210, 246, 114, 0.5);
   color: var(--main);
 }
 

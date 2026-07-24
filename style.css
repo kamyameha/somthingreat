@@ -1296,7 +1296,7 @@ body.onboarding-active .app {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--accent);
+  color: rgba(1, 45, 237, 0.35);
   font-size: 16px;
   font-weight: 500;
 }
@@ -1527,7 +1527,7 @@ textarea::placeholder {
   border: 0;
   border-radius: 21px;
   background: transparent;
-  color: var(--accent);
+  color: rgba(1, 45, 237, 0.35);
   font-size: 14px;
   font-weight: 500;
   line-height: 1;
@@ -1948,7 +1948,7 @@ label:active,
 .nav-btn:not(.active):focus-visible,
 .nav-btn:not(.active):active {
   background: transparent !important;
-  color: var(--accent) !important;
+  color: rgba(1, 45, 237, 0.35) !important;
   box-shadow: none !important;
 }
 
