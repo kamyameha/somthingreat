@@ -1501,7 +1501,8 @@ function renderGeneratedWorkout() {
   document.getElementById('generatedWorkoutCard').classList.remove('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
   document.getElementById('workoutName').textContent = workoutModule.workoutDisplayName(generated.workoutName);
-  document.getElementById('workoutMeta').textContent = workoutToolSummary(generated);
+  const workoutMeta = document.getElementById('workoutMeta');
+  if (workoutMeta) workoutMeta.textContent = workoutToolSummary(generated);
 
   const warmupInput = document.getElementById('includeWarmup');
   const stretchInput = document.getElementById('includeStretch');

@@ -542,13 +542,13 @@
 
 .exercise-help-card h2 {
   padding-right: 42px;
-  color: #000000;
+  color: var(--main);
 }
 
 .exercise-help-cues {
   margin: var(--space-4) 0;
   padding-left: 20px;
-  color: var(--text);
+  color: var(--main);
 }
 
 .exercise-help-cues li {
@@ -589,7 +589,7 @@
 #timerPanel .timer-count,
 .timer-count {
   margin: 0;
-  color: #000000 !important;
+  color: var(--main) !important;
   font-size: 128px;
   font-weight: 500;
   line-height: 1;
@@ -1270,21 +1270,21 @@ body.workout-active .bottom-nav {
   padding: 24px;
   border-radius: 20px;
   background: #f7f7f7;
-  color: #000000;
+  color: var(--main);
 }
 
 .generated-close-btn {
   position: absolute;
   top: 20px;
   right: 20px;
-  width: 26px;
-  height: 26px;
-  min-width: 26px;
-  min-height: 26px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #000000;
+  background: var(--main);
   color: transparent;
   font-size: 0;
   line-height: 0;
@@ -1303,7 +1303,7 @@ body.workout-active .bottom-nav {
 
 .generated-workout-modal h2 {
   margin: 0 48px 8px 0;
-  color: #000000;
+  color: var(--main);
   font-size: 20px;
   font-weight: 700;
   line-height: 1.1;
@@ -1340,7 +1340,7 @@ body.workout-active .bottom-nav {
 
 .generated-preview-list .preview-row strong,
 .generated-preview-list .preview-row span {
-  color: #000000;
+  color: var(--main);
   font-size: 18px;
   font-weight: 500;
   line-height: 1.1;
@@ -1377,8 +1377,8 @@ body.workout-active .bottom-nav {
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: #000000;
-  color: #000000;
+  background: var(--main);
+  color: var(--main);
 }
 
 .preview-swap-btn {
@@ -1399,10 +1399,10 @@ body.workout-active .bottom-nav {
   max-height: 24px;
   margin: 0;
   padding: 0;
-  border: 1px solid #000000;
+  border: 1px solid var(--main);
   border-radius: 50%;
   background: transparent;
-  color: #000000;
+  color: var(--main);
   font-size: 18px;
   font-weight: 400;
   line-height: 1;
@@ -1416,7 +1416,7 @@ body.workout-active .bottom-nav {
   padding: 0;
   border: 0;
   border-radius: 20px;
-  background: #000000;
+  background: var(--main);
   color: #ffffff;
   font-size: 16px;
   font-weight: 500;
@@ -1447,7 +1447,7 @@ body.workout-active .bottom-nav {
   padding: 24px;
   border-radius: 20px;
   background: #f7f7f7;
-  color: #000000;
+  color: var(--main);
 }
 
 .custom-checklist-close {
@@ -1457,7 +1457,7 @@ body.workout-active .bottom-nav {
 
 .custom-checklist-modal h2 {
   margin: 0 36px 48px 0;
-  color: #000000;
+  color: var(--main);
   font-size: 20px;
   font-weight: 700;
   line-height: 1.1;
@@ -1480,10 +1480,10 @@ body.workout-active .bottom-nav {
   gap: 15px;
   margin: 0;
   padding: 0 21px;
-  border: 1px solid #000000;
+  border: 1px solid var(--main);
   border-radius: 20px;
   background: transparent;
-  color: #000000;
+  color: var(--main);
   font-size: 16px;
   font-weight: 400;
   line-height: 1;
@@ -1511,8 +1511,8 @@ body.workout-active .bottom-nav {
 }
 
 .custom-checklist-row.completed {
-  border-color: #000000;
-  background: #000000;
+  border-color: var(--main);
+  background: var(--main);
   color: #ffffff;
 }
 
@@ -1549,13 +1549,13 @@ body.workout-active .bottom-nav {
 }
 
 .custom-checklist-actions .primary-btn {
-  background: #000000;
+  background: var(--main);
   color: #ffffff;
 }
 
 .custom-checklist-actions .secondary-btn {
-  background: rgba(0, 0, 0, 0.15);
-  color: #000000;
+  background: rgba(1, 45, 237, 0.15);
+  color: var(--main);
 }
 
 .custom-edit-grid {
@@ -1569,7 +1569,7 @@ body.workout-active .bottom-nav {
   height: 46px;
   min-height: 46px;
   padding: 0 21px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(1, 45, 237, 0.15);
   border-radius: 20px;
   background: transparent;
   color: #b2b4b8;
@@ -1597,10 +1597,10 @@ body.workout-active .bottom-nav {
   align-items: center;
   justify-content: center;
   padding: 0 21px;
-  border: 1px solid #000000;
+  border: 1px solid var(--main);
   border-radius: 20px;
   background: transparent;
-  color: #000000;
+  color: var(--main);
   font-size: 16px;
   font-weight: 400;
 }
@@ -1612,7 +1612,7 @@ body.workout-active .bottom-nav {
 }
 
 .edit-custom-type-row label:has(input:checked) {
-  background: #000000;
+  background: var(--main);
   color: #ffffff;
 }
 
@@ -1723,7 +1723,7 @@ body.today-active #today {
   padding: 0 18px;
   border: 1px solid transparent;
   border-radius: 20px;
-  background: rgba(210, 246, 114, 0.5);
+  background: rgba(247, 243, 230, 0.7);
   color: var(--main);
   scroll-snap-align: center;
   scroll-snap-stop: always;
@@ -1738,14 +1738,14 @@ body.today-active #today {
 .energy-option.selected,
 .energy-option[aria-pressed="true"] {
   border-color: transparent;
-  background: var(--accent);
+  background: var(--cream);
   color: var(--main);
 }
 
 .energy-option:not(.selected):not([aria-pressed="true"]),
 .energy-option:not(.selected):not([aria-pressed="true"]):active {
-  background: rgba(210, 246, 114, 0.5);
-  color: var(--main);
+  background: rgba(247, 243, 230, 0.7);
+  color: rgba(1, 45, 237, 0.5);
 }
 
 .today-mascot-stage {
@@ -1813,26 +1813,23 @@ html.auth-loading .today-mascot-stage {
   }
 }
 
-.generated-workout-modal > p {
-  margin-bottom: 20px;
-}
-
 .preview-add-on-panel {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin: 0 0 32px;
+  margin: 48px 0;
 }
 
 .preview-add-on-panel .add-on-row {
   height: 42px;
   min-height: 42px;
   padding: 0 10px;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 400;
 }
 
 .preview-add-on-panel .add-on-row i {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
 }
 
 @media (prefers-reduced-motion: reduce) {

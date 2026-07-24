@@ -2,6 +2,7 @@
   --bg: #ffffff;
   --main: #012ded;
   --accent: #D2F672;
+  --cream: #F7F3E6;
   --card: #ffffff;
   --soft: rgba(1, 45, 237, 0.08);
   --border: rgba(1, 45, 237, 0.16);
@@ -498,7 +499,7 @@ button:disabled {
 
 .confirm-panel.workout-completion-panel {
   padding: 24px;
-  background: var(--accent);
+  background: var(--cream);
 }
 
 .workout-completion-panel .confirm-card {
@@ -509,7 +510,7 @@ button:disabled {
   padding: 24px;
   border: 0;
   border-radius: 0;
-  background: var(--accent);
+  background: var(--cream);
   box-shadow: none;
   color: var(--main);
   text-align: center;
@@ -556,7 +557,7 @@ button:disabled {
 .workout-completion-panel .confirm-actions .primary-btn {
   border-color: var(--main);
   background: var(--main);
-  color: var(--accent);
+  color: var(--cream);
 }
 
 .workout-completion-panel .confirm-actions .ghost-btn {
@@ -1838,7 +1839,7 @@ textarea::placeholder {
 .activity-timer-count {
   width: 100%;
   margin: 0 !important;
-  color: #000000;
+  color: var(--main);
   font-size: clamp(88px, 29vw, 126px);
   font-weight: 500;
   line-height: 0.9;

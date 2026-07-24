@@ -366,9 +366,9 @@ body.account-active .app {
 .account-panel.account-modal.account-main-mode .menu-close-btn,
 .account-submenu-panel .menu-close-btn,
 .today-recovery-modal .menu-close-btn {
-  min-width: 26px;
-  width: 26px;
-  height: 26px;
+  min-width: 34px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border: 0;
   border-radius: 0;
