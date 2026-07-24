@@ -1122,10 +1122,27 @@ function syncTodayEnergyUI() {
 
 function positionInitialEnergySelector() {
   const grid = document.querySelector('.energy-grid');
-  const normal = grid?.querySelector('[data-feel="normal"]');
-  if (!grid || !normal || state.selectedEnergy || grid.dataset.initialPositioned === 'true') return;
-  grid.scrollLeft = normal.offsetLeft - ((grid.clientWidth - normal.offsetWidth) / 2);
+  const targetFeel = state.selectedEnergy || 'normal';
+  const target = grid?.querySelector(`[data-feel="${targetFeel}"]`);
+  if (!grid || !target || grid.dataset.initialPositioned === 'true') return;
+  grid.scrollLeft = target.offsetLeft - ((grid.clientWidth - target.offsetWidth) / 2);
   grid.dataset.initialPositioned = 'true';
+}
+
+function resetTodayAfterWorkout() {
+  clearTodaySelectionTimers();
+  state.selectedEnergy = 'normal';
+  state.generated = null;
+  state.includeWarmup = false;
+  state.includeStretch = false;
+  state.includeExerciseTimer = false;
+  state.includeRestTimer = false;
+  state.restTimerSeconds = 60;
+  const energyGrid = document.querySelector('.energy-grid');
+  if (energyGrid) {
+    energyGrid.scrollLeft = 0;
+    energyGrid.dataset.initialPositioned = 'false';
+  }
 }
 
 function resetTodaySession() {
@@ -2124,10 +2141,9 @@ function completeWorkout(skipMissingRatingConfirm = false) {
 function completeWorkoutWithoutProgress() {
   if (!state.current) return;
   state.current = null;
-  state.selectedEnergy = null;
-  state.generated = null;
   openExerciseTrackKey = null;
   workoutCompletionState = null;
+  resetTodayAfterWorkout();
   releaseWorkoutWakeLock();
   saveState();
   renderToday();
@@ -2262,10 +2278,9 @@ function completeWorkoutNow(showFullConfirmation = true) {
   state.rotationIndex = workoutModule.nextRotationIndexFromHistory(state.history, state.rotationIndex);
   state.progressInsights = { ...(state.progressInsights || {}), returningSeenWorkoutId: '' };
   state.current = null;
-  state.selectedEnergy = null;
-  state.generated = null;
   openExerciseTrackKey = null;
   workoutCompletionState = null;
+  resetTodayAfterWorkout();
   releaseWorkoutWakeLock();
   saveState();
   flushPendingSessionRecords();
