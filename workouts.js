@@ -1558,7 +1558,6 @@
     posteriorChain: ids(['glute-bridge', 'paused-glute-bridge', 'single-leg-assisted-glute-bridge', 'single-leg-glute-bridge', 'hip-hinge-drill', 'bodyweight-good-morning', 'single-leg-romanian-deadlift']),
     calves: ids(['two-leg-calf-raise', 'paused-calf-raise', 'single-leg-assisted-calf-raise', 'single-leg-calf-raise', 'elevated-single-leg-calf-raise']),
     antiExtension: ids(['dead-bug', 'forearm-plank', 'plank', 'hollow-hold']),
-    pullCore: ids(['hollow-body-strength']),
     compression: ids(['reverse-crunch', 'seated-compression-lift', 'bent-knee-support-hold', 'tuck-support-hold']),
     lateralCore: ids(['side-plank']),
     lsit: ids(['seated-compression-lift', 'bent-knee-support-hold', 'foot-assisted-support-hold', 'tuck-support-hold', 'one-leg-extended-tuck-hold', 'alternating-one-leg-lsit', 'full-tuck-lsit', 'full-lsit-attempts', 'full-lsit-hold', 'longer-lsit-hold']),
@@ -1746,20 +1745,26 @@
     ]
   };
 
+  const workoutCompositionPolicies = Object.freeze({
+    Push: Object.freeze({
+      primaryTracks: Object.freeze(['horizontalPush', 'dipStrength', 'verticalPush']),
+      supportTracks: Object.freeze(['antiExtension', 'lateralCore'])
+    }),
+    Pull: Object.freeze({
+      primaryTracks: Object.freeze(['verticalPull', 'horizontalPull', 'scapularPull']),
+      supportTracks: Object.freeze(['antiExtension', 'compression', 'lateralCore'])
+    }),
+    'Lower Body': Object.freeze({
+      primaryTracks: Object.freeze(['squat', 'posteriorChain', 'unilateral', 'calves']),
+      supportTracks: Object.freeze(['compression', 'antiExtension', 'lateralCore'])
+    })
+  });
+
   const workoutEligibleTracks = Object.freeze({
-    Push: Object.freeze(['horizontalPush', 'dipStrength', 'antiExtension', 'verticalPush']),
-    Pull: Object.freeze([
-      'horizontalPull',
-      'verticalPull',
-      'scapularPull',
-      'antiExtension',
-      'compression',
-      'lateralCore',
-      'pullCore',
-      'muscleupFoundation'
-    ]),
-    'Lower Body': Object.freeze(['squat', 'posteriorChain', 'compression', 'unilateral', 'calves', 'antiExtension']),
-    Skills: Object.freeze(['pistolSquat', 'handstandPushup', 'antiExtension', 'handstand', 'lsit', 'verticalPull', 'horizontalPull', 'posteriorChain'])
+    Push: Object.freeze([...workoutCompositionPolicies.Push.primaryTracks, ...workoutCompositionPolicies.Push.supportTracks]),
+    Pull: Object.freeze([...workoutCompositionPolicies.Pull.primaryTracks, ...workoutCompositionPolicies.Pull.supportTracks]),
+    'Lower Body': Object.freeze([...workoutCompositionPolicies['Lower Body'].primaryTracks, ...workoutCompositionPolicies['Lower Body'].supportTracks]),
+    Skills: Object.freeze(['pistolSquat', 'handstandPushup', 'antiExtension', 'handstand', 'lsit', 'verticalPull', 'scapularPull', 'compression', 'verticalPush'])
   });
 
   const addOnMovementHelp = {
@@ -2454,35 +2459,100 @@
     });
   }
 
-  function fillTracksForRecovery(trackKeys, config, profile, state, recovery, allowedTracks = null) {
-    if (!recovery) return trackKeys;
-    const rule = recoveryRules[recoveryAreaType(recovery)] || recoveryRules.other;
+  function unlockedTrackCandidates(trackKey, config, state = {}, profile = null, recovery = null) {
     const tracks = getTracks(profile, state);
-    const next = [...trackKeys];
-    for (const fallback of rule.fallbackTracks) {
-      if (next.length >= config.exerciseCount) break;
-      if (allowedTracks && !allowedTracks.has(fallback)) continue;
-      if (!isTrackAvailable(fallback, tracks) || next.includes(fallback)) continue;
-      if (filteredTrackForRecovery(tracks[fallback], recovery).length) next.push(fallback);
-    }
-    return next;
+    if (!isTrackAvailable(trackKey, tracks)) return [];
+    const originalTrack = tracks[trackKey] || [];
+    const trackState = state?.levels?.[trackKey] || {};
+    const levelShift = recovery?.mode === 'reduce' ? Math.min(config.levelShift || 0, -2) : config.levelShift || 0;
+    const unlockedLevel = Math.max(0, Math.min(Number(trackState.level || 0) + levelShift, originalTrack.length - 1));
+    const plateauCount = Math.max(0, Math.floor(trackState.plateauCount || 0));
+    return originalTrack
+      .map((baseExercise, index) => ({ baseExercise, index }))
+      .filter(({ baseExercise, index }) => (
+        index <= unlockedLevel &&
+        isExerciseEligibleForGeneration(baseExercise, profile, state, recovery) &&
+        isExerciseAllowedForRecovery(baseExercise, recovery)
+      ))
+      .sort((first, second) => second.index - first.index)
+      .map(({ baseExercise, index }) => normalizeExercise({
+        ...baseExercise,
+        trackKey,
+        progressionTrackKey: trackKey,
+        prescriptionData: adaptPrescriptionData(baseExercise.prescriptionData, config, recovery),
+        basePrescription: baseExercise.prescription,
+        basePrescriptionData: baseExercise.prescriptionData,
+        level: index + 1,
+        originalLevel: Math.min(Math.max(trackState.level || 0, 0), originalTrack.length - 1) + 1,
+        plateau: plateauCount > 0
+      }));
   }
 
-  function buildWorkoutTracks(workout, desiredCount, profile = null, state = {}) {
-    const tracks = getTracks(profile, state);
-    const recovery = getActiveRecovery(state);
-    const eligibleTracks = workoutEligibleTracks[workout.name] || workout.tracks || [];
-    const allowedTracks = new Set(eligibleTracks);
-    const selected = [];
-    [...workout.tracks, ...eligibleTracks].forEach(trackKey => {
-      if (selected.length >= desiredCount) return;
-      if (!allowedTracks.has(trackKey)) return;
-      if (selected.includes(trackKey) || !isTrackAvailable(trackKey, tracks)) return;
-      const track = filteredTrackForRecovery(tracks[trackKey], recovery);
-      if (!track.length) return;
-      selected.push(trackKey);
-    });
-    return fillTracksForRecovery(selected, { exerciseCount: desiredCount }, profile, state, recovery, allowedTracks).slice(0, desiredCount);
+  function latestWorkoutExerciseIds(history = []) {
+    const latest = [...(history || [])]
+      .filter(item => item && item.type !== 'custom' && Array.isArray(item.exercises))
+      .sort((first, second) => new Date(second.date || second.completedAt || 0) - new Date(first.date || first.completedAt || 0))[0];
+    return new Set((latest?.exercises || []).map(item => item?.exerciseId || item?.id).filter(Boolean));
+  }
+
+  function skillCompositionPolicy(profile = null, state = {}) {
+    const goal = profile?.goal || 'pullup';
+    const selectedTrack = getGoalTrackKey(goal, profile, state);
+    if (goal === 'handstand') {
+      return { primaryTracks: unique([selectedTrack, 'verticalPush', 'handstandPushup']), supportTracks: ['antiExtension', 'lateralCore'] };
+    }
+    if (goal === 'lsit') {
+      return { primaryTracks: unique([selectedTrack, 'compression']), supportTracks: ['antiExtension', 'lateralCore'] };
+    }
+    if (goal === 'muscleup') {
+      return { primaryTracks: unique([selectedTrack, 'verticalPull', 'scapularPull', 'dipStrength']), supportTracks: ['antiExtension'] };
+    }
+    if (goal === 'general') {
+      return { primaryTracks: unique([selectedTrack, 'verticalPush']), supportTracks: ['antiExtension', 'lateralCore'] };
+    }
+    return { primaryTracks: unique([selectedTrack, 'scapularPull']), supportTracks: ['antiExtension', 'lateralCore'] };
+  }
+
+  function compositionPolicyForWorkout(workout, profile = null, state = {}) {
+    return workout.name === 'Skills'
+      ? skillCompositionPolicy(profile, state)
+      : workoutCompositionPolicies[workout.name] || { primaryTracks: workout.tracks || [], supportTracks: [] };
+  }
+
+  function collectCompositionCandidates(trackKeys, role, config, state, profile, recovery, recentIds) {
+    const candidatesByTrack = trackKeys.map((trackKey, trackOrder) => (
+      unlockedTrackCandidates(trackKey, config, state, profile, recovery)
+        .map((exercise, depth) => ({
+          exercise: { ...exercise, workoutRole: role },
+          trackOrder,
+          depth,
+          wasRecent: recentIds.has(exercise.id)
+        }))
+    ));
+    const interleaved = [];
+    const maximumDepth = Math.max(0, ...candidatesByTrack.map(candidates => candidates.length));
+    for (let depth = 0; depth < maximumDepth; depth += 1) {
+      candidatesByTrack.forEach(candidates => {
+        if (candidates[depth]) interleaved.push(candidates[depth]);
+      });
+    }
+    const seenIds = new Set();
+    return interleaved
+      .filter(candidate => {
+        if (seenIds.has(candidate.exercise.id)) return false;
+        seenIds.add(candidate.exercise.id);
+        return true;
+      })
+      .sort((first, second) => {
+        const recentDifference = Number(first.wasRecent) - Number(second.wasRecent);
+        if (recentDifference) return recentDifference;
+        if (['tired', 'exhausted'].includes(config.mode)) {
+          return ((first.exercise.fatigue || 0) + (first.exercise.skill || 0)) -
+            ((second.exercise.fatigue || 0) + (second.exercise.skill || 0));
+        }
+        return 0;
+      })
+      .map(candidate => candidate.exercise);
   }
 
   function getTodayWorkout({ mode = 'normal', state = {}, profile = null } = {}) {
@@ -2491,36 +2561,43 @@
     const workout = rotation[rotationIndex % rotation.length];
     const config = getEnergyConfig(mode);
     const recovery = getActiveRecovery(state);
-    const preferredTracks = buildWorkoutTracks(workout, config.exerciseCount, profile, state);
-    const availableTracks = getTracks(profile, state);
-    const allowedTracks = new Set(workoutEligibleTracks[workout.name] || workout.tracks || []);
-    const tracks = [...preferredTracks];
-    allowedTracks.forEach(trackKey => {
-      if (tracks.length >= config.exerciseCount * 2) return;
-      if (tracks.includes(trackKey) || !isTrackAvailable(trackKey, availableTracks)) return;
-      if (!filteredTrackForRecovery(availableTracks[trackKey], recovery).length) return;
-      tracks.push(trackKey);
-    });
-    const usedIds = new Set();
-    const exercises = [];
-    let totalFatigue = 0;
-    let totalSkill = 0;
-
-    tracks.forEach(trackKey => {
-      if (exercises.length >= config.exerciseCount) return;
-      const item = getExercise(trackKey, config, state, profile, {
-        recovery,
-        usedIds,
-        currentFatigue: totalFatigue,
-        currentSkill: totalSkill,
-        remainingSlots: config.exerciseCount - exercises.length - 1
-      });
-      if (!item) return;
+    const policy = compositionPolicyForWorkout(workout, profile, state);
+    const recentIds = latestWorkoutExerciseIds(state.history);
+    const primaryCandidates = collectCompositionCandidates(
+      policy.primaryTracks,
+      workout.name === 'Skills' ? 'skill-specific' : `primary-${workout.name}`,
+      config,
+      state,
+      profile,
+      recovery,
+      recentIds
+    );
+    const supportCandidates = collectCompositionCandidates(
+      policy.supportTracks,
+      'core-support',
+      config,
+      state,
+      profile,
+      recovery,
+      recentIds
+    );
+    const targetCount = config.exerciseCount;
+    const minimumPrimaryCount = Math.max(1, targetCount - 1);
+    const exercises = primaryCandidates.slice(0, minimumPrimaryCount);
+    const usedIds = new Set(exercises.map(item => item.id));
+    const support = supportCandidates.find(item => !usedIds.has(item.id));
+    if (support && exercises.length > 0 && exercises.length < targetCount) {
+      exercises.push(support);
+      usedIds.add(support.id);
+    }
+    primaryCandidates.forEach(item => {
+      if (exercises.length >= targetCount || usedIds.has(item.id)) return;
       exercises.push(item);
       usedIds.add(item.id);
-      totalFatigue += item.fatigue || 0;
-      totalSkill += item.skill || 0;
     });
+    const totalFatigue = exercises.reduce((sum, item) => sum + (item.fatigue || 0), 0);
+    const totalSkill = exercises.reduce((sum, item) => sum + (item.skill || 0), 0);
+    const allowedTracks = new Set([...policy.primaryTracks, ...policy.supportTracks]);
 
     return {
       mode: config.mode,
@@ -2552,22 +2629,28 @@
     const state = context.state || {};
     const profile = context.profile || null;
     const recovery = getActiveRecovery(state);
-    const categoryTracks = workoutEligibleTracks[workout.workoutName] || workout.eligibleTrackKeys || [];
+    const workoutDescriptor = { name: workout.workoutName, tracks: workout.eligibleTrackKeys || [] };
+    const policy = compositionPolicyForWorkout(workoutDescriptor, profile, state);
+    const isSupport = exercise.workoutRole === 'core-support';
+    const categoryTracks = isSupport ? policy.supportTracks : policy.primaryTracks;
     const orderedTracks = [
       exercise.progressionTrackKey || exercise.trackKey,
       ...categoryTracks
     ].filter((trackKey, index, all) => trackKey && all.indexOf(trackKey) === index && categoryTracks.includes(trackKey));
+    const recentIds = latestWorkoutExerciseIds(state.history);
+    const candidates = [];
     for (const trackKey of orderedTracks) {
-      const replacement = getExercise(trackKey, config, state, profile, {
-        recovery,
-        usedIds,
-        currentFatigue: 0,
-        currentSkill: 0,
-        remainingSlots: 0
+      unlockedTrackCandidates(trackKey, config, state, profile, recovery).forEach(replacement => {
+        if (!usedIds.has(replacement.id)) {
+          candidates.push({
+            replacement: { ...replacement, workoutRole: exercise.workoutRole || (isSupport ? 'core-support' : `primary-${workout.workoutName}`) },
+            wasRecent: recentIds.has(replacement.id)
+          });
+        }
       });
-      if (replacement) return replacement;
     }
-    return null;
+    candidates.sort((first, second) => Number(first.wasRecent) - Number(second.wasRecent));
+    return candidates[0]?.replacement || null;
   }
 
   function validateWorkoutSections(workout, addOnExercises = [], context = {}) {
@@ -2960,6 +3043,21 @@
       if (!help?.purpose || !help?.startingPosition || !help?.movement?.length || !help?.successCriteria?.length || !help?.focus?.length || !help?.commonMistakes?.length || !help?.safety) errors.push(`Missing add-on instructions: ${name}`);
       if (help?.successCriteria?.length && help.successCriteria.every(value => normalizeInstructionText(value) === normalizeInstructionText(help.movement.join(' ')))) errors.push(`Movement duplicates every success criterion: add-on ${name}`);
     });
+    Object.entries(workoutCompositionPolicies).forEach(([workoutName, policy]) => {
+      const primaryTracks = new Set(policy.primaryTracks || []);
+      (policy.primaryTracks || []).forEach(trackKey => {
+        if (!Array.isArray(movementTracks[trackKey])) errors.push(`Unknown primary track for ${workoutName}: ${trackKey}`);
+      });
+      (policy.supportTracks || []).forEach(trackKey => {
+        if (!Array.isArray(movementTracks[trackKey])) errors.push(`Unknown support track for ${workoutName}: ${trackKey}`);
+        if (primaryTracks.has(trackKey)) errors.push(`Track has conflicting composition roles for ${workoutName}: ${trackKey}`);
+      });
+    });
+    [...workoutAddOns.warmups, ...workoutAddOns.stretches].forEach(addOn => {
+      if ((addOn.setLabels || []).length !== (addOn.movementExerciseIds || []).length) {
+        errors.push(`Add-on movement identity mismatch: ${addOn.id}`);
+      }
+    });
     return errors;
   }
 
@@ -2974,6 +3072,7 @@
     recoveryRules,
     energyOptions,
     workoutAddOns,
+    workoutCompositionPolicies,
     workoutEligibleTracks,
     createDefaultLevels,
     migrateLevels,
