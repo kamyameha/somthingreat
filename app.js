@@ -1873,6 +1873,7 @@ function renderExercises() {
   if (!workoutCompletionState && (!openExerciseTrackKey || !state.current.exercises.some(exercise => exerciseSessionKey(exercise) === openExerciseTrackKey))) {
     openExerciseTrackKey = firstIncompleteExerciseKey();
   }
+  document.body.classList.toggle('workout-completion-active', Boolean(workoutCompletionState));
   state.current.exercises.forEach((exercise, index) => {
     const exerciseKey = exerciseSessionKey(exercise, index);
     const isOpen = exerciseKey === openExerciseTrackKey;

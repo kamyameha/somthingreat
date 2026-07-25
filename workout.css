@@ -629,7 +629,40 @@ body.workout-active {
   overflow: hidden;
 }
 
+body.workout-active {
+  --workout-bottom-overscroll: var(--main);
+  position: relative;
+  isolation: isolate;
+}
+
+body.workout-active.workout-completion-active {
+  --workout-bottom-overscroll: var(--cream);
+}
+
+body.workout-active::before,
+body.workout-active::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 50dvh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+body.workout-active::before {
+  top: 0;
+  background: #ffffff;
+}
+
+body.workout-active::after {
+  bottom: 0;
+  background: var(--workout-bottom-overscroll);
+}
+
 body.workout-active .app {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: none;
   height: 100dvh;
