@@ -1897,7 +1897,6 @@ body.today-active .brand-block {
 }
 
 body.today-active .bottom-nav {
-  bottom: 2px;
   z-index: 60;
 }
 
