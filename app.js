@@ -60,6 +60,9 @@ let todayMascotTimer = null;
 let todayReactionTimers = [];
 let energyPointerStart = null;
 let energyScrollGesture = false;
+let cloudSavePromise = null;
+let cloudSaveRequested = false;
+let workoutCompletionSaveInProgress = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support']);
 const AUTH_LOADING_MIN_MS = 450;
@@ -75,6 +78,17 @@ const TODAY_MASCOT_FRAMES = {
   tired: ['Assets/EnergyCheck/tired-a.svg', 'Assets/EnergyCheck/tired-b.svg'],
   exhausted: ['Assets/EnergyCheck/exhausted-a.svg', 'Assets/EnergyCheck/exhausted-b.svg']
 };
+
+function persistenceDiagnostic(event, details = {}) {
+  const enabled = window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    localStorage.getItem('somthingreat-persistence-debug') === '1';
+  if (!enabled) return;
+  console.debug(`[workout-persistence] ${event}`, {
+    userId: currentUser?.id || null,
+    ...details
+  });
+}
 
 function clearLegacyPasswordSession() {
   try {
@@ -530,11 +544,31 @@ function defaultState() {
 }
 
 function saveState() {
+  const updatedAt = new Date().toISOString();
+  state.lastUpdatedAt = updatedAt;
+  if (state.current) {
+    state.current.lifecycleStatus = 'active';
+    state.current.updatedAt = updatedAt;
+  }
   state = stateStore.saveState(state);
+  persistenceDiagnostic('local-save', {
+    sessionId: state.current?.sessionId || null,
+    lifecycleStatus: state.current?.lifecycleStatus || 'closed',
+    historySessionIds: state.history.map(item => item.sessionId).filter(Boolean),
+    completedSetCounts: state.current
+      ? Object.fromEntries(Object.entries(state.current.sets || {}).map(([key, sets]) => [key, sets.filter(Boolean).length]))
+      : {}
+  });
   queueCloudSave();
 }
 
 function saveLocalStateOnly() {
+  const updatedAt = new Date().toISOString();
+  state.lastUpdatedAt = updatedAt;
+  if (state.current) {
+    state.current.lifecycleStatus = 'active';
+    state.current.updatedAt = updatedAt;
+  }
   state = stateStore.writeLocalState(state);
 }
 
@@ -583,9 +617,10 @@ async function flushPendingSessionRecords() {
 }
 
 function queueCloudSave() {
-  if (!supabaseClient || !currentUser || !currentProfileId) return;
+  if (!supabaseClient || !currentUser) return;
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(saveCloudState, 500);
+  cloudSaveRequested = true;
+  syncTimer = setTimeout(() => saveCloudState(), 500);
 }
 
 function normaliseEmail(email = '') {
@@ -745,16 +780,41 @@ async function ensureWorkoutProfile() {
   return data.id;
 }
 
-async function saveCloudState() {
-  if (!supabaseClient || !currentUser) return;
+async function writeCloudStateSnapshot(snapshot) {
+  if (!supabaseClient || !currentUser) return true;
   const profileId = currentProfileId || await ensureWorkoutProfile();
-  if (!profileId) return;
+  if (!profileId) return false;
 
   setSyncStatus('Saving...');
   const { error } = await supabaseClient
     .from('workout_states_v2')
-    .upsert({ profile_id: profileId, state: publicState(), updated_at: new Date().toISOString() }, { onConflict: 'profile_id' });
+    .upsert({ profile_id: profileId, state: snapshot, updated_at: new Date().toISOString() }, { onConflict: 'profile_id' });
   setSyncStatus(error ? 'Save failed. Local progress is still saved.' : 'Progress saved.');
+  persistenceDiagnostic(error ? 'cloud-save-failed' : 'cloud-save-complete', {
+    sessionId: snapshot.current?.sessionId || null,
+    lifecycleStatus: snapshot.current?.lifecycleStatus || 'closed',
+    historySessionIds: (snapshot.history || []).map(item => item.sessionId).filter(Boolean),
+    stateUpdatedAt: snapshot.lastUpdatedAt || null
+  });
+  return !error;
+}
+
+function saveCloudState() {
+  clearTimeout(syncTimer);
+  cloudSaveRequested = true;
+  if (cloudSavePromise) return cloudSavePromise;
+
+  cloudSavePromise = (async () => {
+    while (cloudSaveRequested) {
+      cloudSaveRequested = false;
+      const saved = await writeCloudStateSnapshot(publicState());
+      if (!saved) break;
+    }
+  })().finally(() => {
+    cloudSavePromise = null;
+  });
+
+  return cloudSavePromise;
 }
 
 async function loadLegacyCloudState() {
@@ -779,7 +839,7 @@ async function loadCloudState() {
 
   const { data, error } = await supabaseClient
     .from('workout_states_v2')
-    .select('state')
+    .select('state, updated_at')
     .eq('profile_id', profileId)
     .maybeSingle();
 
@@ -789,25 +849,35 @@ async function loadCloudState() {
   }
 
   const legacyState = !data?.state ? await loadLegacyCloudState() : null;
-  const cloudState = data?.state || legacyState;
+  const cloudState = data?.state
+    ? { ...data.state, lastUpdatedAt: data.state.lastUpdatedAt || data.updated_at || null }
+    : legacyState;
 
   if (cloudState) {
     const localPending = Array.isArray(state.pendingSessionRecords) ? state.pendingSessionRecords : [];
-    state = sanitizeState({ ...defaultState(), ...cloudState });
+    state = stateStore.reconcileStates(state, cloudState);
+    persistenceDiagnostic('cloud-restore-reconciled', {
+      cloudSessionId: cloudState.current?.sessionId || null,
+      restoredSessionId: state.current?.sessionId || null,
+      closedSessionIds: state.closedWorkoutSessionIds,
+      historySessionIds: state.history.map(item => item.sessionId).filter(Boolean),
+      cloudUpdatedAt: cloudState.lastUpdatedAt || null,
+      localUpdatedAt: state.lastUpdatedAt || null
+    });
     const pendingById = new Map([...(state.pendingSessionRecords || []), ...localPending]
       .filter(item => item?.sessionId)
       .map(item => [item.sessionId, item]));
     state.pendingSessionRecords = [...pendingById.values()];
     saveLocalStateOnly();
-    if (legacyState) await saveCloudState();
+    await saveCloudState();
     renderAll();
-    setSyncStatus(legacyState ? 'Progress recovered and upgraded.' : 'Progress loaded.');
+    setSyncStatus(legacyState ? 'Progress recovered and upgraded.' : 'Progress reconciled.');
   } else {
-    state = defaultState();
+    state = sanitizeState(state);
     saveLocalStateOnly();
     await saveCloudState();
     renderAll();
-    setSyncStatus('New account ready.');
+    setSyncStatus('Progress saved.');
   }
   flushPendingSessionRecords();
 }
@@ -1590,10 +1660,13 @@ function startWorkout() {
     renderToday();
     return;
   }
+  const startedAt = state.generated.startedAt || new Date().toISOString();
   state.current = {
     ...state.generated,
     sessionId: state.generated.sessionId || createSessionId(),
-    startedAt: state.generated.startedAt || new Date().toISOString(),
+    startedAt,
+    updatedAt: startedAt,
+    lifecycleStatus: 'active',
     includeExerciseTimer: Boolean(state.generated.includeExerciseTimer),
     includeRestTimer: Boolean(state.generated.includeRestTimer),
     restTimerSeconds: 60,
@@ -2138,19 +2211,35 @@ function completeWorkout(skipMissingRatingConfirm = false) {
   openInlineWorkoutCompletion();
 }
 
-function completeWorkoutWithoutProgress() {
-  if (!state.current) return;
+function closeWorkoutSession(sessionId) {
+  if (!sessionId) return;
+  if (!Array.isArray(state.closedWorkoutSessionIds)) state.closedWorkoutSessionIds = [];
+  if (!state.closedWorkoutSessionIds.includes(sessionId)) state.closedWorkoutSessionIds.push(sessionId);
+}
+
+async function completeWorkoutWithoutProgress() {
+  if (!state.current || workoutCompletionSaveInProgress) return;
+  workoutCompletionSaveInProgress = true;
+  const sessionId = state.current.sessionId;
+  closeWorkoutSession(sessionId);
+  persistenceDiagnostic('session-abandoned', { sessionId, lifecycleStatus: 'abandoned' });
   state.current = null;
   openExerciseTrackKey = null;
   workoutCompletionState = null;
   resetTodayAfterWorkout();
   releaseWorkoutWakeLock();
   saveState();
+  try {
+    await saveCloudState();
+  } catch (error) {
+    setSyncStatus('Cloud save will retry. Local progress is safely closed.');
+  }
   renderToday();
   renderProgress();
   renderActivity();
   renderAccount();
   updateUpdateBanner();
+  workoutCompletionSaveInProgress = false;
 }
 
 function showCompletionScreen({ title, message, actionLabel = '', cancelLabel = '', onConfirm = null, autoClose = false }) {
@@ -2186,8 +2275,9 @@ function showCompletionScreen({ title, message, actionLabel = '', cancelLabel = 
   }
 }
 
-function completeWorkoutNow(showFullConfirmation = true) {
-  if (!state.current) return;
+async function completeWorkoutNow(showFullConfirmation = true) {
+  if (!state.current || workoutCompletionSaveInProgress) return;
+  workoutCompletionSaveInProgress = true;
   const performedExercises = (state.current.exercises || []).filter((exercise, index) => {
     const completedSets = state.current.sets?.[exerciseSessionKey(exercise, index)] || [];
     return !exercise.isAddOn || completedSets.some(Boolean);
@@ -2205,23 +2295,39 @@ function completeWorkoutNow(showFullConfirmation = true) {
     const rating = state.current.ratings?.[exerciseKey] || null;
     return workoutModule.exerciseResult(ex, state.current.sets?.[exerciseKey] || [], rating);
   });
-  if (!workoutModule.shouldRecordWorkoutResults(exerciseResults)) return;
+  if (!workoutModule.shouldRecordWorkoutResults(exerciseResults)) {
+    workoutCompletionSaveInProgress = false;
+    return;
+  }
   exerciseResults.forEach(result => {
     const decision = workoutModule.applyExerciseResultToProgression(state.levels, result, getProfile());
     result.progressionApplied = decision.applied;
     result.progressionDecision = decision.reason;
   });
+  const completionStatus = completedMainExercises.length === (state.current.exercises || []).filter(exercise => !exercise.isAddOn).length
+    ? 'completed'
+    : 'saved_partial';
   const historyEntry = {
     sessionId,
     startedAt: state.current.startedAt || new Date().toISOString(),
     date: completedAt,
+    completedAt,
     workout: state.current.workoutName,
     mode: state.current.mode,
     energy: state.current.mode,
+    status: completionStatus,
     completedCount: completedMainExercises.length,
     exercises: exerciseResults
   };
   state.history.push(historyEntry);
+  persistenceDiagnostic('completion-confirmed', {
+    sessionId,
+    lifecycleStatus: completionStatus,
+    completedAt,
+    workoutDate: historyEntry.date,
+    completedExerciseIds: exerciseResults.filter(result => result.completedSets > 0).map(result => result.exerciseId),
+    completedSetCounts: Object.fromEntries(exerciseResults.map(result => [result.exerciseId, result.completedSets]))
+  });
   const progressionEvents = exerciseResults.flatMap((result, position) => {
     const key = result.progressionTrackKey;
     const before = levelBeforeByTrack[key];
@@ -2242,7 +2348,7 @@ function completeWorkoutNow(showFullConfirmation = true) {
     sessionType: 'workout',
     startedAt: historyEntry.startedAt,
     completedAt,
-    status: completedMainExercises.length === (state.current.exercises || []).filter(exercise => !exercise.isAddOn).length ? 'completed' : 'partial',
+    status: completionStatus === 'completed' ? 'completed' : 'partial',
     energySelection: state.current.mode,
     workoutMode: state.current.mode,
     workoutName: state.current.workoutName,
@@ -2277,12 +2383,18 @@ function completeWorkoutNow(showFullConfirmation = true) {
   });
   state.rotationIndex = workoutModule.nextRotationIndexFromHistory(state.history, state.rotationIndex);
   state.progressInsights = { ...(state.progressInsights || {}), returningSeenWorkoutId: '' };
+  closeWorkoutSession(sessionId);
   state.current = null;
   openExerciseTrackKey = null;
   workoutCompletionState = null;
   resetTodayAfterWorkout();
   releaseWorkoutWakeLock();
   saveState();
+  try {
+    await saveCloudState();
+  } catch (error) {
+    setSyncStatus('Cloud save will retry. Your completed workout is saved locally.');
+  }
   flushPendingSessionRecords();
   renderToday();
   renderProgress();
@@ -2296,6 +2408,7 @@ function completeWorkoutNow(showFullConfirmation = true) {
     });
   }
   updateUpdateBanner();
+  workoutCompletionSaveInProgress = false;
 }
 
 function showWorkoutStatus(titleText = 'Well done for today.', messageText = 'You showed up, and that counts. Your progress is saved.') {

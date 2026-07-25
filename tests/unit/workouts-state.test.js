@@ -515,4 +515,115 @@ assert.strictEqual(persistedTodayState.includeExerciseTimer, false);
 assert.strictEqual(persistedTodayState.includeRestTimer, false);
 assert.strictEqual(stateStore.loadState().selectedEnergy, null);
 
+function resumableWorkout(sessionId, updatedAt, completedFlags = [true, false, false]) {
+  const workout = workouts.getTodayWorkout({
+    mode: 'normal',
+    state: stateStore.defaultState(),
+    profile: null
+  });
+  const first = workout.exercises[0];
+  const trackKey = first.sessionKey || first.workoutExerciseId || `${first.trackKey}-0-${first.id}`;
+  return {
+    ...workout,
+    sessionId,
+    startedAt: '2026-07-24T08:00:00.000Z',
+    updatedAt,
+    lifecycleStatus: 'active',
+    ratings: {},
+    sets: { [trackKey]: completedFlags }
+  };
+}
+
+function completedHistory(sessionId, date = '2026-07-24T09:00:00.000Z', status = 'completed') {
+  return {
+    sessionId,
+    startedAt: '2026-07-24T08:00:00.000Z',
+    date,
+    workout: 'Lower Body',
+    mode: 'normal',
+    energy: 'normal',
+    status,
+    completedCount: status === 'completed' ? 3 : 1,
+    exercises: [{
+      exerciseId: 'bodyweight-squat',
+      name: 'Bodyweight squat',
+      prescription: '3 × 9',
+      targetSets: 3,
+      completedSets: status === 'completed' ? 3 : 1,
+      completedSetIndexes: status === 'completed' ? [0, 1, 2] : [0],
+      completionStatus: status === 'completed' ? 'completed' : 'partial',
+      rating: 'good',
+      trackKey: 'squat',
+      progressionTrackKey: 'squat'
+    }]
+  };
+}
+
+const completedSessionId = 'session-full-completion';
+const completedLocalState = {
+  ...stateStore.defaultState(),
+  lastUpdatedAt: '2026-07-24T09:00:01.000Z',
+  history: [completedHistory(completedSessionId)],
+  current: null,
+  closedWorkoutSessionIds: [completedSessionId]
+};
+const staleCloudState = {
+  ...stateStore.defaultState(),
+  lastUpdatedAt: '2026-07-24T08:30:00.000Z',
+  history: [],
+  current: resumableWorkout(completedSessionId, '2026-07-24T08:30:00.000Z')
+};
+const reconciledCompletion = stateStore.reconcileStates(completedLocalState, staleCloudState);
+assert.strictEqual(reconciledCompletion.current, null, 'completed workout must not reopen from stale cloud state');
+assert.strictEqual(reconciledCompletion.history.length, 1, 'completed Activity record must survive restart');
+assert.strictEqual(reconciledCompletion.history[0].sessionId, completedSessionId);
+assert.ok(reconciledCompletion.closedWorkoutSessionIds.includes(completedSessionId));
+
+const staleDelayedSave = stateStore.reconcileStates(reconciledCompletion, staleCloudState);
+assert.strictEqual(staleDelayedSave.current, null, 'delayed active save must not downgrade a closed session');
+assert.strictEqual(staleDelayedSave.history.length, 1, 'delayed active save must not remove history');
+
+const interruptedSessionId = 'session-interrupted';
+const olderInterruptedCloud = {
+  ...stateStore.defaultState(),
+  lastUpdatedAt: '2026-07-24T08:10:00.000Z',
+  current: resumableWorkout(interruptedSessionId, '2026-07-24T08:10:00.000Z', [false, false, false])
+};
+const latestInterruptedLocal = {
+  ...stateStore.defaultState(),
+  lastUpdatedAt: '2026-07-24T08:20:00.000Z',
+  current: resumableWorkout(interruptedSessionId, '2026-07-24T08:20:00.000Z', [true, false, false])
+};
+const reconciledInterruption = stateStore.reconcileStates(latestInterruptedLocal, olderInterruptedCloud);
+assert.strictEqual(reconciledInterruption.current.sessionId, interruptedSessionId);
+assert.strictEqual(reconciledInterruption.current.updatedAt, '2026-07-24T08:20:00.000Z');
+assert.strictEqual(reconciledInterruption.history.length, 0, 'interrupted progress must not invent Activity history');
+
+const dayTwoCloudRestore = {
+  ...staleCloudState,
+  lastUpdatedAt: '2026-07-25T06:00:00.000Z',
+  current: resumableWorkout(completedSessionId, '2026-07-24T08:30:00.000Z')
+};
+const reconciledRollover = stateStore.reconcileStates(completedLocalState, dayTwoCloudRestore);
+assert.strictEqual(reconciledRollover.current, null, 'date rollover must not reopen a completed session');
+assert.strictEqual(reconciledRollover.history[0].date, '2026-07-24T09:00:00.000Z');
+
+const partialSessionId = 'session-saved-partial';
+const partialLocalState = {
+  ...stateStore.defaultState(),
+  lastUpdatedAt: '2026-07-24T10:00:00.000Z',
+  history: [completedHistory(partialSessionId, '2026-07-24T10:00:00.000Z', 'saved_partial')],
+  current: null,
+  closedWorkoutSessionIds: [partialSessionId]
+};
+const partialStaleCloud = {
+  ...stateStore.defaultState(),
+  lastUpdatedAt: '2026-07-24T09:55:00.000Z',
+  current: resumableWorkout(partialSessionId, '2026-07-24T09:55:00.000Z')
+};
+const reconciledPartial = stateStore.reconcileStates(partialLocalState, partialStaleCloud);
+assert.strictEqual(reconciledPartial.current, null, 'saved partial workout must not reopen');
+assert.strictEqual(reconciledPartial.history[0].status, 'saved_partial');
+assert.strictEqual(reconciledPartial.history.length, 1, 'saved partial history must not duplicate');
+
 console.log(`Validated ${workouts.exerciseCatalog.length} exercises and workout lifecycle regression cases.`);

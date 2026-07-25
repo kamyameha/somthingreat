@@ -127,6 +127,16 @@ assert.match(functionSource('completeWorkoutWithoutProgress'), /resetTodayAfterW
 assert.match(functionSource('completeWorkoutNow'), /resetTodayAfterWorkout\(\)/);
 assert.match(functionSource('positionInitialEnergySelector'), /const targetFeel = state\.selectedEnergy \|\| 'normal'/);
 assert.doesNotMatch(functionSource('positionInitialEnergySelector'), /\|\| state\.selectedEnergy \|\|/);
+assert.match(functionSource('saveCloudState'), /if \(cloudSavePromise\) return cloudSavePromise/);
+assert.match(functionSource('saveCloudState'), /while \(cloudSaveRequested\)/);
+assert.ok(
+  functionSource('completeWorkoutNow').indexOf('await saveCloudState()') <
+    functionSource('completeWorkoutNow').indexOf('renderToday()'),
+  'completed workout cloud persistence is ordered before returning to Today'
+);
+assert.match(functionSource('completeWorkoutNow'), /closeWorkoutSession\(sessionId\)/);
+assert.match(functionSource('completeWorkoutWithoutProgress'), /closeWorkoutSession\(sessionId\)/);
+assert.match(appSource, /stateStore\.reconcileStates\(state, cloudState\)/);
 assert.match(workout, /\.workout-accordion-card \.rating-row\s*\{[^}]*background:\s*rgba\(1,\s*45,\s*237,\s*0\.15\)/s);
 assert.match(workout, /\.workout-accordion-card \.rating-row button\.selected\s*\{[^}]*background:\s*var\(--main\);[^}]*color:\s*#ffffff/s);
 

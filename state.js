@@ -2,7 +2,7 @@
   const STORAGE_KEY = 'camille-calisthenics-v4';
   const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
   const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
-  const STATE_SCHEMA_VERSION = 4;
+  const STATE_SCHEMA_VERSION = 5;
 
   function applyWorkoutCatalogMigrations(workoutModule) {
     if (!workoutModule || workoutModule.catalogMigrationsApplied) return;
@@ -91,6 +91,9 @@
         .map(item => ({
           date: new Date(item.date).toISOString(),
           startedAt: item.startedAt && !Number.isNaN(new Date(item.startedAt).getTime()) ? new Date(item.startedAt).toISOString() : null,
+          completedAt: item.completedAt && !Number.isNaN(new Date(item.completedAt).getTime())
+            ? new Date(item.completedAt).toISOString()
+            : new Date(item.date).toISOString(),
           workout: typeof item.workout === 'string' ? item.workout : 'Workout',
           mode: typeof item.mode === 'string' ? item.mode : 'normal',
           type: item.type === 'custom' ? 'custom' : 'workout',
@@ -99,6 +102,9 @@
           completedCount: Number.isFinite(Number(item.completedCount)) ? Math.max(0, Math.round(Number(item.completedCount))) : null,
           energy: ['great', 'normal', 'tired', 'exhausted'].includes(item.energy) ? item.energy : null,
           sessionId: typeof item.sessionId === 'string' ? item.sessionId : '',
+          status: ['completed', 'saved_partial'].includes(item.status)
+            ? item.status
+            : 'completed',
           exercises: Array.isArray(item.exercises)
             ? item.exercises
                 .filter(exercise => exercise && typeof exercise === 'object' && exercise.name)
@@ -139,6 +145,11 @@
                 })
             : []
         }));
+    }
+
+    function sanitizeClosedWorkoutSessionIds(sessionIds) {
+      if (!Array.isArray(sessionIds)) return [];
+      return Array.from(new Set(sessionIds.filter(value => typeof value === 'string' && value)));
     }
 
     function sanitizePendingSessionRecords(records) {
@@ -240,7 +251,9 @@
         pendingSessionRecords: [],
         progressInsights: sanitizeProgressInsights(null),
         restAdvice: sanitizeRestAdvice(null),
-        todayEmptyStateDismissed: false
+        todayEmptyStateDismissed: false,
+        closedWorkoutSessionIds: [],
+        lastUpdatedAt: null
       };
     }
 
@@ -265,11 +278,42 @@
         : null;
       nextState.levels = sanitizeLevels(nextState.levels, nextState.profile);
       nextState.history = sanitizeHistory(nextState.history);
+      nextState.closedWorkoutSessionIds = sanitizeClosedWorkoutSessionIds([
+        ...(nextState.closedWorkoutSessionIds || []),
+        ...nextState.history.map(item => item.sessionId).filter(Boolean)
+      ]);
       nextState.rotationIndex = Number.isFinite(Number(nextState.rotationIndex)) ? Math.max(0, Math.round(Number(nextState.rotationIndex))) : 0;
       if (typeof workoutModule.nextRotationIndexFromHistory === 'function') {
         nextState.rotationIndex = workoutModule.nextRotationIndexFromHistory(nextState.history, nextState.rotationIndex);
       }
       nextState.current = workoutModule.sanitizeWorkout(nextState.current);
+      if (nextState.current) {
+        if (typeof nextState.current.sessionId !== 'string' || !nextState.current.sessionId) {
+          const legacyStartedAt = nextState.current.startedAt && !Number.isNaN(new Date(nextState.current.startedAt).getTime())
+            ? new Date(nextState.current.startedAt).toISOString()
+            : 'unknown-time';
+          const legacyWorkoutName = String(nextState.current.workoutName || 'workout').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          nextState.current.sessionId = `legacy-${legacyStartedAt}-${legacyWorkoutName}`;
+        }
+        const currentSessionId = nextState.current.sessionId;
+        const lifecycleStatus = typeof nextState.current.lifecycleStatus === 'string'
+          ? nextState.current.lifecycleStatus
+          : 'active';
+        const isClosedLifecycle = ['completed', 'saved_partial', 'abandoned'].includes(lifecycleStatus);
+        if (currentSessionId && isClosedLifecycle && !nextState.closedWorkoutSessionIds.includes(currentSessionId)) {
+          nextState.closedWorkoutSessionIds.push(currentSessionId);
+        }
+        if (isClosedLifecycle || (currentSessionId && nextState.closedWorkoutSessionIds.includes(currentSessionId))) {
+          nextState.current = null;
+        } else {
+          nextState.current.lifecycleStatus = 'active';
+          nextState.current.updatedAt = nextState.current.updatedAt && !Number.isNaN(new Date(nextState.current.updatedAt).getTime())
+            ? new Date(nextState.current.updatedAt).toISOString()
+            : (nextState.current.startedAt && !Number.isNaN(new Date(nextState.current.startedAt).getTime())
+              ? new Date(nextState.current.startedAt).toISOString()
+              : new Date().toISOString());
+        }
+      }
       nextState.generated = workoutModule.sanitizeWorkout(nextState.generated);
       nextState.customChecklist = sanitizeCustomChecklist(nextState.customChecklist);
       nextState.selectedEnergy = energyOptions[nextState.selectedEnergy] ? nextState.selectedEnergy : null;
@@ -283,6 +327,9 @@
       nextState.progressInsights = sanitizeProgressInsights(nextState.progressInsights);
       nextState.restAdvice = sanitizeRestAdvice(nextState.restAdvice);
       nextState.todayEmptyStateDismissed = Boolean(nextState.todayEmptyStateDismissed);
+      nextState.lastUpdatedAt = nextState.lastUpdatedAt && !Number.isNaN(new Date(nextState.lastUpdatedAt).getTime())
+        ? new Date(nextState.lastUpdatedAt).toISOString()
+        : null;
       nextState.schemaVersion = STATE_SCHEMA_VERSION;
 
       if (!nextState.current && !nextState.generated && !nextState.selectedEnergy && !nextState.customChecklist) {
@@ -294,6 +341,71 @@
       }
 
       return nextState;
+    }
+
+    function historyRecordKey(item = {}) {
+      if (item.sessionId) return `session:${item.sessionId}`;
+      return `legacy:${item.type || 'workout'}:${item.date || ''}:${item.startedAt || ''}:${item.workout || ''}`;
+    }
+
+    function mergeHistory(localHistory, cloudHistory) {
+      const merged = new Map();
+      sanitizeHistory(cloudHistory).forEach(item => merged.set(historyRecordKey(item), item));
+      sanitizeHistory(localHistory).forEach(item => merged.set(historyRecordKey(item), item));
+      return [...merged.values()].sort((left, right) => Date.parse(left.date) - Date.parse(right.date));
+    }
+
+    function stateFreshness(nextState) {
+      const timestamps = [
+        nextState?.lastUpdatedAt,
+        nextState?.current?.updatedAt,
+        nextState?.current?.startedAt,
+        ...(nextState?.history || []).map(item => item?.date)
+      ].map(value => Date.parse(value)).filter(Number.isFinite);
+      return timestamps.length ? Math.max(...timestamps) : 0;
+    }
+
+    function reconcileStates(localState, cloudState) {
+      const local = sanitizeState({ ...defaultState(), ...(localState || {}) });
+      const cloud = sanitizeState({ ...defaultState(), ...(cloudState || {}) });
+      const history = mergeHistory(local.history, cloud.history);
+      const closedWorkoutSessionIds = sanitizeClosedWorkoutSessionIds([
+        ...local.closedWorkoutSessionIds,
+        ...cloud.closedWorkoutSessionIds,
+        ...history.map(item => item.sessionId).filter(Boolean)
+      ]);
+      const closed = new Set(closedWorkoutSessionIds);
+      const activeCandidates = [local.current, cloud.current]
+        .filter(current => current?.sessionId && !closed.has(current.sessionId))
+        .sort((left, right) => {
+          const leftTime = Date.parse(left.updatedAt || left.startedAt) || 0;
+          const rightTime = Date.parse(right.updatedAt || right.startedAt) || 0;
+          return rightTime - leftTime;
+        });
+      const pendingBySession = new Map(
+        [...cloud.pendingSessionRecords, ...local.pendingSessionRecords]
+          .filter(record => record?.sessionId)
+          .map(record => [record.sessionId, record])
+      );
+      const localHistoryIds = new Set(local.history.map(item => item.sessionId).filter(Boolean));
+      const cloudHistoryIds = new Set(cloud.history.map(item => item.sessionId).filter(Boolean));
+      const localHasUnsharedCompletion = [...localHistoryIds].some(sessionId => !cloudHistoryIds.has(sessionId));
+      const cloudHasUnsharedCompletion = [...cloudHistoryIds].some(sessionId => !localHistoryIds.has(sessionId));
+      const base = localHasUnsharedCompletion && !cloudHasUnsharedCompletion
+        ? local
+        : cloudHasUnsharedCompletion && !localHasUnsharedCompletion
+          ? cloud
+          : stateFreshness(local) >= stateFreshness(cloud) ? local : cloud;
+      const latestUpdatedAt = Math.max(stateFreshness(local), stateFreshness(cloud));
+
+      return sanitizeState({
+        ...base,
+        history,
+        current: activeCandidates[0] || null,
+        pendingSessionRecords: [...pendingBySession.values()],
+        closedWorkoutSessionIds,
+        lastUpdatedAt: latestUpdatedAt ? new Date(latestUpdatedAt).toISOString() : null
+      });
     }
 
     function withoutTemporaryTodayState(nextState) {
@@ -356,7 +468,9 @@
         pendingSessionRecords: state.pendingSessionRecords,
         progressInsights: state.progressInsights,
         restAdvice: state.restAdvice,
-        todayEmptyStateDismissed: state.todayEmptyStateDismissed
+        todayEmptyStateDismissed: state.todayEmptyStateDismissed,
+        closedWorkoutSessionIds: state.closedWorkoutSessionIds,
+        lastUpdatedAt: state.lastUpdatedAt
       });
     }
 
@@ -366,6 +480,7 @@
       migrateState,
       publicState,
       sanitizeState,
+      reconcileStates,
       saveState,
       writeLocalState,
       schemaVersion: STATE_SCHEMA_VERSION,
