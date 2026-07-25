@@ -375,6 +375,10 @@ body.account-active .app {
   background: transparent;
   font-size: 0;
   line-height: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  transform: none;
 }
 
 .account-panel.account-modal.account-main-mode .menu-close-btn,
@@ -393,6 +397,9 @@ body.account-active .app {
   display: block;
   width: 26px;
   height: 26px;
+  margin: 0;
+  place-self: center;
+  transform: none;
   background: currentColor;
   mask: url("Assets/x.svg") center / 26px 26px no-repeat;
   -webkit-mask: url("Assets/x.svg") center / 26px 26px no-repeat;

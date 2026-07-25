@@ -397,6 +397,37 @@ const unlockedWallPushAudit = workouts.getSwapCandidateAudit({ ...pushTrack[0], 
   profile: { goal: 'pullup', equipment: ['floor'] }, state: { levels: { horizontalPush: { level: 1 } } }, unlockedLevel: 1
 });
 assert.ok(unlockedWallPushAudit.candidateCountFinal > 0, 'Wall push-up exposes Swap when a same-track replacement is unlocked');
+let cyclingSwap = workouts.normalizeExercise({
+  ...pushTrack[0],
+  trackKey: 'horizontalPush',
+  progressionTrackKey: 'horizontalPush',
+  workoutRole: 'primaryFocus'
+});
+const cyclingSwapIds = [cyclingSwap.id];
+for (let swapIndex = 0; swapIndex < 7; swapIndex += 1) {
+  const audit = workouts.getSwapCandidateAudit(cyclingSwap, {
+    usedIds: new Set([cyclingSwap.id]),
+    profile: { goal: 'pullup', equipment: ['floor'] },
+    state: { levels: { horizontalPush: { level: 3 } } },
+    unlockedLevel: 3
+  });
+  const nextCandidate = workouts.selectSwapCandidate(cyclingSwap, audit.finalCandidates);
+  assert.ok(nextCandidate, `cycling Swap candidate ${swapIndex + 1}`);
+  if (audit.finalCandidates.length > 1 && cyclingSwapIds.length > 1) {
+    assert.notStrictEqual(
+      nextCandidate.id,
+      cyclingSwapIds[cyclingSwapIds.length - 2],
+      'Swap avoids the immediately previous exercise when another candidate exists'
+    );
+  }
+  cyclingSwap = workouts.createSwapReplacement(cyclingSwap, nextCandidate, 'great');
+  cyclingSwapIds.push(cyclingSwap.id);
+}
+assert.deepStrictEqual(
+  new Set(cyclingSwapIds.slice(0, 4)),
+  new Set(pushTrack.slice(0, 4).map(item => item.id)),
+  'repeated swaps reach every unlocked compatible stable ID before cycling'
+);
 const proneSwapAudit = workouts.getSwapCandidateAudit({
   ...pronePullDown,
   trackKey: 'pullAccessory',

@@ -1577,7 +1577,9 @@ function swapActiveExercise(index) {
   const current = state.current?.exercises?.[index];
   const candidates = activeSwapCandidates(current);
   if (!current || !candidates.length) return;
-  const replacement = workoutModule.createSwapReplacement(current, candidates[0], state.current.mode,
+  const next = workoutModule.selectSwapCandidate(current, candidates);
+  if (!next) return;
+  const replacement = workoutModule.createSwapReplacement(current, next, state.current.mode,
     typeof getActiveRecovery === 'function' ? getActiveRecovery() : null, { profile: getProfile(), state });
   const key = exerciseSessionKey(current, index);
   replacement.sessionKey = key;
@@ -1593,10 +1595,10 @@ function swapPreviewExercise(index) {
   if (!current) return;
   const candidates = previewSwapCandidates(current);
   if (!candidates.length) return;
-  const previousIds = Array.isArray(current.previewSwapIds) ? current.previewSwapIds : [];
-  const next = candidates.find(candidate => !previousIds.includes(candidate.id)) || candidates[0];
+  const next = workoutModule.selectSwapCandidate(current, candidates);
+  if (!next) return;
   state.generated.exercises[index] = workoutModule.createSwapReplacement(
-    { ...current, previewSwapIds: previousIds },
+    current,
     next,
     state.generated.mode,
     typeof getActiveRecovery === 'function' ? getActiveRecovery() : null,

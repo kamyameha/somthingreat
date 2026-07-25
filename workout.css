@@ -7,9 +7,28 @@
   box-shadow: none;
 }
 
-.exercise-help-content { display: grid; gap: 12px; max-height: min(68vh, 560px); overflow-y: auto; }
-.exercise-help-section h3 { margin: 0 0 6px; font-size: .82rem; letter-spacing: .02em; }
-.exercise-help-section p, .exercise-help-section ul { margin: 0; }
+.exercise-help-content {
+  display: grid;
+  gap: 12px;
+  max-height: min(68vh, 560px);
+  overflow-y: auto;
+  color: var(--main);
+}
+
+.exercise-help-section h3 {
+  margin: 0 0 6px;
+  color: rgba(1, 45, 237, 0.35);
+  font-size: .82rem;
+  letter-spacing: .02em;
+}
+
+.exercise-help-section p,
+.exercise-help-section ul,
+.exercise-help-section li {
+  margin: 0;
+  color: var(--main);
+}
+
 .exercise-help-section ul { padding-left: 18px; }
 .exercise-help-section li + li { margin-top: 5px; }
 
@@ -1438,6 +1457,8 @@ body.workout-active .workout-safe-area {
   line-height: 0;
   display: grid;
   place-items: center;
+  margin: 0;
+  transform: none;
 }
 
 .generated-close-btn::before {
@@ -1446,8 +1467,8 @@ body.workout-active .workout-safe-area {
   width: 24px;
   height: 24px;
   margin: 0;
-  align-self: center;
-  justify-self: center;
+  place-self: center;
+  transform: none;
   background: #ffffff;
   -webkit-mask: url("Assets/x.svg") center / contain no-repeat;
   mask: url("Assets/x.svg") center / contain no-repeat;

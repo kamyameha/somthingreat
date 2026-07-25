@@ -2129,6 +2129,15 @@
   }
 
   function replaceWorkoutExercise(current, replacement) {
+    const previousSwapIds = Array.isArray(current.swapHistoryIds)
+      ? current.swapHistoryIds
+      : Array.isArray(current.previewSwapIds)
+        ? current.previewSwapIds
+        : [];
+    const swapHistoryIds = [
+      ...previousSwapIds.filter(id => id && id !== current.id),
+      current.id
+    ].filter(Boolean);
     const next = normalizeExercise({
       ...replacement,
       trackKey: current.trackKey || replacement.trackKey,
@@ -2137,9 +2146,26 @@
       workoutExerciseId: current.workoutExerciseId,
       swappedFromExerciseId: current.swappedFromExerciseId || current.id,
       swappedFromExerciseName: current.swappedFromExerciseName || current.name,
-      previewSwapIds: [...(current.previewSwapIds || []), current.id].filter(Boolean)
+      swapHistoryIds,
+      // Retained for workouts saved before swap history was shared by Preview
+      // and the active workout.
+      previewSwapIds: swapHistoryIds
     });
     return next;
+  }
+
+  function selectSwapCandidate(current, candidates = []) {
+    if (!current || !Array.isArray(candidates) || !candidates.length) return null;
+    const history = Array.isArray(current.swapHistoryIds)
+      ? current.swapHistoryIds
+      : Array.isArray(current.previewSwapIds)
+        ? current.previewSwapIds
+        : [];
+    const visitedIds = new Set(history);
+    const unvisited = candidates.find(candidate => candidate?.id && !visitedIds.has(candidate.id));
+    if (unvisited) return unvisited;
+    const immediatelyPreviousId = history[history.length - 1] || null;
+    return candidates.find(candidate => candidate?.id && candidate.id !== immediatelyPreviousId) || candidates[0];
   }
 
   function createSwapReplacement(current, replacement, mode = 'normal', recovery = null, context = {}) {
@@ -3245,6 +3271,7 @@
     prescriptionToString,
     replaceWorkoutExercise,
     createSwapReplacement,
+    selectSwapCandidate,
     getValidSwapCandidates,
     getSwapCandidateAudit,
     executableRounds,
