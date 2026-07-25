@@ -23,6 +23,24 @@
     'core'
   ]);
 
+  const PROGRAMME_ROLES = Object.freeze({
+    foundationStrength: 'foundationStrength',
+    foundationMobility: 'foundationMobility',
+    foundationControl: 'foundationControl',
+    skillPreparation: 'skillPreparation',
+    skillPractice: 'skillPractice',
+    skillProgression: 'skillProgression',
+    generalSupport: 'generalSupport'
+  });
+
+  const MASTERY_SKILLS = Object.freeze({
+    pullup: 'pullup',
+    handstand: 'handstand',
+    lsit: 'lsit',
+    muscleup: 'muscleup',
+    generalFitness: 'generalFitness'
+  });
+
   const legacyTrackMap = {
     pushup: ['horizontalPush'],
     pullup: ['horizontalPull', 'verticalPull', 'scapularPull', 'pullAccessory'],
@@ -1548,6 +1566,169 @@
     })
   ];
 
+  function stableIdSet(values) {
+    return new Set(values);
+  }
+
+  const generalSupportIds = stableIdSet([
+    'dead-bug', 'forearm-plank', 'plank', 'hollow-hold', 'side-plank'
+  ]);
+  const foundationControlIds = stableIdSet([
+    'top-support-hold', 'scapular-support-movement',
+    'active-hang-preparation', 'scapular-pull-up', 'prone-pull-down',
+    'assisted-single-leg-sit-to-stand', 'elevated-pistol-squat', 'counterbalance-pistol-squat',
+    'assisted-pistol-squat', 'pistol-squat-negative',
+    'reverse-crunch', 'seated-compression-lift', 'bent-knee-support-hold',
+    'foot-assisted-support-hold', 'tuck-support-hold',
+    'wrist-preparation', 'elevated-plank-shoulder-shift', 'pike-hold',
+    'pike-shoulder-taps', 'wall-walk-preparation',
+    'hollow-body-strength', 'straight-bar-support-development',
+    'crow-weight-shift'
+  ]);
+  const foundationMobilityIds = stableIdSet([
+    'wrist-preparation', 'hip-hinge-drill', 'bodyweight-good-morning'
+  ]);
+  const skillPreparationIds = stableIdSet([
+    'active-hang-preparation', 'scapular-pull-up', 'prone-pull-down',
+    'wrist-preparation', 'elevated-plank-shoulder-shift', 'pike-hold',
+    'pike-shoulder-taps', 'wall-walk-preparation',
+    'reverse-crunch', 'seated-compression-lift', 'bent-knee-support-hold',
+    'foot-assisted-support-hold', 'hollow-body-strength',
+    'straight-bar-support-development', 'straight-bar-dip-preparation',
+    'low-bar-transition-drill', 'crow-weight-shift',
+    'assisted-single-leg-sit-to-stand', 'elevated-pike-hold'
+  ]);
+  const skillPracticeIds = stableIdSet([
+    'chest-to-wall-handstand-hold', 'chest-to-wall-alignment-hold',
+    'wall-weight-shifts', 'heel-pulls', 'controlled-wall-exit',
+    'back-to-wall-kick-up-practice', 'freestanding-kick-up-practice',
+    'freestanding-balance-attempts', 'crow-one-foot-lift', 'crow-hold',
+    'feet-assisted-transition', 'band-assisted-transition',
+    'jumping-muscle-up-transition', 'slow-negative-muscle-up'
+  ]);
+  const skillProgressionIds = stableIdSet([
+    'assisted-pull-up', 'flexed-arm-hang', 'negative-pull-up',
+    'partial-pull-up', 'strict-pull-up-singles', 'strict-pull-up',
+    'chest-to-bar-pull-up', 'high-pull-up',
+    'tuck-support-hold', 'one-leg-extended-tuck-hold',
+    'alternating-one-leg-lsit', 'full-tuck-lsit', 'full-lsit-attempts',
+    'full-lsit-hold', 'longer-lsit-hold',
+    'pike-push-up', 'feet-elevated-pike-push-up',
+    'wall-handstand-push-up-negative', 'partial-wall-handstand-push-up',
+    'full-wall-handstand-push-up',
+    'elevated-pistol-squat', 'counterbalance-pistol-squat',
+    'assisted-pistol-squat', 'pistol-squat-negative', 'full-pistol-squat',
+    'explosive-pull-up', 'feet-assisted-transition',
+    'band-assisted-transition', 'jumping-muscle-up-transition',
+    'slow-negative-muscle-up', 'assisted-muscle-up',
+    'full-muscle-up-attempt', 'full-muscle-up',
+    'controlled-muscle-up-repetitions'
+  ]);
+
+  function intrinsicProgrammeRoles(exerciseId) {
+    const roles = [];
+    if (foundationMobilityIds.has(exerciseId)) roles.push(PROGRAMME_ROLES.foundationMobility);
+    if (foundationControlIds.has(exerciseId)) roles.push(PROGRAMME_ROLES.foundationControl);
+    if (skillPreparationIds.has(exerciseId)) roles.push(PROGRAMME_ROLES.skillPreparation);
+    if (skillPracticeIds.has(exerciseId)) roles.push(PROGRAMME_ROLES.skillPractice);
+    if (skillProgressionIds.has(exerciseId)) roles.push(PROGRAMME_ROLES.skillProgression);
+    if (generalSupportIds.has(exerciseId)) roles.push(PROGRAMME_ROLES.generalSupport);
+    if (!roles.length || !generalSupportIds.has(exerciseId)) roles.unshift(PROGRAMME_ROLES.foundationStrength);
+    return unique(roles);
+  }
+
+  const masteryRelationshipGroups = Object.freeze({
+    pullup: Object.freeze({
+      preparation: stableIdSet(['active-hang-preparation', 'scapular-pull-up', 'prone-pull-down']),
+      progression: stableIdSet([
+        'assisted-pull-up', 'flexed-arm-hang', 'negative-pull-up', 'partial-pull-up',
+        'strict-pull-up-singles', 'strict-pull-up', 'chest-to-bar-pull-up', 'high-pull-up'
+      ]),
+      foundation: stableIdSet([
+        'standing-towel-row-isometric', 'seated-towel-row-isometric', 'high-angle-table-row',
+        'bent-knee-inverted-row', 'straight-leg-inverted-row', 'feet-elevated-inverted-row',
+        'dead-bug', 'forearm-plank', 'plank', 'hollow-hold'
+      ])
+    }),
+    handstand: Object.freeze({
+      preparation: stableIdSet([
+        'wrist-preparation', 'elevated-plank-shoulder-shift', 'pike-hold',
+        'pike-shoulder-taps', 'wall-walk-preparation', 'dead-bug', 'hollow-hold'
+      ]),
+      progression: stableIdSet([
+        'chest-to-wall-handstand-hold', 'chest-to-wall-alignment-hold',
+        'wall-weight-shifts', 'heel-pulls', 'controlled-wall-exit',
+        'back-to-wall-kick-up-practice', 'freestanding-kick-up-practice',
+        'freestanding-balance-attempts'
+      ]),
+      foundation: stableIdSet([
+        'pike-push-up', 'feet-elevated-pike-push-up', 'scapular-support-movement',
+        'assisted-split-squat', 'single-leg-romanian-deadlift', 'reverse-crunch'
+      ])
+    }),
+    lsit: Object.freeze({
+      preparation: stableIdSet([
+        'reverse-crunch', 'seated-compression-lift', 'bent-knee-support-hold',
+        'foot-assisted-support-hold', 'top-support-hold', 'scapular-support-movement'
+      ]),
+      progression: stableIdSet([
+        'tuck-support-hold', 'one-leg-extended-tuck-hold',
+        'alternating-one-leg-lsit', 'full-tuck-lsit', 'full-lsit-attempts',
+        'full-lsit-hold', 'longer-lsit-hold'
+      ]),
+      foundation: stableIdSet([
+        'close-grip-wall-push-up', 'close-grip-incline-push-up',
+        'close-grip-push-up-dip-prep', 'assisted-split-squat',
+        'single-leg-romanian-deadlift'
+      ])
+    }),
+    muscleup: Object.freeze({
+      preparation: stableIdSet([
+        'hollow-body-strength', 'active-hang-preparation', 'scapular-pull-up',
+        'prone-pull-down', 'straight-bar-support-development',
+        'straight-bar-dip-preparation', 'low-bar-transition-drill'
+      ]),
+      progression: stableIdSet([
+        'chest-to-bar-pull-up', 'high-pull-up', 'explosive-pull-up',
+        'feet-assisted-transition', 'band-assisted-transition',
+        'jumping-muscle-up-transition', 'slow-negative-muscle-up',
+        'assisted-muscle-up', 'full-muscle-up-attempt', 'full-muscle-up',
+        'controlled-muscle-up-repetitions'
+      ]),
+      foundation: stableIdSet([
+        'negative-pull-up', 'strict-pull-up-singles', 'strict-pull-up',
+        'top-support-hold', 'scapular-support-movement', 'feet-assisted-dip',
+        'negative-dip', 'partial-dip', 'full-dip-singles', 'full-dip',
+        'dead-bug', 'hollow-hold'
+      ])
+    })
+  });
+
+  function masteryRelationshipFor(exerciseId, masterySkill) {
+    const groups = masteryRelationshipGroups[masterySkill];
+    if (!groups) return null;
+    if (groups.progression.has(exerciseId)) {
+      return { masterySkill, relationship: PROGRAMME_ROLES.skillProgression, direct: true };
+    }
+    if (groups.preparation.has(exerciseId)) {
+      return { masterySkill, relationship: PROGRAMME_ROLES.skillPreparation, direct: false };
+    }
+    if (groups.foundation.has(exerciseId)) {
+      return { masterySkill, relationship: PROGRAMME_ROLES.foundationStrength, direct: false };
+    }
+    return null;
+  }
+
+  exerciseCatalog.forEach(item => {
+    item.programmeRoles = intrinsicProgrammeRoles(item.id);
+    item.masteryRelationships = Object.fromEntries(
+      Object.values(MASTERY_SKILLS)
+        .filter(skill => skill !== MASTERY_SKILLS.generalFitness)
+        .map(skill => [skill, masteryRelationshipFor(item.id, skill)])
+        .filter(([, relationship]) => Boolean(relationship))
+    );
+  });
+
   const byId = Object.fromEntries(exerciseCatalog.map(item => [item.id, item]));
   // These movements remain documented for migration/history lookup, but are
   // intentionally excluded from generation because their household anchors
@@ -1787,6 +1968,30 @@
     })
   });
 
+  const masteryFoundationRankings = Object.freeze({
+    pullup: Object.freeze({
+      Push: Object.freeze(['verticalPush', 'horizontalPush', 'dipStrength', 'antiExtension', 'lateralCore']),
+      Pull: Object.freeze(['horizontalPull', 'scapularPull', 'pullAccessory', 'verticalPull', 'antiExtension', 'lateralCore', 'compression']),
+      'Lower Body': Object.freeze(['squat', 'posteriorChain', 'unilateral', 'calves', 'antiExtension', 'compression', 'lateralCore'])
+    }),
+    handstand: Object.freeze({
+      Push: Object.freeze(['verticalPush', 'dipStrength', 'horizontalPush', 'antiExtension', 'lateralCore']),
+      Pull: Object.freeze(['scapularPull', 'horizontalPull', 'pullAccessory', 'verticalPull', 'antiExtension', 'lateralCore', 'compression']),
+      'Lower Body': Object.freeze(['unilateral', 'posteriorChain', 'squat', 'calves', 'compression', 'antiExtension', 'lateralCore'])
+    }),
+    lsit: Object.freeze({
+      Push: Object.freeze(['dipStrength', 'horizontalPush', 'verticalPush', 'antiExtension', 'lateralCore']),
+      Pull: Object.freeze(['horizontalPull', 'scapularPull', 'pullAccessory', 'verticalPull', 'antiExtension', 'compression', 'lateralCore']),
+      'Lower Body': Object.freeze(['unilateral', 'posteriorChain', 'squat', 'calves', 'compression', 'antiExtension', 'lateralCore'])
+    }),
+    muscleup: Object.freeze({
+      Push: Object.freeze(['dipStrength', 'verticalPush', 'horizontalPush', 'antiExtension', 'lateralCore']),
+      Pull: Object.freeze(['scapularPull', 'horizontalPull', 'pullAccessory', 'verticalPull', 'antiExtension', 'lateralCore', 'compression']),
+      'Lower Body': Object.freeze(['squat', 'posteriorChain', 'unilateral', 'calves', 'antiExtension', 'compression', 'lateralCore'])
+    }),
+    generalFitness: Object.freeze({})
+  });
+
   const workoutEligibleTracks = Object.freeze({
     Push: Object.freeze([
       ...workoutCompositionPolicies.Push.primaryFocusTracks,
@@ -1803,7 +2008,12 @@
       ...workoutCompositionPolicies['Lower Body'].focusAccessoryTracks,
       ...workoutCompositionPolicies['Lower Body'].generalSupportTracks
     ]),
-    Skills: Object.freeze(['pistolSquat', 'handstandPushup', 'antiExtension', 'handstand', 'lsit', 'verticalPull', 'scapularPull', 'pullAccessory', 'compression', 'verticalPush'])
+    Skills: Object.freeze([
+      'pistolSquat', 'handstandPushup', 'antiExtension', 'lateralCore',
+      'handstand', 'crow', 'lsit', 'compression', 'dipStrength',
+      'verticalPull', 'scapularPull', 'pullAccessory', 'verticalPush',
+      'muscleupFoundation', 'muscleupPower', 'muscleupTransition', 'muscleupFull'
+    ])
   });
 
   const addOnMovementHelp = {
@@ -2044,8 +2254,16 @@
     if (goal === 'handstand') return 'handstand';
     if (goal === 'lsit') return 'lsit';
     if (goal === 'muscleup') return getMuscleUpGate(profile, state).trackKey;
-    if (goal === 'general') return 'crow';
+    if (goal === 'general') return MASTERY_SKILLS.generalFitness;
     return 'verticalPull';
+  }
+
+  function resolveMasterySkill(goal) {
+    if (goal === 'handstand') return MASTERY_SKILLS.handstand;
+    if (goal === 'lsit') return MASTERY_SKILLS.lsit;
+    if (goal === 'muscleup') return MASTERY_SKILLS.muscleup;
+    if (goal === 'general') return MASTERY_SKILLS.generalFitness;
+    return MASTERY_SKILLS.pullup;
   }
 
   function getRotation(profile = null, state = {}) {
@@ -2059,7 +2277,13 @@
       {
         name: 'Skills',
         focusLabel: goal === 'muscleup' ? muscleGate.label : '',
-        tracks: unique([skillTrack, 'pistolSquat', 'antiExtension', 'handstandPushup', 'lsit', goal === 'lsit' ? 'compression' : goal === 'handstand' ? 'verticalPush' : 'horizontalPull'])
+        tracks: unique([
+          ...(goal === 'general' ? ['crow', 'handstand', 'lsit', 'pistolSquat', 'handstandPushup'] : [skillTrack]),
+          'antiExtension',
+          goal === 'pullup' || goal === 'muscleup' ? 'scapularPull' : null,
+          goal === 'lsit' ? 'compression' : null,
+          goal === 'handstand' ? 'verticalPush' : null
+        ].filter(Boolean))
       }
     ];
   }
@@ -2142,7 +2366,17 @@
       ...replacement,
       trackKey: current.trackKey || replacement.trackKey,
       progressionTrackKey: current.progressionTrackKey || current.trackKey || replacement.progressionTrackKey || replacement.trackKey,
+      progressionEvidenceTarget: current.progressionEvidenceTarget || current.progressionTrackKey || current.trackKey,
       workoutRole: current.workoutRole || replacement.workoutRole,
+      programmeRole: current.programmeRole || replacement.programmeRole,
+      selectedMasterySkill: current.selectedMasterySkill || replacement.selectedMasterySkill,
+      masteryRelationship: current.masteryRelationship || replacement.masteryRelationship,
+      developmentDiagnostics: {
+        ...(replacement.developmentDiagnostics || {}),
+        ...(current.developmentDiagnostics || {}),
+        stableExerciseId: replacement.id,
+        source: 'user-swap'
+      },
       workoutExerciseId: current.workoutExerciseId,
       swappedFromExerciseId: current.swappedFromExerciseId || current.id,
       swappedFromExerciseName: current.swappedFromExerciseName || current.name,
@@ -2198,6 +2432,7 @@
         candidate.id !== exercise.id &&
         !usedIds.has(candidate.id) &&
         index <= unlockedLevel &&
+        swapCandidatePreservesProgrammeRole(exercise, candidate) &&
         isExerciseEligibleForGeneration(candidate, options.profile || null, options.state || {}, recovery) &&
         isExerciseAllowedForRecovery(candidate, recovery)
       ))
@@ -2205,6 +2440,25 @@
         Math.abs((first.difficulty || 1) - (exercise.difficulty || 1)) -
         Math.abs((second.difficulty || 1) - (exercise.difficulty || 1))
       ));
+  }
+
+  function swapCandidatePreservesProgrammeRole(exercise, candidate) {
+    const role = exercise?.programmeRole;
+    if (!role) return true;
+    if (role === PROGRAMME_ROLES.generalSupport) {
+      return candidate?.programmeRoles?.includes(PROGRAMME_ROLES.generalSupport);
+    }
+    const relationship = masteryRelationshipFor(candidate?.id, exercise?.selectedMasterySkill);
+    if ([PROGRAMME_ROLES.skillPreparation, PROGRAMME_ROLES.skillPractice, PROGRAMME_ROLES.skillProgression].includes(role)) {
+      return relationship?.relationship === role || candidate?.programmeRoles?.includes(role);
+    }
+    if (
+      [PROGRAMME_ROLES.foundationStrength, PROGRAMME_ROLES.foundationMobility, PROGRAMME_ROLES.foundationControl].includes(role) &&
+      relationship?.direct
+    ) {
+      return false;
+    }
+    return candidate?.programmeRoles?.includes(role);
   }
 
   function getSwapCandidateAudit(exercise, options = {}) {
@@ -2219,7 +2473,10 @@
     const afterRecovery = afterEquipment.filter(candidate => isExerciseAllowedForRecovery(candidate, recovery));
     const afterProgression = afterRecovery.filter(candidate => {
       const index = equipmentTrack.findIndex(item => item.id === candidate.id);
-      return index >= 0 && index <= unlockedLevel && isExerciseEligibleForGeneration(candidate, options.profile || null, options.state || {}, recovery);
+      return index >= 0 &&
+        index <= unlockedLevel &&
+        swapCandidatePreservesProgrammeRole(exercise, candidate) &&
+        isExerciseEligibleForGeneration(candidate, options.profile || null, options.state || {}, recovery);
     });
     const finalCandidates = afterProgression
       .filter(candidate => !usedIds.has(candidate.id))
@@ -2286,7 +2543,12 @@
       rating: safeRating,
       trackKey: normalized.trackKey,
       progressionTrackKey: normalized.progressionTrackKey || null,
+      progressionEvidenceTarget: normalized.progressionEvidenceTarget || normalized.progressionTrackKey || null,
       progressionLevel: normalized.level || null,
+      programmeRole: normalized.programmeRole || null,
+      selectedMasterySkill: normalized.selectedMasterySkill || null,
+      masteryRelationship: normalized.masteryRelationship || null,
+      developmentDiagnostics: normalized.developmentDiagnostics || null,
       swappedFromExerciseId: normalized.swappedFromExerciseId || null,
       swappedFromExerciseName: normalized.swappedFromExerciseName || null,
       isAddOn: Boolean(normalized.isAddOn)
@@ -2299,6 +2561,12 @@
     }
     if (!result.rating || result.completedSets < 1) {
       return { applied: false, reason: 'no-completed-sets-or-rating' };
+    }
+    if (
+      result.progressionEvidenceTarget &&
+      result.progressionEvidenceTarget !== result.progressionTrackKey
+    ) {
+      return { applied: false, reason: 'progression-evidence-target-mismatch' };
     }
     const isFullyCompleted = result.completedSets === result.targetSets;
     if (!isFullyCompleted && ['easy', 'good'].includes(result.rating)) {
@@ -2554,11 +2822,49 @@
       }));
   }
 
-  function latestWorkoutExerciseIds(history = []) {
-    const latest = [...(history || [])]
-      .filter(item => item && item.type !== 'custom' && Array.isArray(item.exercises))
-      .sort((first, second) => new Date(second.date || second.completedAt || 0) - new Date(first.date || first.completedAt || 0))[0];
-    return new Set((latest?.exercises || []).map(item => item?.exerciseId || item?.id).filter(Boolean));
+  function localDateKey(value) {
+    const date = value instanceof Date ? value : new Date(value || 0);
+    if (Number.isNaN(date.getTime())) return '';
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  }
+
+  function sameDayWorkoutExerciseIds(history = [], referenceDate = new Date()) {
+    const referenceKey = localDateKey(referenceDate);
+    return new Set(
+      [...(history || [])]
+        .filter(item => (
+          item &&
+          item.type !== 'custom' &&
+          !item.customType &&
+          Array.isArray(item.exercises) &&
+          localDateKey(item.date || item.completedAt) === referenceKey
+        ))
+        .flatMap(item => item.exercises)
+        .map(item => item?.exerciseId || item?.id)
+        .filter(Boolean)
+    );
+  }
+
+  function workoutDiversityHistory(state = {}) {
+    return [
+      ...(Array.isArray(state.history) ? state.history : []),
+      ...(Array.isArray(state.generationHistory) ? state.generationHistory : [])
+    ];
+  }
+
+  function recentWorkoutExerciseIds(history = [], limit = 3) {
+    return new Set(
+      [...(history || [])]
+        .filter(item => item && item.type !== 'custom' && !item.customType && Array.isArray(item.exercises))
+        .sort((left, right) => (
+          Date.parse(right.date || right.generatedAt || right.completedAt || 0) -
+          Date.parse(left.date || left.generatedAt || left.completedAt || 0)
+        ))
+        .slice(0, Math.max(1, Number(limit) || 3))
+        .flatMap(item => item.exercises)
+        .map(item => item?.exerciseId || item?.id)
+        .filter(Boolean)
+    );
   }
 
   function skillCompositionPolicy(profile = null, state = {}) {
@@ -2566,15 +2872,15 @@
     const selectedTrack = getGoalTrackKey(goal, profile, state);
     if (goal === 'handstand') {
       return {
-        primaryFocusTracks: unique([selectedTrack, 'verticalPush', 'handstandPushup']),
-        focusAccessoryTracks: [],
-        generalSupportTracks: ['antiExtension', 'lateralCore']
+        primaryFocusTracks: unique([selectedTrack, 'handstandPushup']),
+        focusAccessoryTracks: ['verticalPush', 'antiExtension'],
+        generalSupportTracks: ['lateralCore']
       };
     }
     if (goal === 'lsit') {
       return {
-        primaryFocusTracks: unique([selectedTrack, 'compression']),
-        focusAccessoryTracks: [],
+        primaryFocusTracks: unique([selectedTrack]),
+        focusAccessoryTracks: ['compression', 'dipStrength'],
         generalSupportTracks: ['antiExtension', 'lateralCore']
       };
     }
@@ -2587,9 +2893,9 @@
     }
     if (goal === 'general') {
       return {
-        primaryFocusTracks: unique([selectedTrack, 'verticalPush']),
+        primaryFocusTracks: ['crow', 'handstand', 'lsit', 'pistolSquat', 'handstandPushup'],
         focusAccessoryTracks: [],
-        generalSupportTracks: ['antiExtension', 'lateralCore']
+        generalSupportTracks: ['antiExtension']
       };
     }
     return {
@@ -2600,23 +2906,67 @@
   }
 
   function compositionPolicyForWorkout(workout, profile = null, state = {}) {
-    return workout.name === 'Skills'
-      ? skillCompositionPolicy(profile, state)
-      : workoutCompositionPolicies[workout.name] || {
+    const masterySkill = resolveMasterySkill(profile?.goal);
+    if (workout.name === 'Skills') {
+      return {
+        ...skillCompositionPolicy(profile, state),
+        policyType: 'directSkills',
+        selectedMasterySkill: masterySkill,
+        rankingTrackOrder: []
+      };
+    }
+    const policy = workoutCompositionPolicies[workout.name] || {
         primaryFocusTracks: workout.tracks || [],
         focusAccessoryTracks: [],
         generalSupportTracks: []
       };
+    return {
+      ...policy,
+      policyType: 'foundation',
+      selectedMasterySkill: masterySkill,
+      rankingTrackOrder: masteryFoundationRankings[masterySkill]?.[workout.name] || []
+    };
   }
 
-  function collectCompositionCandidates(trackKeys, role, config, state, profile, recovery, recentIds) {
+  function resolveContextualProgrammeRole(exercise, compositionRole, policy) {
+    if (compositionRole === 'generalSupport') return PROGRAMME_ROLES.generalSupport;
+    const relationship = masteryRelationshipFor(exercise.id, policy.selectedMasterySkill);
+    if (policy.policyType === 'directSkills') {
+      if (relationship?.relationship) return relationship.relationship;
+      if (exercise.programmeRoles?.includes(PROGRAMME_ROLES.skillProgression)) return PROGRAMME_ROLES.skillProgression;
+      if (exercise.programmeRoles?.includes(PROGRAMME_ROLES.skillPractice)) return PROGRAMME_ROLES.skillPractice;
+      return PROGRAMME_ROLES.skillPreparation;
+    }
+    if (exercise.programmeRoles?.includes(PROGRAMME_ROLES.foundationMobility)) return PROGRAMME_ROLES.foundationMobility;
+    if (exercise.programmeRoles?.includes(PROGRAMME_ROLES.foundationControl)) return PROGRAMME_ROLES.foundationControl;
+    return PROGRAMME_ROLES.foundationStrength;
+  }
+
+  function progressionEvidenceTarget(exercise, sourceTrack, programmeRole, policy, profile, state) {
+    const relationship = masteryRelationshipFor(exercise.id, policy.selectedMasterySkill);
+    if (
+      policy.policyType === 'directSkills' &&
+      relationship?.direct &&
+      policy.selectedMasterySkill !== MASTERY_SKILLS.generalFitness
+    ) {
+      return getGoalTrackKey(profile?.goal || 'pullup', profile, state);
+    }
+    return sourceTrack;
+  }
+
+  function collectCompositionCandidates(trackKeys, role, config, state, profile, recovery, diversity, context) {
+    const policy = context.policy;
+    const workoutName = context.workoutName;
+    const rankingTrackOrder = policy.rankingTrackOrder || [];
     const candidatesByTrack = trackKeys.map((trackKey, trackOrder) => (
       unlockedTrackCandidates(trackKey, config, state, profile, recovery)
         .map((exercise, depth) => ({
-          exercise: { ...exercise, workoutRole: role },
+          exercise,
+          sourceTrack: trackKey,
           trackOrder,
           depth,
-          wasRecent: recentIds.has(exercise.id)
+          appearedSameDay: diversity.sameDayIds.has(exercise.id),
+          appearedRecently: diversity.recentIds.has(exercise.id)
         }))
     ));
     const interleaved = [];
@@ -2633,16 +2983,108 @@
         seenIds.add(candidate.exercise.id);
         return true;
       })
+      .map(candidate => {
+        const relationship = masteryRelationshipFor(candidate.exercise.id, policy.selectedMasterySkill);
+        const programmeRole = resolveContextualProgrammeRole(candidate.exercise, role, policy);
+        const reservedDirectProgression = Boolean(policy.policyType === 'foundation' && relationship?.direct);
+        const rankedTrackIndex = rankingTrackOrder.indexOf(candidate.sourceTrack);
+        const masteryRelevant = Boolean(
+          policy.selectedMasterySkill !== MASTERY_SKILLS.generalFitness &&
+          relationship
+        );
+        const prioritisationReason = policy.policyType === 'directSkills'
+          ? relationship?.relationship || 'eligible-introductory-skill-practice'
+          : masteryRelevant
+            ? `mastery-relevant-${programmeRole}`
+            : rankedTrackIndex >= 0
+              ? 'foundation-policy-track-order'
+              : 'balanced-foundation-candidate';
+        const evidenceTarget = progressionEvidenceTarget(
+          candidate.exercise,
+          candidate.sourceTrack,
+          programmeRole,
+          policy,
+          profile,
+          state
+        );
+        return {
+          ...candidate,
+          reservedDirectProgression,
+          masteryRelevant,
+          rankedTrackIndex,
+          exercise: {
+            ...candidate.exercise,
+            workoutRole: role,
+            programmeRole,
+            selectedMasterySkill: policy.selectedMasterySkill,
+            sourceTrack: candidate.sourceTrack,
+            progressionTrackKey: evidenceTarget,
+            progressionEvidenceTarget: evidenceTarget,
+            masteryRelationship: relationship?.relationship || null,
+            developmentDiagnostics: {
+              stableExerciseId: candidate.exercise.id,
+              workoutType: workoutName,
+              selectedMasterySkill: policy.selectedMasterySkill,
+              programmeRole,
+              sourceTrack: candidate.sourceTrack,
+              progressionEvidenceTarget: evidenceTarget,
+              masteryRelationship: relationship?.relationship || null,
+              prioritisationReason,
+              supportsSelectedSkill: masteryRelevant,
+              directPractice: policy.policyType === 'directSkills',
+              appearedEarlierSameDay: candidate.appearedSameDay,
+              appearedRecently: candidate.appearedRecently,
+              fallbackReason: null,
+              overlapReason: null
+            }
+          }
+        };
+      })
       .sort((first, second) => {
-        const recentDifference = Number(first.wasRecent) - Number(second.wasRecent);
-        if (recentDifference) return recentDifference;
+        const sameDayDifference = Number(first.appearedSameDay) - Number(second.appearedSameDay);
+        if (sameDayDifference) return sameDayDifference;
+        const reservationDifference = Number(first.reservedDirectProgression) - Number(second.reservedDirectProgression);
+        if (reservationDifference) return reservationDifference;
         if (['tired', 'exhausted'].includes(config.mode)) {
-          return ((first.exercise.fatigue || 0) + (first.exercise.skill || 0)) -
+          const energyDifference = ((first.exercise.fatigue || 0) + (first.exercise.skill || 0)) -
             ((second.exercise.fatigue || 0) + (second.exercise.skill || 0));
+          if (energyDifference) return energyDifference;
         }
-        return 0;
+        const masteryDifference = Number(second.masteryRelevant) - Number(first.masteryRelevant);
+        if (masteryDifference) return masteryDifference;
+        const firstRank = first.rankedTrackIndex >= 0 ? first.rankedTrackIndex : Number.MAX_SAFE_INTEGER;
+        const secondRank = second.rankedTrackIndex >= 0 ? second.rankedTrackIndex : Number.MAX_SAFE_INTEGER;
+        if (firstRank !== secondRank) return firstRank - secondRank;
+        const recentDifference = Number(first.appearedRecently) - Number(second.appearedRecently);
+        if (recentDifference) return recentDifference;
+        return first.trackOrder - second.trackOrder || first.depth - second.depth;
       })
       .map(candidate => candidate.exercise);
+  }
+
+  function variedRepeatedPrescriptionData(prescriptionData) {
+    const source = normalizePrescriptionData(prescriptionData);
+    if (!source) return source;
+    const next = { ...source };
+    const adjustableField = ['reps', 'seconds', 'attempts', 'minutes'].find(field => Number(next[field]) > 1);
+    if (adjustableField) next[adjustableField] = Math.max(1, Number(next[adjustableField]) - 1);
+    else if (Number(next.sets) > 1) next.sets = Number(next.sets) - 1;
+    else return source;
+    return next;
+  }
+
+  function annotateControlledOverlap(exercise) {
+    const prescriptionData = variedRepeatedPrescriptionData(exercise.prescriptionData);
+    return normalizeExercise({
+      ...exercise,
+      prescriptionData,
+      developmentDiagnostics: {
+        ...(exercise.developmentDiagnostics || {}),
+        fallbackReason: 'same-day-repeat-after-unused-role-candidates-exhausted',
+        overlapReason: 'limited-safe-unlocked-catalogue',
+        reducedVariety: true
+      }
+    });
   }
 
   function getTodayWorkout({ mode = 'normal', state = {}, profile = null } = {}) {
@@ -2652,7 +3094,11 @@
     const config = getEnergyConfig(mode);
     const recovery = getActiveRecovery(state);
     const policy = compositionPolicyForWorkout(workout, profile, state);
-    const recentIds = latestWorkoutExerciseIds(state.history);
+    const diversityHistory = workoutDiversityHistory(state);
+    const sameDayIds = sameDayWorkoutExerciseIds(diversityHistory);
+    const recentIds = recentWorkoutExerciseIds(diversityHistory);
+    const diversity = { sameDayIds, recentIds };
+    const candidateContext = { policy, workoutName: workout.name };
     const primaryCandidates = collectCompositionCandidates(
       policy.primaryFocusTracks,
       'primaryFocus',
@@ -2660,7 +3106,8 @@
       state,
       profile,
       recovery,
-      recentIds
+      diversity,
+      candidateContext
     );
     const accessoryCandidates = collectCompositionCandidates(
       policy.focusAccessoryTracks,
@@ -2669,7 +3116,8 @@
       state,
       profile,
       recovery,
-      recentIds
+      diversity,
+      candidateContext
     );
     const supportCandidates = collectCompositionCandidates(
       policy.generalSupportTracks,
@@ -2678,7 +3126,8 @@
       state,
       profile,
       recovery,
-      recentIds
+      diversity,
+      candidateContext
     );
     const targetCount = config.exerciseCount;
     const exercises = [];
@@ -2687,7 +3136,9 @@
       for (const candidate of candidates) {
         if (exercises.length >= targetCount || maximum <= 0) break;
         if (!candidate?.id || usedIds.has(candidate.id)) continue;
-        exercises.push(candidate);
+        exercises.push(candidate.developmentDiagnostics?.appearedEarlierSameDay
+          ? annotateControlledOverlap(candidate)
+          : candidate);
         usedIds.add(candidate.id);
         maximum -= 1;
       }
@@ -2722,17 +3173,27 @@
     const focusAccessoryCount = exercises.filter(item => item.workoutRole === 'focusAccessory').length;
     const generalSupportCount = exercises.filter(item => item.workoutRole === 'generalSupport').length;
     const focusCount = primaryFocusCount + focusAccessoryCount;
+    const requiredCategoryCount = targetCount === 4 ? 3 : 2;
+    const foundationCompositionValid = workout.name === 'Skills' || (
+      focusCount >= requiredCategoryCount &&
+      generalSupportCount <= 1
+    );
     const pullCompositionValid = workout.name !== 'Pull' || (
       primaryFocusCount >= 2 &&
       focusCount >= (targetCount === 4 ? 3 : 2) &&
       generalSupportCount <= 1 &&
       (targetCount !== 4 || focusAccessoryCount >= 1)
     );
-    const generationFailure = exercises.length === targetCount && !duplicateIds && pullCompositionValid
+    const skillCompositionValid = workout.name !== 'Skills' || (
+      focusCount > generalSupportCount &&
+      generalSupportCount <= 1
+    );
+    const generationFailure = exercises.length === targetCount && !duplicateIds && foundationCompositionValid && pullCompositionValid && skillCompositionValid
       ? null
       : {
-          code: 'exact-composition-unavailable',
+          code: workout.name === 'Skills' ? 'skill-composition-unavailable' : 'exact-composition-unavailable',
           workoutName: workout.name,
+          selectedSkillTrackKey: workout.name === 'Skills' ? getGoalTrackKey(profile?.goal || 'pullup', profile, state) : null,
           mode: config.mode,
           expectedCount: targetCount,
           actualCount: exercises.length,
@@ -2743,6 +3204,24 @@
           availableFocusAccessoryIds: accessoryCandidates.map(item => item.id),
           availableGeneralSupportIds: supportCandidates.map(item => item.id)
         };
+    const repeatedExercises = exercises.filter(item => item.developmentDiagnostics?.reducedVariety);
+    const candidateCountsByProgrammeRole = [...primaryCandidates, ...accessoryCandidates, ...supportCandidates]
+      .reduce((counts, candidate) => {
+        const role = candidate.programmeRole || PROGRAMME_ROLES.foundationStrength;
+        counts[role] = Number(counts[role] || 0) + 1;
+        return counts;
+      }, {});
+    const finalStableIds = exercises.map(item => item.id);
+    const finalStableIdKey = [...finalStableIds].sort().join('|');
+    const identicalSameDayWorkout = diversityHistory
+      .filter(item => localDateKey(item.date || item.generatedAt || item.completedAt) === localDateKey(new Date()))
+      .some(item => (
+        [...(item.exercises || [])]
+          .map(exercise => exercise?.exerciseId || exercise?.id)
+          .filter(Boolean)
+          .sort()
+          .join('|') === finalStableIdKey
+      ));
     const totalFatigue = exercises.reduce((sum, item) => sum + (item.fatigue || 0), 0);
     const totalSkill = exercises.reduce((sum, item) => sum + (item.skill || 0), 0);
     const allowedTracks = new Set([
@@ -2754,6 +3233,8 @@
     return {
       mode: config.mode,
       workoutName: workout.name,
+      selectedMasterySkill: policy.selectedMasterySkill,
+      selectedSkillTrackKey: workout.name === 'Skills' ? getGoalTrackKey(profile?.goal || 'pullup', profile, state) : null,
       focusLabel: workout.focusLabel || '',
       energyTitle: config.title,
       energyDescription: config.description,
@@ -2763,6 +3244,28 @@
       totalSkill,
       eligibleTrackKeys: [...allowedTracks],
       generationFailure,
+      developmentDiagnostics: {
+        selectedMasterySkill: policy.selectedMasterySkill,
+        workoutType: workout.name,
+        resolvedCompositionPolicy: {
+          policyType: policy.policyType,
+          primaryFocusTracks: [...policy.primaryFocusTracks],
+          focusAccessoryTracks: [...policy.focusAccessoryTracks],
+          generalSupportTracks: [...policy.generalSupportTracks],
+          rankingTrackOrder: [...(policy.rankingTrackOrder || [])]
+        },
+        candidateCountsByProgrammeRole,
+        excludedSameDayIds: [...sameDayIds].filter(id => !finalStableIds.includes(id)),
+        deprioritisedSameDayIds: [...sameDayIds],
+        recentHistoryIds: [...recentIds],
+        finalStableIds,
+        reducedVariety: repeatedExercises.length > 0 || identicalSameDayWorkout,
+        unavoidableOverlapExplanation: repeatedExercises.length
+          ? 'Safe, unlocked, equipment-valid unused candidates were exhausted for a required role.'
+          : identicalSameDayWorkout
+            ? 'The current eligible catalogue produced an identical same-day stable-ID set.'
+            : null
+      },
       exercises
     };
   }
@@ -2794,13 +3297,27 @@
       exercise.progressionTrackKey || exercise.trackKey,
       ...categoryTracks
     ].filter((trackKey, index, all) => trackKey && all.indexOf(trackKey) === index && categoryTracks.includes(trackKey));
-    const recentIds = latestWorkoutExerciseIds(state.history);
+    const recentIds = sameDayWorkoutExerciseIds(workoutDiversityHistory(state));
     const candidates = [];
     for (const trackKey of orderedTracks) {
       unlockedTrackCandidates(trackKey, config, state, profile, recovery).forEach(replacement => {
         if (!usedIds.has(replacement.id)) {
           candidates.push({
-            replacement: { ...replacement, workoutRole: exercise.workoutRole || 'primaryFocus' },
+            replacement: {
+              ...replacement,
+              workoutRole: exercise.workoutRole || 'primaryFocus',
+              programmeRole: exercise.programmeRole || resolveContextualProgrammeRole(replacement, exercise.workoutRole, policy),
+              selectedMasterySkill: exercise.selectedMasterySkill || policy.selectedMasterySkill,
+              sourceTrack: trackKey,
+              progressionEvidenceTarget: trackKey,
+              developmentDiagnostics: {
+                ...(exercise.developmentDiagnostics || {}),
+                stableExerciseId: replacement.id,
+                sourceTrack: trackKey,
+                progressionEvidenceTarget: trackKey,
+                fallbackReason: 'cross-section-stable-id-collision'
+              }
+            },
             wasRecent: recentIds.has(replacement.id)
           });
         }
@@ -3193,6 +3710,12 @@
         }
       });
       if (!stimuli.has(item.stimulus)) errors.push(`Invalid stimulus: ${item.id}`);
+      const validProgrammeRoles = new Set(Object.values(PROGRAMME_ROLES));
+      if (!Array.isArray(item.programmeRoles) || !item.programmeRoles.length) {
+        errors.push(`Missing programme role metadata: ${item.id}`);
+      } else if (item.programmeRoles.some(role => !validProgrammeRoles.has(role))) {
+        errors.push(`Invalid programme role metadata: ${item.id}`);
+      }
       jointKeys.forEach(key => {
         if (!Number.isInteger(item.jointStress?.[key]) || item.jointStress[key] < 0 || item.jointStress[key] > 10) {
           errors.push(`Invalid joint stress ${key}: ${item.id}`);
@@ -3239,6 +3762,8 @@
     baseTracks,
     movementTracks,
     exerciseCatalog,
+    PROGRAMME_ROLES,
+    MASTERY_SKILLS,
     disabledExerciseIds,
     scoreSchema,
     scoringGuidelines,
@@ -3254,8 +3779,11 @@
     getRotation,
     rotationIndexForWorkoutName,
     workoutDisplayName,
+    sameDayWorkoutExerciseIds,
+    recentWorkoutExerciseIds,
     nextRotationIndexFromHistory,
     getGoalTrackKey,
+    resolveMasterySkill,
     getMuscleUpGate,
     advancedSkillEligibility,
     evaluateAdvancedSkillEligibility,

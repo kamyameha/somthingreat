@@ -694,6 +694,11 @@ function resetMainRouteScroll() {
   if (root) root.scrollTop = 0;
 }
 
+function resetRouteScrollOnEntry() {
+  resetMainRouteScroll();
+  window.requestAnimationFrame(resetMainRouteScroll);
+}
+
 function openAccountModal() {
   openAccountMain();
 }
@@ -1141,6 +1146,7 @@ function renderToday() {
   document.documentElement.classList.toggle('today-active', Boolean(todayIsActive));
   document.body.classList.toggle('today-active', Boolean(todayIsActive));
   if (todayIsActive) setThemeColor('#ffffff');
+  if (todayIsActive) resetRouteScrollOnEntry();
   document.querySelector('.topbar')?.classList.remove('hidden');
   document.getElementById('exerciseList').innerHTML = '';
   document.getElementById('completeBtn')?.classList.add('hidden');
@@ -1499,10 +1505,27 @@ function generateWorkout({ render = true } = {}) {
   const option = energyOptions[state.selectedEnergy];
   if (!option) return;
   const baseWorkout = getTodayWorkout(option.mode);
+  if (baseWorkout.generationFailure) {
+    console.warn('Workout composition diagnostic:', baseWorkout.generationFailure);
+  }
+  if (baseWorkout.developmentDiagnostics?.reducedVariety) {
+    console.warn('Workout reduced-catalogue diagnostic:', baseWorkout.developmentDiagnostics);
+  }
   state.generated = applyWorkoutAddOns(baseWorkout);
   state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
   state.generated.includeRestTimer = Boolean(state.includeRestTimer);
   state.generated.restTimerSeconds = 60;
+  state.generationHistory = [
+    ...(Array.isArray(state.generationHistory) ? state.generationHistory : []),
+    {
+      date: new Date().toISOString(),
+      generatedAt: new Date().toISOString(),
+      workout: baseWorkout.workoutName,
+      mode: baseWorkout.mode,
+      selectedMasterySkill: baseWorkout.selectedMasterySkill,
+      exercises: baseWorkout.exercises.map(exercise => ({ exerciseId: exercise.id }))
+    }
+  ].slice(-50);
   saveState();
   if (render) renderGeneratedWorkout();
 }
@@ -1873,6 +1896,9 @@ function renderExercises() {
   if (!workoutCompletionState && (!openExerciseTrackKey || !state.current.exercises.some(exercise => exerciseSessionKey(exercise) === openExerciseTrackKey))) {
     openExerciseTrackKey = firstIncompleteExerciseKey();
   }
+  const topWorkoutTile = state.current.exercises[0] || null;
+  const topWorkoutTileCompleted = Boolean(topWorkoutTile && isExerciseComplete(topWorkoutTile));
+  document.body.classList.toggle('workout-top-completed', topWorkoutTileCompleted || Boolean(workoutCompletionState));
   document.body.classList.toggle('workout-completion-active', Boolean(workoutCompletionState));
   state.current.exercises.forEach((exercise, index) => {
     const exerciseKey = exerciseSessionKey(exercise, index);
@@ -2418,6 +2444,9 @@ async function completeWorkoutNow(showFullConfirmation = true) {
       wasSwapped: Boolean(result.swappedFromExerciseId),
       trackKey: result.trackKey,
       progressionTrackKey: result.progressionTrackKey,
+      progressionEvidenceTarget: result.progressionEvidenceTarget,
+      programmeRole: result.programmeRole,
+      selectedMasterySkill: result.selectedMasterySkill,
       prescribedData: result.prescriptionData,
       prescribedText: result.prescription,
       plannedSets: result.targetSets,
@@ -4105,6 +4134,7 @@ document.addEventListener('click', event => {
     if (title) title.textContent = event.target.textContent;
     renderProgress();
     renderActivity();
+    resetRouteScrollOnEntry();
   }
 });
 

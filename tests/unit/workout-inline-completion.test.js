@@ -85,11 +85,14 @@ assert.match(workout, /\.workout-accordion-card\s*\{[^}]*height:\s*var\(--workou
 assert.match(workout, /\.exercise-chip-toggle\s*\{[^}]*padding:\s*0 20px;/s);
 assert.match(workout, /\.exercise-chip-toggle span\s*\{[^}]*min-height:\s*1\.25em;[^}]*overflow:\s*visible;[^}]*text-overflow:\s*clip;[^}]*white-space:\s*normal;[^}]*line-height:\s*1\.25;/s);
 assert.match(workout, /\.workout-accordion-card\.completed \.exercise-chip-toggle\s*\{[^}]*background:\s*var\(--cream\)/s);
-assert.match(workout, /\.workout-accordion-card\.workout-warmup-card \.exercise-chip-toggle\s*\{[^}]*background:\s*#ffffff/s);
+assert.match(workout, /\.workout-accordion-card\.workout-warmup-card:not\(\.completed\) \.exercise-chip-toggle\s*\{[^}]*background:\s*#ffffff/s);
+assert.doesNotMatch(workout, /\.workout-accordion-card\.workout-warmup-card \.exercise-chip-toggle\s*\{[^}]*background:\s*#ffffff/s);
 assert.match(workout, /#exerciseList > \.workout-accordion-card:first-child,[^}]*#exerciseList > \.workout-accordion-card:first-child \.exercise-chip-toggle,[^}]*#exerciseList > \.workout-accordion-card:first-child\.open \.exercise-card-body\s*\{[^}]*border-radius:\s*0 0 20px 20px/s);
 assert.match(workout, /body\.workout-active \.app\s*\{[^}]*padding:\s*0;[^}]*overflow-y:\s*auto;[^}]*overflow-x:\s*hidden/s);
 assert.match(workout, /body\.workout-active::before,[^}]*body\.workout-active::after\s*\{[^}]*position:\s*fixed;[^}]*height:\s*50dvh;[^}]*pointer-events:\s*none/s);
-assert.match(workout, /body\.workout-active::before\s*\{[^}]*top:\s*0;[^}]*background:\s*#ffffff/s);
+assert.match(workout, /body\.workout-active\s*\{[^}]*--workout-top-overscroll:\s*#ffffff/s);
+assert.match(workout, /body\.workout-active\.workout-top-completed,[^}]*body\.workout-active\.workout-completion-active\s*\{[^}]*--workout-top-overscroll:\s*var\(--cream\)/s);
+assert.match(workout, /body\.workout-active::before\s*\{[^}]*top:\s*0;[^}]*background:\s*var\(--workout-top-overscroll\)/s);
 assert.match(workout, /body\.workout-active\s*\{[^}]*--workout-bottom-overscroll:\s*var\(--main\)/s);
 assert.match(workout, /body\.workout-active\.workout-completion-active\s*\{[^}]*--workout-bottom-overscroll:\s*var\(--cream\)/s);
 assert.match(workout, /body\.workout-active::after\s*\{[^}]*bottom:\s*0;[^}]*background:\s*var\(--workout-bottom-overscroll\)/s);
@@ -104,6 +107,8 @@ assert.doesNotMatch(workout, /\.workout-accordion-card\.open \.exercise-card-bod
 assert.doesNotMatch(workout, /\.workout-completion-content\s*\{[^}]*overflow-y:\s*(?:auto|scroll)/s);
 assert.match(workout, /\.workout-active \.today-mascot-stage\s*\{[^}]*display:\s*none !important/s);
 assert.match(functionSource('renderExercises'), /classList\.remove\('today-active'\)/);
+assert.match(functionSource('renderExercises'), /const topWorkoutTileCompleted = Boolean\(topWorkoutTile && isExerciseComplete\(topWorkoutTile\)\)/);
+assert.match(functionSource('renderExercises'), /classList\.toggle\('workout-top-completed', topWorkoutTileCompleted \|\| Boolean\(workoutCompletionState\)\)/);
 assert.match(functionSource('renderExercises'), /document\.body\.classList\.toggle\('workout-completion-active', Boolean\(workoutCompletionState\)\)/);
 assert.doesNotMatch(functionSource('renderExercises'), /Today's workout|workout-started-title/);
 const renderTodaySource = functionSource('renderToday');
@@ -125,12 +130,38 @@ assert.match(workout, /\.workout-safe-area\s*\{[^}]*display:\s*none/s);
 assert.match(workout, /body\.workout-active \.workout-safe-area\s*\{[^}]*display:\s*block;[^}]*flex:\s*0 0 env\(safe-area-inset-top\);[^}]*height:\s*env\(safe-area-inset-top\);[^}]*background:\s*#ffffff/s);
 assert.doesNotMatch(workout, /#exerciseList > \.workout-accordion-card:first-child[^}]*padding-top:\s*env\(safe-area-inset-top\)/s);
 assert.match(workout, /\.workout-accordion-card \.active-swap-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
-assert.match(workout, /\.workout-accordion-card \.exercise-help-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
+assert.match(workout, /\.exercise-help-btn\s*\{[^}]*flex:\s*0 0 24px;[^}]*width:\s*24px;[^}]*max-width:\s*24px;[^}]*height:\s*24px;[^}]*max-height:\s*24px/s);
+assert.match(workout, /\.preview-icon-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
+assert.doesNotMatch(workout, /\.exercise-help-btn\s*\{[^}]*34px/s);
 assert.match(workout, /\.set-control\s*\{[^}]*width:\s*26px;[^}]*height:\s*26px/s);
 assert.match(workout, /\.set-list\s*\{[^}]*width:\s*100%/s);
 assert.match(workout, /\.workout-accordion-card \.set-row\s*\{[^}]*width:\s*100%/s);
 assert.doesNotMatch(workout, /\.workout-accordion-card \.set-row\s*\{[^}]*width:\s*min\(309px,\s*100%\)/s);
 assert.match(workout, /\.workout-accordion-card \.rating-row\s*\{[^}]*width:\s*100%/s);
+assert.match(workout, /html\.today-active,[^}]*body\.today-active\s*\{[^}]*height:\s*100dvh;[^}]*overflow:\s*hidden/s);
+assert.match(workout, /body\.today-active \.app\s*\{[^}]*height:\s*100dvh;[^}]*overflow-y:\s*hidden/s);
+
+const routeScrollContext = {
+  app: { scrollTop: 42 },
+  root: { scrollTop: 73 },
+  document: {
+    querySelector: selector => selector === '.app' ? routeScrollContext.app : null,
+    scrollingElement: null
+  },
+  window: { requestAnimationFrame: callback => callback() }
+};
+routeScrollContext.document.scrollingElement = routeScrollContext.root;
+vm.createContext(routeScrollContext);
+vm.runInContext(`
+  ${functionSource('resetMainRouteScroll')}
+  ${functionSource('resetRouteScrollOnEntry')}
+  this.resetRouteScrollOnEntry = resetRouteScrollOnEntry;
+`, routeScrollContext);
+routeScrollContext.resetRouteScrollOnEntry();
+assert.equal(routeScrollContext.app.scrollTop, 0);
+assert.equal(routeScrollContext.root.scrollTop, 0);
+assert.match(functionSource('renderToday'), /if \(todayIsActive\) resetRouteScrollOnEntry\(\)/);
+assert.match(appSource, /renderProgress\(\);\s*renderActivity\(\);\s*resetRouteScrollOnEntry\(\);/);
 
 const resetAfterWorkoutSource = functionSource('resetTodayAfterWorkout');
 assert.match(resetAfterWorkoutSource, /state\.selectedEnergy = null/);

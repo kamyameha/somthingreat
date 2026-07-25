@@ -2,7 +2,7 @@
   const STORAGE_KEY = 'camille-calisthenics-v4';
   const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
   const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
-  const STATE_SCHEMA_VERSION = 5;
+  const STATE_SCHEMA_VERSION = 6;
 
   function applyWorkoutCatalogMigrations(workoutModule) {
     if (!workoutModule || workoutModule.catalogMigrationsApplied) return;
@@ -137,7 +137,13 @@
                   progressionDecision: typeof exercise.progressionDecision === 'string' ? exercise.progressionDecision : null,
                   trackKey: typeof exercise.trackKey === 'string' ? exercise.trackKey : '',
                   progressionTrackKey: typeof exercise.progressionTrackKey === 'string' ? exercise.progressionTrackKey : '',
+                  progressionEvidenceTarget: typeof exercise.progressionEvidenceTarget === 'string'
+                    ? exercise.progressionEvidenceTarget
+                    : (typeof exercise.progressionTrackKey === 'string' ? exercise.progressionTrackKey : ''),
                   progressionLevel: Number.isFinite(Number(exercise.progressionLevel)) ? Number(exercise.progressionLevel) : null,
+                  programmeRole: typeof exercise.programmeRole === 'string' ? exercise.programmeRole : null,
+                  selectedMasterySkill: typeof exercise.selectedMasterySkill === 'string' ? exercise.selectedMasterySkill : null,
+                  masteryRelationship: typeof exercise.masteryRelationship === 'string' ? exercise.masteryRelationship : null,
                   swappedFromExerciseId: typeof exercise.swappedFromExerciseId === 'string' ? exercise.swappedFromExerciseId : null,
                   swappedFromExerciseName: typeof exercise.swappedFromExerciseName === 'string' ? exercise.swappedFromExerciseName : null,
                   isAddOn: Boolean(exercise.isAddOn)
@@ -150,6 +156,29 @@
     function sanitizeClosedWorkoutSessionIds(sessionIds) {
       if (!Array.isArray(sessionIds)) return [];
       return Array.from(new Set(sessionIds.filter(value => typeof value === 'string' && value)));
+    }
+
+    function sanitizeGenerationHistory(history) {
+      if (!Array.isArray(history)) return [];
+      return history
+        .filter(item => item && typeof item === 'object' && !Number.isNaN(Date.parse(item.date || item.generatedAt)))
+        .slice(-50)
+        .map(item => ({
+          date: new Date(item.date || item.generatedAt).toISOString(),
+          generatedAt: new Date(item.generatedAt || item.date).toISOString(),
+          workout: typeof item.workout === 'string' ? item.workout : 'Workout',
+          mode: ['great', 'normal', 'tired', 'exhausted'].includes(item.mode) ? item.mode : 'normal',
+          selectedMasterySkill: typeof item.selectedMasterySkill === 'string' ? item.selectedMasterySkill : null,
+          exercises: Array.isArray(item.exercises)
+            ? item.exercises
+                .map(exercise => ({
+                  exerciseId: typeof exercise?.exerciseId === 'string'
+                    ? exercise.exerciseId
+                    : typeof exercise?.id === 'string' ? exercise.id : ''
+                }))
+                .filter(exercise => exercise.exerciseId)
+            : []
+        }));
     }
 
     function sanitizePendingSessionRecords(records) {
@@ -236,6 +265,7 @@
         rotationIndex: 0,
         levels,
         history: [],
+        generationHistory: [],
         current: null,
         selectedEnergy: null,
         generated: null,
@@ -278,6 +308,7 @@
         : null;
       nextState.levels = sanitizeLevels(nextState.levels, nextState.profile);
       nextState.history = sanitizeHistory(nextState.history);
+      nextState.generationHistory = sanitizeGenerationHistory(nextState.generationHistory);
       nextState.closedWorkoutSessionIds = sanitizeClosedWorkoutSessionIds([
         ...(nextState.closedWorkoutSessionIds || []),
         ...nextState.history.map(item => item.sessionId).filter(Boolean)
@@ -360,7 +391,8 @@
         nextState?.lastUpdatedAt,
         nextState?.current?.updatedAt,
         nextState?.current?.startedAt,
-        ...(nextState?.history || []).map(item => item?.date)
+        ...(nextState?.history || []).map(item => item?.date),
+        ...(nextState?.generationHistory || []).map(item => item?.generatedAt || item?.date)
       ].map(value => Date.parse(value)).filter(Number.isFinite);
       return timestamps.length ? Math.max(...timestamps) : 0;
     }
@@ -401,6 +433,10 @@
       return sanitizeState({
         ...base,
         history,
+        generationHistory: sanitizeGenerationHistory([
+          ...(cloud.generationHistory || []),
+          ...(local.generationHistory || [])
+        ]),
         current: activeCandidates[0] || null,
         pendingSessionRecords: [...pendingBySession.values()],
         closedWorkoutSessionIds,
@@ -453,6 +489,7 @@
         rotationIndex: state.rotationIndex,
         levels: state.levels,
         history: state.history,
+        generationHistory: state.generationHistory,
         current: state.current,
         selectedEnergy: state.selectedEnergy,
         generated: state.generated,
