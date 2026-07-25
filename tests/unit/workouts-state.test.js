@@ -29,6 +29,12 @@ function catalog(id) {
 assert.deepStrictEqual(Array.from(workouts.validateWorkoutSystem()), []);
 assert.strictEqual(new Set(workouts.exerciseCatalog.map(item => item.id)).size, workouts.exerciseCatalog.length);
 assert.strictEqual(new Set(workouts.exerciseCatalog.map(item => item.name)).size, workouts.exerciseCatalog.length);
+const pronePullDown = catalog('prone-pull-down');
+assert.ok(pronePullDown, 'Prone pull-down is present in the catalogue');
+assert.strictEqual(pronePullDown.name, 'Prone pull-down');
+assert.strictEqual(pronePullDown.prescription, '3 × 8');
+assert.deepStrictEqual(Array.from(pronePullDown.equipment), []);
+assert.deepStrictEqual(Array.from(workouts.movementTracks.pullAccessory, item => item.id), ['prone-pull-down']);
 
 workouts.exerciseCatalog.forEach(item => {
   assert.ok(item.id && item.name, `identity: ${item.id}`);
@@ -153,17 +159,17 @@ const skillsWorkout = workouts.getTodayWorkout({
   state: { rotationIndex: 3, levels: workouts.createDefaultLevels() },
   profile: { goal: 'pullup', equipment: ['pullupBar'] }
 });
-assert.ok(skillsWorkout.exercises.filter(item => item.workoutRole === 'skill-specific').length >
-  skillsWorkout.exercises.filter(item => item.workoutRole === 'core-support').length);
-assert.ok(skillsWorkout.exercises.filter(item => item.workoutRole === 'core-support').length <= 1);
+assert.ok(skillsWorkout.exercises.filter(item => item.workoutRole === 'primaryFocus').length >
+  skillsWorkout.exercises.filter(item => item.workoutRole === 'generalSupport').length);
+assert.ok(skillsWorkout.exercises.filter(item => item.workoutRole === 'generalSupport').length <= 1);
 for (const goal of ['pullup', 'handstand', 'lsit', 'muscleup', 'general']) {
   const goalSkillWorkout = workouts.getTodayWorkout({
     mode: 'great',
     state: { rotationIndex: 3, levels: workouts.createDefaultLevels() },
     profile: { goal, equipment: ['floor', 'pullupBar', 'dipBars'] }
   });
-  const skillCount = goalSkillWorkout.exercises.filter(item => item.workoutRole === 'skill-specific').length;
-  const supportCount = goalSkillWorkout.exercises.filter(item => item.workoutRole === 'core-support').length;
+  const skillCount = goalSkillWorkout.exercises.filter(item => item.workoutRole === 'primaryFocus').length;
+  const supportCount = goalSkillWorkout.exercises.filter(item => item.workoutRole === 'generalSupport').length;
   assert.ok(skillCount > supportCount, `selected skill remains the majority: ${goal}`);
   assert.ok(supportCount <= 1, `single general support slot for skill: ${goal}`);
 }
@@ -176,14 +182,15 @@ for (let rotationIndex = 0; rotationIndex < 4; rotationIndex += 1) {
       profile: { goal: 'pullup', equipment: ['floor', 'pullupBar'] }
     });
     assert.ok(workout.exercises.some(item => integratedCoreTracks.has(item.progressionTrackKey)), `integrated core: ${workout.workoutName} ${mode}`);
-    assert.ok(workout.exercises.length <= workouts.energyOptions[mode].exerciseCount, `energy exercise ceiling: ${workout.workoutName} ${mode}`);
+    assert.strictEqual(workout.generationFailure, null, `valid composition: ${workout.workoutName} ${mode}`);
+    assert.strictEqual(workout.exercises.length, workouts.energyOptions[mode].exerciseCount, `exact energy exercise count: ${workout.workoutName} ${mode}`);
     assert.notStrictEqual(workout.workoutName, 'Core');
     const allowedTracks = new Set(workouts.workoutEligibleTracks[workout.workoutName]);
     assert.ok(
       workout.exercises.every(item => allowedTracks.has(item.progressionTrackKey)),
       `category-preserving tracks: ${workout.workoutName} ${mode}`
     );
-    const supportCount = workout.exercises.filter(item => item.workoutRole === 'core-support').length;
+    const supportCount = workout.exercises.filter(item => item.workoutRole === 'generalSupport').length;
     const focusCount = workout.exercises.length - supportCount;
     assert.ok(supportCount <= 1, `single support slot: ${workout.workoutName} ${mode}`);
     assert.ok(focusCount >= supportCount, `support never outnumbers focus: ${workout.workoutName} ${mode}`);
@@ -231,15 +238,39 @@ for (const equipment of [['floor'], ['floor', 'pullupBar']]) {
       pullWorkout.exercises.every(item => item.id !== 'bodyweight-good-morning'),
       `Bodyweight good morning excluded from Pull: ${mode} ${equipment.join(',')}`
     );
-    assert.ok(pullWorkout.exercises.filter(item => item.workoutRole === 'core-support').length <= 1);
+    assert.ok(pullWorkout.exercises.filter(item => item.workoutRole === 'generalSupport').length <= 1);
     if (equipment.includes('pullupBar')) {
       const pullIds = new Set(pullWorkout.exercises.map(item => item.id));
       assert.ok(pullIds.has('active-hang-preparation'), `Active hang included: ${mode}`);
       assert.ok(pullIds.has('scapular-pull-up'), `Scapular pull-up included: ${mode}`);
+      if (['great', 'normal'].includes(mode)) assert.ok(pullIds.has('prone-pull-down'), `Prone pull-down included: ${mode}`);
       assert.ok(!pullIds.has('assisted-pull-up'), `Locked assisted pull-up excluded: ${mode}`);
       assert.ok(!pullIds.has('negative-pull-up'), `Locked negative pull-up excluded: ${mode}`);
-      assert.strictEqual(pullWorkout.exercises.filter(item => item.workoutRole === 'primary-Pull').length, 2);
-      assert.strictEqual(pullWorkout.exercises.length, 3, `coherent beginner Pull length: ${mode}`);
+      assert.ok(
+        !pullWorkout.exercises.some(item => workouts.disabledExerciseIds.has(item.id)),
+        `unsafe household-anchor rows remain disabled: ${mode}`
+      );
+      assert.strictEqual(pullWorkout.generationFailure, null, `beginner Pull composes exactly: ${mode}`);
+      assert.strictEqual(pullWorkout.exercises.filter(item => item.workoutRole === 'primaryFocus').length, 2);
+      assert.strictEqual(
+        pullWorkout.exercises.filter(item => ['primaryFocus', 'focusAccessory'].includes(item.workoutRole)).length,
+        ['great', 'normal'].includes(mode) ? 3 : 2,
+        `Pull-focused count: ${mode}`
+      );
+      assert.strictEqual(pullWorkout.exercises.length, workouts.energyOptions[mode].exerciseCount, `exact beginner Pull length: ${mode}`);
+      assert.strictEqual(new Set(pullWorkout.exercises.map(item => item.id)).size, pullWorkout.exercises.length, `unique stable IDs: ${mode}`);
+      if (mode !== 'exhausted') {
+        assert.strictEqual(
+          pullWorkout.exercises.filter(item => item.progressionTrackKey === 'verticalPull').length,
+          2,
+          `distinct same-track Pull identities are both selectable: ${mode}`
+        );
+      }
+      if (mode === 'great') assert.strictEqual(pullWorkout.exercises.find(item => item.id === 'prone-pull-down')?.prescription, '3 × 8');
+      if (mode === 'normal') assert.strictEqual(pullWorkout.exercises.find(item => item.id === 'prone-pull-down')?.prescription, '2 × 7');
+    } else {
+      assert.strictEqual(pullWorkout.generationFailure?.code, 'exact-composition-unavailable', `no unsafe no-bar fallback: ${mode}`);
+      assert.ok(!pullWorkout.exercises.some(item => item.id.includes('row')), `disabled household-anchor rows remain excluded: ${mode}`);
     }
   }
 }
@@ -251,10 +282,12 @@ const progressedPull = workouts.getTodayWorkout({
   state: { rotationIndex: 2, levels: progressedPullLevels },
   profile: { goal: 'pullup', equipment: ['floor', 'pullupBar'] }
 });
-assert.strictEqual(progressedPull.exercises.filter(item => item.workoutRole === 'primary-Pull').length, 3);
-assert.strictEqual(progressedPull.exercises.filter(item => item.workoutRole === 'core-support').length, 1);
+assert.strictEqual(progressedPull.exercises.filter(item => item.workoutRole === 'primaryFocus').length, 2);
+assert.strictEqual(progressedPull.exercises.filter(item => item.workoutRole === 'focusAccessory').length, 1);
+assert.strictEqual(progressedPull.exercises.filter(item => item.workoutRole === 'generalSupport').length, 1);
 assert.strictEqual(progressedPull.exercises.length, 4);
 assert.ok(progressedPull.exercises.some(item => item.id === 'assisted-pull-up'));
+assert.ok(progressedPull.exercises.some(item => item.id === 'prone-pull-down'));
 
 const recentSupportLevels = workouts.createDefaultLevels();
 recentSupportLevels.verticalPull.level = 1;
@@ -273,8 +306,19 @@ const diversifiedPull = workouts.getTodayWorkout({
   },
   profile: { goal: 'pullup', equipment: ['floor', 'pullupBar'] }
 });
-assert.strictEqual(diversifiedPull.exercises.filter(item => item.workoutRole === 'core-support').length, 1);
+assert.strictEqual(diversifiedPull.exercises.filter(item => item.workoutRole === 'generalSupport').length, 1);
 assert.ok(!diversifiedPull.exercises.some(item => item.id === 'bent-knee-support-hold'), 'recent support identity is rotated when alternatives exist');
+assert.strictEqual(diversifiedPull.exercises.length, 4, 'recent support rotation never reduces the exact count');
+const pullWithAddOns = workouts.applyWorkoutAddOns(diversifiedPull, { warmup: true, stretch: true }, {
+  state: { levels: recentSupportLevels },
+  profile: { goal: 'pullup', equipment: ['floor', 'pullupBar'] }
+});
+assert.strictEqual(pullWithAddOns.generationFailure, null, 'section validation preserves a valid Pull composition');
+assert.strictEqual(pullWithAddOns.exercises.filter(item => !item.isAddOn).length, 4, 'warm-up and stretch do not reduce the main exercise count');
+const pullSectionIds = pullWithAddOns.exercises.flatMap(item => (
+  item.isAddOn ? [item.id, ...(item.movementExerciseIds || [])] : [item.id]
+));
+assert.strictEqual(new Set(pullSectionIds).size, pullSectionIds.length, 'Pull warm-up, main workout, and stretch use distinct stable IDs');
 
 const duplicateMainWorkout = {
   ...workouts.getTodayWorkout({
@@ -353,6 +397,18 @@ const unlockedWallPushAudit = workouts.getSwapCandidateAudit({ ...pushTrack[0], 
   profile: { goal: 'pullup', equipment: ['floor'] }, state: { levels: { horizontalPush: { level: 1 } } }, unlockedLevel: 1
 });
 assert.ok(unlockedWallPushAudit.candidateCountFinal > 0, 'Wall push-up exposes Swap when a same-track replacement is unlocked');
+const proneSwapAudit = workouts.getSwapCandidateAudit({
+  ...pronePullDown,
+  trackKey: 'pullAccessory',
+  progressionTrackKey: 'pullAccessory',
+  workoutRole: 'focusAccessory'
+}, {
+  profile: { goal: 'pullup', equipment: ['floor', 'pullupBar'] },
+  state: { levels: { pullAccessory: { level: 0 } } },
+  unlockedLevel: 0
+});
+assert.strictEqual(proneSwapAudit.candidateCountFinal, 0, 'single accessory identity uses the disabled Swap state');
+assert.match(proneSwapAudit.reason, /No alternative exists in the same progression family/);
 assert.strictEqual(workouts.executableRounds(pike).length, 3);
 assert.ok(workouts.executableRounds(pike).every(round => round.seconds === 20));
 
@@ -391,12 +447,14 @@ const sameFamilyOriginal = workouts.normalizeExercise({
   ...catalog('wall-push-up'),
   workoutExerciseId: 'session-slot-horizontal-push-1',
   trackKey: 'horizontalPush',
-  progressionTrackKey: 'horizontalPush'
+  progressionTrackKey: 'horizontalPush',
+  workoutRole: 'primaryFocus'
 });
 const sameFamilySwap = workouts.createSwapReplacement(sameFamilyOriginal, catalog('high-incline-push-up'), 'great');
 assert.strictEqual(sameFamilySwap.workoutExerciseId, sameFamilyOriginal.workoutExerciseId);
 assert.strictEqual(sameFamilySwap.id, 'high-incline-push-up');
 assert.strictEqual(sameFamilySwap.progressionTrackKey, 'horizontalPush');
+assert.strictEqual(sameFamilySwap.workoutRole, 'primaryFocus', 'Swap preserves the composition role');
 const sameFamilyResult = workouts.exerciseResult(sameFamilySwap, [true, true, true], 'easy');
 assert.strictEqual(sameFamilyResult.exerciseId, 'high-incline-push-up');
 assert.strictEqual(sameFamilyResult.swappedFromExerciseId, 'wall-push-up');
