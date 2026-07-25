@@ -27,11 +27,11 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.25.132732" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.25.132732" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.25.132732" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.25.132732" />
-  <link rel="stylesheet" href="account.css?v=2026.07.25.132732" />
+  <link rel="stylesheet" href="style.css?v=2026.07.25.133925" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.25.133925" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.25.133925" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.25.133925" />
+  <link rel="stylesheet" href="account.css?v=2026.07.25.133925" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
@@ -137,7 +137,7 @@
             <div>
 	            <h2 id="accountModalTitle" class="account-main-heading account-heading-focus-target" tabindex="-1">Account</h2>
           </div>
-          <button id="closeAccountModalBtn" class="ghost-btn compact menu-close-btn" type="button" aria-label="Close account">×</button>
+          <button id="closeAccountModalBtn" class="ghost-btn compact menu-close-btn" type="button" aria-label="Close account"></button>
         </div>
 
         <div id="accountMainView" class="account-view">
@@ -178,7 +178,7 @@
           <div>
             <h2 id="accountSubmenuTitle">somthingreat</h2>
           </div>
-          <button id="closeAccountSubmenuBtn" class="ghost-btn compact menu-close-btn" type="button" aria-label="Close account">×</button>
+          <button id="closeAccountSubmenuBtn" class="ghost-btn compact menu-close-btn" type="button" aria-label="Close account"></button>
         </div>
 
         <div id="accountGoalView" class="account-view hidden">
@@ -367,7 +367,7 @@
     <section id="today" class="screen active">
       <section id="energyCard" class="energy-check-screen">
         <div id="workoutStatusCard" class="today-empty-state workout-complete-state hidden" role="status" aria-live="polite">
-          <button id="dismissWorkoutStatusBtn" class="today-empty-close" type="button" aria-label="Close">×</button>
+          <button id="dismissWorkoutStatusBtn" class="today-empty-close" type="button" aria-label="Close"></button>
           <h2>Well done for today.</h2>
           <p>You showed up, and that counts. Your progress is saved.</p>
         </div>
@@ -397,7 +397,7 @@
 
       <section id="customChecklistActive" class="custom-checklist-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="customChecklistTitle">
         <div class="custom-checklist-modal">
-          <button id="cancelCustomChecklistBtn" class="generated-close-btn custom-checklist-close" type="button" aria-label="Close checklist">×</button>
+          <button id="cancelCustomChecklistBtn" class="generated-close-btn custom-checklist-close" type="button" aria-label="Close checklist"></button>
           <h2 id="customChecklistTitle">Stairs - 10 rounds</h2>
           <p id="customChecklistMeta" class="muted hidden">8 rounds</p>
           <div id="customChecklistItems" class="custom-checklist-items"></div>
@@ -410,7 +410,7 @@
 
       <section id="customChecklistEdit" class="custom-checklist-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="customChecklistEditTitle">
         <div class="custom-checklist-modal custom-checklist-edit-modal">
-          <button id="closeCustomChecklistEditBtn" class="generated-close-btn custom-checklist-close" type="button" aria-label="Close edit">×</button>
+          <button id="closeCustomChecklistEditBtn" class="generated-close-btn custom-checklist-close" type="button" aria-label="Close edit"></button>
           <h2 id="customChecklistEditTitle">Custom checklist</h2>
           <div class="custom-edit-grid">
             <input id="editCustomChecklistNameInput" class="text-input" type="text" maxlength="40" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" placeholder="Activity" />
@@ -487,7 +487,7 @@
   </main>
 
   <section id="todayEmptyState" class="today-recovery-modal hidden" role="dialog" aria-modal="true" aria-labelledby="todayRecoveryTitle" aria-describedby="todayRecoveryMessage" aria-hidden="true">
-    <button id="dismissTodayEmptyState" class="menu-close-btn today-recovery-close" type="button" aria-label="Close">×</button>
+    <button id="dismissTodayEmptyState" class="menu-close-btn today-recovery-close" type="button" aria-label="Close"></button>
     <div class="today-recovery-content">
       <h2 id="todayRecoveryTitle">Rest might help</h2>
       <p id="todayRecoveryMessage">You've trained 3 days in a row. Taking a rest day can help your body recover.</p>
@@ -496,7 +496,7 @@
 
   <section id="generatedWorkoutCard" class="generated-workout-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="workoutName">
     <div class="generated-workout-modal">
-      <button class="generated-close-btn" id="closeWorkoutPreviewBtn" type="button" aria-label="Close">×</button>
+      <button class="generated-close-btn" id="closeWorkoutPreviewBtn" type="button" aria-label="Close"></button>
       <h2 id="workoutName">Lower Body</h2>
       <div class="add-on-panel preview-add-on-panel" aria-label="Workout add-ons">
         <label class="add-on-row"><input id="includeWarmup" type="checkbox"> <span>Warm-up</span><i aria-hidden="true"></i></label>
@@ -535,7 +535,7 @@
 
   <div id="exerciseHelpPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="exerciseHelpTitle">
     <div class="confirm-card exercise-help-card">
-      <button id="closeExerciseHelpBtn" class="generated-close-btn help-close" type="button" aria-label="Close">×</button>
+      <button id="closeExerciseHelpBtn" class="generated-close-btn help-close" type="button" aria-label="Close"></button>
       <h2 id="exerciseHelpTitle">Exercise</h2>
       <div id="exerciseHelpContent" class="exercise-help-content"></div>
     </div>
@@ -543,18 +543,18 @@
 
   <div id="timerPanel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="timerTitle">
     <div class="confirm-card timer-card">
-      <button id="skipTimerBtn" class="generated-close-btn timer-close-btn" type="button" aria-label="Close timer">×</button>
+      <button id="skipTimerBtn" class="generated-close-btn timer-close-btn" type="button" aria-label="Close timer"></button>
       <h2 id="timerTitle" class="sr-only">Timer</h2>
       <p id="timerCount" class="timer-count">0:30</p>
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.25.132732"></script>
-  <script src="workouts.js?v=2026.07.25.132732"></script>
-  <script src="state.js?v=2026.07.25.132732"></script>
-  <script src="account.js?v=2026.07.25.132732"></script>
-  <script src="render.js?v=2026.07.25.132732"></script>
-  <script src="app-version.js?v=2026.07.25.132732"></script>
-  <script src="app.js?v=2026.07.25.132732"></script>
+  <script src="auth.js?v=2026.07.25.133925"></script>
+  <script src="workouts.js?v=2026.07.25.133925"></script>
+  <script src="state.js?v=2026.07.25.133925"></script>
+  <script src="account.js?v=2026.07.25.133925"></script>
+  <script src="render.js?v=2026.07.25.133925"></script>
+  <script src="app-version.js?v=2026.07.25.133925"></script>
+  <script src="app.js?v=2026.07.25.133925"></script>
 </body>
 </html>

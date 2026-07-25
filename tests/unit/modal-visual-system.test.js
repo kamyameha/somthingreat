@@ -31,6 +31,7 @@ assert.match(workout, /\.preview-add-on-panel \.add-on-row i\s*\{[^}]*width:\s*2
 assert.match(workout, /\.generated-close-btn\s*\{[^}]*width:\s*34px;[^}]*height:\s*34px;/s);
 assert.match(workout, /\.generated-close-btn\s*\{[^}]*display:\s*grid;[^}]*place-items:\s*center;[^}]*transform:\s*none;/s);
 assert.match(workout, /\.generated-close-btn::before\s*\{[^}]*display:\s*block;[^}]*place-self:\s*center;[^}]*transform:\s*none;/s);
+assert.doesNotMatch(html, /class="[^"]*(?:generated-close-btn|menu-close-btn|today-empty-close)[^"]*"[^>]*>[^<]+<\/button>/);
 assert.match(workout, /\.generated-preview-list \.preview-row span\s*\{[^}]*color:\s*rgba\(1,\s*45,\s*237,\s*0\.35\)/s);
 assert.match(account, /\.today-recovery-modal \.menu-close-btn\s*\{[^}]*width:\s*34px;[^}]*height:\s*34px;/s);
 assert.match(account, /\.account-panel\.account-modal\.account-main-mode \.menu-close-btn,[\s\S]*?\.today-recovery-modal \.menu-close-btn\s*\{[^}]*display:\s*grid;[^}]*place-items:\s*center;[^}]*transform:\s*none;/s);
