@@ -602,20 +602,26 @@
   right: 20px;
 }
 
+html.workout-active,
 body.workout-active {
+  width: 100%;
+  height: 100dvh;
   background: #1e1e1e;
+  overflow: hidden;
 }
 
 body.workout-active .app {
   width: 100%;
   max-width: none;
   height: 100dvh;
-  min-height: 100dvh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 0;
+  padding: 0 0 env(safe-area-inset-bottom);
   background: #000000;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 body.workout-active .topbar,
@@ -629,9 +635,9 @@ body.workout-active .bottom-nav {
 
 body.workout-active #today.active {
   width: 100%;
-  min-height: 100%;
+  min-height: 0;
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   flex-direction: column;
 }
 
@@ -640,7 +646,7 @@ body.workout-active #today.active {
   width: 100%;
   min-height: 0;
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 0;
 }
@@ -751,7 +757,7 @@ body.workout-active .workout-safe-area {
 .workout-accordion-card.open {
   height: auto;
   min-height: min-content;
-  flex: 1 0 auto;
+  flex: 0 0 auto;
   background: #ffffff;
 }
 
@@ -760,7 +766,7 @@ body.workout-active .workout-safe-area {
 }
 
 .workout-accordion-card.open .exercise-card-body {
-  min-height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1530,6 +1536,28 @@ body.workout-active .workout-safe-area {
 .preview-swap-btn {
   -webkit-mask: url("Assets/repeat.svg") center / 24px 24px no-repeat;
   mask: url("Assets/repeat.svg") center / 24px 24px no-repeat;
+}
+
+.preview-swap-btn.swap-unavailable-btn {
+  opacity: 0.35;
+}
+
+.swap-availability-message {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 130;
+  width: max-content;
+  max-width: calc(100vw - 48px);
+  padding: 12px 18px;
+  border-radius: 20px;
+  background: var(--main);
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.25;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .generated-preview-list .preview-help-btn {

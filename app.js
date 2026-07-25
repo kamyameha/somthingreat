@@ -63,6 +63,8 @@ let energyScrollGesture = false;
 let cloudSavePromise = null;
 let cloudSaveRequested = false;
 let workoutCompletionSaveInProgress = false;
+let renderedWorkoutSessionId = null;
+let swapAvailabilityMessageTimer = null;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support']);
 const AUTH_LOADING_MIN_MS = 450;
@@ -522,7 +524,7 @@ function getExtraSessionMinutes(addOns = getSelectedAddOns()) {
 }
 
 function applyWorkoutAddOns(workout, addOns = getSelectedAddOns()) {
-  return workoutModule.applyWorkoutAddOns(workout, addOns);
+  return workoutModule.applyWorkoutAddOns(workout, addOns, { state, profile: getProfile() });
 }
 
 function getTodayWorkout(mode = 'normal') {
@@ -1517,32 +1519,58 @@ function updateGeneratedWorkoutAddOns() {
   state.generated.restTimerSeconds = 60;
 }
 
-function previewSwapCandidates(exercise) {
-  if (!exercise || exercise.isAddOn) return [];
+function swapCandidateAudit(exercise, workout, { respectCommittedSets = false } = {}) {
+  if (!exercise || exercise.isAddOn) {
+    return { finalCandidates: [], reason: 'Workout add-ons are intentionally not swappable.' };
+  }
+  const key = exerciseSessionKey(exercise);
+  if (respectCommittedSets && ((workout?.sets?.[key] || []).some(Boolean) || workout?.ratings?.[key])) {
+    return { finalCandidates: [], reason: 'This exercise cannot be changed after progress has been recorded.' };
+  }
   const trackKey = exercise.progressionTrackKey || exercise.trackKey;
   const recovery = typeof getActiveRecovery === 'function' ? getActiveRecovery() : null;
-  const usedIds = new Set((state.generated?.exercises || []).map(item => item?.id).filter(Boolean));
+  const usedIds = new Set((workout?.exercises || []).map(item => item?.id).filter(Boolean));
   return workoutModule.getSwapCandidateAudit(exercise, {
     usedIds,
     recovery,
     unlockedLevel: state.levels?.[trackKey]?.level || 0,
     profile: getProfile(),
     state
-  }).finalCandidates;
+  });
+}
+
+function previewSwapAudit(exercise) {
+  return swapCandidateAudit(exercise, state.generated);
+}
+
+function previewSwapCandidates(exercise) {
+  return previewSwapAudit(exercise).finalCandidates;
+}
+
+function activeSwapAudit(exercise) {
+  return swapCandidateAudit(exercise, state.current, { respectCommittedSets: true });
 }
 
 function activeSwapCandidates(exercise) {
-  if (!exercise || exercise.isAddOn) return [];
-  const key = exerciseSessionKey(exercise);
-  if ((state.current?.sets?.[key] || []).some(Boolean) || state.current?.ratings?.[key]) return [];
-  const trackKey = exercise.progressionTrackKey || exercise.trackKey;
-  return workoutModule.getSwapCandidateAudit(exercise, {
-    usedIds: new Set((state.current?.exercises || []).map(item => item?.id).filter(Boolean)),
-    recovery: typeof getActiveRecovery === 'function' ? getActiveRecovery() : null,
-    unlockedLevel: state.levels?.[trackKey]?.level || 0,
-    profile: getProfile(),
-    state
-  }).finalCandidates;
+  return activeSwapAudit(exercise).finalCandidates;
+}
+
+function swapAvailabilityCopy(reason = '') {
+  if (/locked progression stages/i.test(reason)) return 'Keep progressing to unlock another option.';
+  if (/unavailable equipment/i.test(reason)) return 'No other suitable option works with your current equipment.';
+  if (/already used/i.test(reason)) return 'Every suitable alternative is already in this workout.';
+  return 'No other suitable option is available yet.';
+}
+
+function showSwapAvailabilityMessage(message = 'No other suitable option is unlocked yet.') {
+  const element = document.getElementById('swapAvailabilityMessage');
+  if (!element) return;
+  window.clearTimeout(swapAvailabilityMessageTimer);
+  element.textContent = message || 'No other suitable option is unlocked yet.';
+  element.classList.remove('hidden');
+  swapAvailabilityMessageTimer = window.setTimeout(() => {
+    element.classList.add('hidden');
+  }, 2600);
 }
 
 function swapActiveExercise(index) {
@@ -1604,7 +1632,13 @@ function renderGeneratedWorkout() {
   (generated.exercises || []).filter(Boolean).forEach((exercise, index) => {
     const name = exerciseDisplayName(exercise);
     const hasHelp = !exercise.isAddOn && Boolean(getExerciseHelp(name));
-    const canSwap = previewSwapCandidates(exercise).length > 0;
+    const swapAudit = previewSwapAudit(exercise);
+    const canSwap = swapAudit.finalCandidates.length > 0;
+    const swapButton = exercise.isAddOn
+      ? ''
+      : canSwap
+        ? `<button class="preview-icon-btn preview-swap-btn" type="button" data-preview-index="${index}" aria-label="Change ${escapeHTML(name)}"></button>`
+        : `<button class="preview-icon-btn preview-swap-btn swap-unavailable-btn" type="button" aria-disabled="true" data-swap-reason="${escapeHTML(swapAvailabilityCopy(swapAudit.reason))}" aria-label="Swap unavailable for ${escapeHTML(name)}. ${escapeHTML(swapAudit.reason)}"></button>`;
     const row = document.createElement('div');
     row.className = 'preview-row preview-action-row';
     row.innerHTML = `
@@ -1613,7 +1647,7 @@ function renderGeneratedWorkout() {
         <span>${escapeHTML(exercise.prescription)}</span>
       </div>
       <div class="preview-exercise-actions">
-        ${canSwap ? `<button class="preview-icon-btn preview-swap-btn" type="button" data-preview-index="${index}" aria-label="Change ${escapeHTML(name)}"></button>` : ''}
+        ${swapButton}
         ${hasHelp ? `<button class="preview-icon-btn preview-help-btn exercise-help-btn" type="button" data-exercise-name="${escapeHTML(name)}" aria-label="How to do ${escapeHTML(name)}">?</button>` : ''}
       </div>`;
     preview.appendChild(row);
@@ -1648,6 +1682,12 @@ document.addEventListener('click', event => {
   if (!swapButton) return;
   event.preventDefault();
   event.stopPropagation();
+  if (swapButton.classList.contains('swap-unavailable-btn')) {
+    event.stopImmediatePropagation();
+    showSwapAvailabilityMessage(swapButton.dataset.swapReason);
+    return;
+  }
+  if (!swapButton.dataset.previewIndex) return;
   swapPreviewExercise(Number(swapButton.dataset.previewIndex));
 });
 
@@ -1814,6 +1854,8 @@ function renderExercises() {
 
   state.current = sanitizeWorkout(state.current);
   if (!state.current) { renderToday(); return; }
+  const shouldResetWorkoutScroll = state.current.sessionId !== renderedWorkoutSessionId;
+  renderedWorkoutSessionId = state.current.sessionId || null;
   state.current.exercises = (state.current.exercises || []).map((exercise, index) => ({
     ...exercise,
     sessionKey: exerciseSessionKey(exercise, index)
@@ -1849,9 +1891,13 @@ function renderExercises() {
     }).join('');
     const help = exercise.isAddOn ? null : getExerciseHelp(exerciseName);
     const helpButton = help ? `<button class="exercise-help-btn" type="button" data-exercise-name="${escapeHTML(exerciseName)}" aria-label="Help with ${escapeHTML(exerciseName)}">?</button>` : '';
-    const swapButton = activeSwapCandidates(exercise).length
-      ? `<button class="preview-icon-btn preview-swap-btn active-swap-btn" type="button" data-active-index="${index}" aria-label="Change ${escapeHTML(exerciseName)}"></button>`
-      : '';
+    const hasCommittedProgress = (state.current.sets?.[exerciseKey] || []).some(Boolean) || Boolean(state.current.ratings?.[exerciseKey]);
+    const swapAudit = activeSwapAudit(exercise);
+    const swapButton = exercise.isAddOn || hasCommittedProgress
+      ? ''
+      : swapAudit.finalCandidates.length
+        ? `<button class="preview-icon-btn preview-swap-btn active-swap-btn" type="button" data-active-index="${index}" aria-label="Change ${escapeHTML(exerciseName)}"></button>`
+        : `<button class="preview-icon-btn preview-swap-btn active-swap-btn swap-unavailable-btn" type="button" aria-disabled="true" data-swap-reason="${escapeHTML(swapAvailabilityCopy(swapAudit.reason))}" aria-label="Swap unavailable for ${escapeHTML(exerciseName)}. ${escapeHTML(swapAudit.reason)}"></button>`;
     const ratingBlock = exercise.isAddOn ? '' : `
       <p class="rating-label">How was it?</p>
       <div class="rating-row" data-track="${exerciseKey}">
@@ -1879,6 +1925,9 @@ function renderExercises() {
   });
   renderWorkoutCompletionTile(list);
   restoreActiveWorkoutTimer();
+  if (shouldResetWorkoutScroll) {
+    window.requestAnimationFrame(() => resetMainRouteScroll());
+  }
 }
 
 function renderWorkoutCompletionTile(list) {

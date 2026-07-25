@@ -1701,7 +1701,8 @@
         setCount: 4,
         isAddOn: true,
         addOnType: 'warmup',
-        setLabels: ['March in place', 'Arm circles', 'Hip circles', 'Bodyweight squats']
+        setLabels: ['March in place', 'Arm circles', 'Hip circles', 'Bodyweight squats'],
+        movementExerciseIds: ['warmup-march-in-place', 'warmup-arm-circles', 'warmup-hip-circles', 'bodyweight-squat']
       },
       {
         id: 'warmup-general-b',
@@ -1712,7 +1713,8 @@
         setCount: 4,
         isAddOn: true,
         addOnType: 'warmup',
-        setLabels: ['Step touch', 'Shoulder rolls', 'Good mornings', 'Ankle bounces']
+        setLabels: ['Step touch', 'Shoulder rolls', 'Good mornings', 'Ankle bounces'],
+        movementExerciseIds: ['warmup-step-touch', 'warmup-shoulder-rolls', 'bodyweight-good-morning', 'warmup-ankle-bounces']
       }
     ],
     stretches: [
@@ -1725,7 +1727,8 @@
         setCount: 4,
         isAddOn: true,
         addOnType: 'stretch',
-        setLabels: ['Hamstring stretch', 'Quad stretch', 'Chest opener', "Child's pose"]
+        setLabels: ['Hamstring stretch', 'Quad stretch', 'Chest opener', "Child's pose"],
+        movementExerciseIds: ['stretch-hamstring', 'stretch-quad', 'stretch-chest-opener', 'stretch-childs-pose']
       },
       {
         id: 'stretch-general-b',
@@ -1736,10 +1739,18 @@
         setCount: 4,
         isAddOn: true,
         addOnType: 'stretch',
-        setLabels: ['Calf stretch', 'Hip flexor stretch', 'Shoulder stretch', 'Forward fold']
+        setLabels: ['Calf stretch', 'Hip flexor stretch', 'Shoulder stretch', 'Forward fold'],
+        movementExerciseIds: ['stretch-calf', 'stretch-hip-flexor', 'stretch-shoulder', 'stretch-forward-fold']
       }
     ]
   };
+
+  const workoutEligibleTracks = Object.freeze({
+    Push: Object.freeze(['horizontalPush', 'dipStrength', 'antiExtension', 'verticalPush']),
+    Pull: Object.freeze(['horizontalPull', 'verticalPull', 'antiExtension', 'scapularPull']),
+    'Lower Body': Object.freeze(['squat', 'posteriorChain', 'compression', 'unilateral', 'calves', 'antiExtension']),
+    Skills: Object.freeze(['pistolSquat', 'handstandPushup', 'antiExtension', 'handstand', 'lsit', 'verticalPull', 'horizontalPull', 'posteriorChain'])
+  });
 
   const addOnMovementHelp = {
     'March in place': {
@@ -2386,8 +2397,9 @@
     const recovery = options.recovery || getActiveRecovery(state);
     const usedIds = options.usedIds || new Set();
     const tracks = getTracks(profile, state);
-    const safeTrackKey = isTrackAvailable(trackKey, tracks) ? trackKey : 'antiExtension';
-    const originalTrack = tracks[safeTrackKey] || tracks.antiExtension || baseTracks.antiExtension;
+    if (!isTrackAvailable(trackKey, tracks)) return null;
+    const safeTrackKey = trackKey;
+    const originalTrack = tracks[safeTrackKey];
     const eligibleTrack = originalTrack.filter(exercise => isExerciseEligibleForGeneration(exercise, profile, state, recovery));
     const track = filteredTrackForRecovery(eligibleTrack, recovery);
     if (!track.length) return null;
@@ -2432,13 +2444,14 @@
     });
   }
 
-  function fillTracksForRecovery(trackKeys, config, profile, state, recovery) {
+  function fillTracksForRecovery(trackKeys, config, profile, state, recovery, allowedTracks = null) {
     if (!recovery) return trackKeys;
     const rule = recoveryRules[recoveryAreaType(recovery)] || recoveryRules.other;
     const tracks = getTracks(profile, state);
     const next = [...trackKeys];
     for (const fallback of rule.fallbackTracks) {
       if (next.length >= config.exerciseCount) break;
+      if (allowedTracks && !allowedTracks.has(fallback)) continue;
       if (!isTrackAvailable(fallback, tracks) || next.includes(fallback)) continue;
       if (filteredTrackForRecovery(tracks[fallback], recovery).length) next.push(fallback);
     }
@@ -2448,21 +2461,18 @@
   function buildWorkoutTracks(workout, desiredCount, profile = null, state = {}) {
     const tracks = getTracks(profile, state);
     const recovery = getActiveRecovery(state);
-    const fillByWorkout = {
-      Push: ['horizontalPush', 'dipStrength', 'antiExtension', 'verticalPush', 'squat'],
-      Pull: ['horizontalPull', 'verticalPull', 'antiExtension', 'scapularPull', 'posteriorChain'],
-      'Lower Body': ['squat', 'posteriorChain', 'compression', 'unilateral', 'calves', 'antiExtension'],
-      Skills: ['pistolSquat', 'handstandPushup', 'antiExtension', 'handstand', 'lsit', 'verticalPull', 'horizontalPull', 'posteriorChain']
-    };
+    const eligibleTracks = workoutEligibleTracks[workout.name] || workout.tracks || [];
+    const allowedTracks = new Set(eligibleTracks);
     const selected = [];
-    [...workout.tracks, ...(fillByWorkout[workout.name] || [])].forEach(trackKey => {
+    [...workout.tracks, ...eligibleTracks].forEach(trackKey => {
       if (selected.length >= desiredCount) return;
+      if (!allowedTracks.has(trackKey)) return;
       if (selected.includes(trackKey) || !isTrackAvailable(trackKey, tracks)) return;
       const track = filteredTrackForRecovery(tracks[trackKey], recovery);
       if (!track.length) return;
       selected.push(trackKey);
     });
-    return fillTracksForRecovery(selected, { exerciseCount: desiredCount }, profile, state, recovery).slice(0, desiredCount);
+    return fillTracksForRecovery(selected, { exerciseCount: desiredCount }, profile, state, recovery, allowedTracks).slice(0, desiredCount);
   }
 
   function getTodayWorkout({ mode = 'normal', state = {}, profile = null } = {}) {
@@ -2473,8 +2483,9 @@
     const recovery = getActiveRecovery(state);
     const preferredTracks = buildWorkoutTracks(workout, config.exerciseCount, profile, state);
     const availableTracks = getTracks(profile, state);
+    const allowedTracks = new Set(workoutEligibleTracks[workout.name] || workout.tracks || []);
     const tracks = [...preferredTracks];
-    Object.keys(availableTracks).forEach(trackKey => {
+    allowedTracks.forEach(trackKey => {
       if (tracks.length >= config.exerciseCount * 2) return;
       if (tracks.includes(trackKey) || !isTrackAvailable(trackKey, availableTracks)) return;
       if (!filteredTrackForRecovery(availableTracks[trackKey], recovery).length) return;
@@ -2511,6 +2522,7 @@
       skillLimit: config.skillLimit,
       totalFatigue,
       totalSkill,
+      eligibleTrackKeys: [...allowedTracks],
       exercises
     };
   }
@@ -2519,11 +2531,59 @@
     return (addOns.warmup ? 2 : 0) + (addOns.stretch ? 2 : 0);
   }
 
-  function applyWorkoutAddOns(workout, addOns = {}) {
+  function exerciseSectionIds(exercise) {
+    if (!exercise) return [];
+    if (exercise.isAddOn) return [exercise.id, ...(exercise.movementExerciseIds || [])].filter(Boolean);
+    return [exercise.id].filter(Boolean);
+  }
+
+  function replaceSectionCollision(exercise, workout, usedIds, context = {}) {
+    const config = getEnergyConfig(workout.mode || 'normal');
+    const state = context.state || {};
+    const profile = context.profile || null;
+    const recovery = getActiveRecovery(state);
+    const categoryTracks = workoutEligibleTracks[workout.workoutName] || workout.eligibleTrackKeys || [];
+    const orderedTracks = [
+      exercise.progressionTrackKey || exercise.trackKey,
+      ...categoryTracks
+    ].filter((trackKey, index, all) => trackKey && all.indexOf(trackKey) === index && categoryTracks.includes(trackKey));
+    for (const trackKey of orderedTracks) {
+      const replacement = getExercise(trackKey, config, state, profile, {
+        recovery,
+        usedIds,
+        currentFatigue: 0,
+        currentSkill: 0,
+        remainingSlots: 0
+      });
+      if (replacement) return replacement;
+    }
+    return null;
+  }
+
+  function validateWorkoutSections(workout, addOnExercises = [], context = {}) {
+    const reservedIds = new Set(addOnExercises.flatMap(exerciseSectionIds));
+    const usedIds = new Set(reservedIds);
+    const mainExercises = [];
+    (workout.exercises || []).filter(exercise => !exercise?.isAddOn).forEach(exercise => {
+      let next = exercise;
+      if (exerciseSectionIds(exercise).some(id => usedIds.has(id))) {
+        next = replaceSectionCollision(exercise, workout, usedIds, context);
+      }
+      if (!next || exerciseSectionIds(next).some(id => usedIds.has(id))) return;
+      mainExercises.push(next);
+      exerciseSectionIds(next).forEach(id => usedIds.add(id));
+    });
+    return mainExercises;
+  }
+
+  function applyWorkoutAddOns(workout, addOns = {}, context = {}) {
     const variantIndex = Math.floor(Date.now() / 86400000) % 2;
-    const exercises = [...(workout.exercises || [])];
-    if (addOns.warmup) exercises.unshift(clone(workoutAddOns.warmups[variantIndex]));
-    if (addOns.stretch) exercises.push(clone(workoutAddOns.stretches[variantIndex]));
+    const warmup = addOns.warmup ? clone(workoutAddOns.warmups[variantIndex]) : null;
+    const stretch = addOns.stretch ? clone(workoutAddOns.stretches[variantIndex]) : null;
+    const addOnExercises = [warmup, stretch].filter(Boolean);
+    const exercises = validateWorkoutSections(workout, addOnExercises, context);
+    if (warmup) exercises.unshift(warmup);
+    if (stretch) exercises.push(stretch);
     return {
       ...workout,
       includeWarmup: Boolean(addOns.warmup),
@@ -2904,6 +2964,7 @@
     recoveryRules,
     energyOptions,
     workoutAddOns,
+    workoutEligibleTracks,
     createDefaultLevels,
     migrateLevels,
     getTracks,
@@ -2919,6 +2980,7 @@
     getTodayWorkout,
     getExtraSessionMinutes,
     applyWorkoutAddOns,
+    validateWorkoutSections,
     sessionTotalLabel,
     sanitizeWorkout,
     normalizeExercise,

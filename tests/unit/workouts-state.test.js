@@ -166,8 +166,83 @@ for (let rotationIndex = 0; rotationIndex < 4; rotationIndex += 1) {
     assert.ok(workout.exercises.some(item => integratedCoreTracks.has(item.progressionTrackKey)), `integrated core: ${workout.workoutName} ${mode}`);
     assert.ok(workout.exercises.length <= workouts.energyOptions[mode].exerciseCount, `energy budget: ${workout.workoutName} ${mode}`);
     assert.notStrictEqual(workout.workoutName, 'Core');
+    const allowedTracks = new Set(workouts.workoutEligibleTracks[workout.workoutName]);
+    assert.ok(
+      workout.exercises.every(item => allowedTracks.has(item.progressionTrackKey)),
+      `category-preserving tracks: ${workout.workoutName} ${mode}`
+    );
   }
 }
+
+const pullOnlyState = {
+  rotationIndex: 2,
+  levels: workouts.createDefaultLevels()
+};
+for (const equipment of [['floor'], ['floor', 'pullupBar']]) {
+  for (const mode of ['great', 'normal', 'tired', 'exhausted']) {
+    const pullWorkout = workouts.getTodayWorkout({
+      mode,
+      state: pullOnlyState,
+      profile: { goal: 'pullup', equipment }
+    });
+    assert.strictEqual(pullWorkout.workoutName, 'Pull');
+    assert.ok(
+      pullWorkout.exercises.every(item => workouts.workoutEligibleTracks.Pull.includes(item.progressionTrackKey)),
+      `Pull fallback remains in category: ${mode} ${equipment.join(',')}`
+    );
+    assert.ok(
+      pullWorkout.exercises.every(item => item.id !== 'bodyweight-good-morning'),
+      `Bodyweight good morning excluded from Pull: ${mode} ${equipment.join(',')}`
+    );
+  }
+}
+
+const duplicateMainWorkout = {
+  ...workouts.getTodayWorkout({
+    mode: 'normal',
+    state: { rotationIndex: 1, levels: workouts.createDefaultLevels() },
+    profile: { goal: 'general', equipment: ['floor'] }
+  }),
+  exercises: [
+    workouts.normalizeExercise({
+      ...catalog('bodyweight-squat'),
+      trackKey: 'squat',
+      progressionTrackKey: 'squat'
+    })
+  ]
+};
+const validatedSections = workouts.validateWorkoutSections(
+  duplicateMainWorkout,
+  [{ id: 'warmup-test', isAddOn: true, movementExerciseIds: ['bodyweight-squat'] }],
+  {
+    state: { levels: workouts.createDefaultLevels() },
+    profile: { goal: 'general', equipment: ['floor'] }
+  }
+);
+assert.strictEqual(validatedSections.length, 1, 'a same-category replacement is retained');
+assert.notStrictEqual(validatedSections[0].id, 'bodyweight-squat', 'warm-up/main collision is replaced by stable ID');
+assert.ok(
+  workouts.workoutEligibleTracks['Lower Body'].includes(validatedSections[0].progressionTrackKey),
+  'duplicate replacement preserves workout category'
+);
+const addOnValidatedWorkout = workouts.applyWorkoutAddOns({
+  ...duplicateMainWorkout,
+  exercises: [
+    duplicateMainWorkout.exercises[0],
+    workouts.normalizeExercise({
+      ...catalog('bodyweight-good-morning'),
+      trackKey: 'posteriorChain',
+      progressionTrackKey: 'posteriorChain'
+    })
+  ]
+}, { warmup: true, stretch: true }, {
+  state: { levels: workouts.createDefaultLevels() },
+  profile: { goal: 'general', equipment: ['floor'] }
+});
+const allSectionIds = addOnValidatedWorkout.exercises.flatMap(item => (
+  item.isAddOn ? [item.id, ...(item.movementExerciseIds || [])] : [item.id]
+));
+assert.strictEqual(new Set(allSectionIds).size, allSectionIds.length, 'final preview workout has no cross-section ID collisions');
 
 assert.strictEqual(workouts.prescriptionToString({ sets: 3, seconds: 20 }), '3 × 20s');
 assert.strictEqual(workouts.prescriptionToString({ sets: 3, reps: 8 }), '3 × 8');
@@ -195,6 +270,10 @@ const lockedSwapAudit = workouts.getSwapCandidateAudit({ ...pushTrack[0], trackK
 });
 assert.strictEqual(lockedSwapAudit.candidateCountFinal, 0);
 assert.match(lockedSwapAudit.reason, /locked progression stages/);
+const unlockedWallPushAudit = workouts.getSwapCandidateAudit({ ...pushTrack[0], trackKey: 'horizontalPush', progressionTrackKey: 'horizontalPush' }, {
+  profile: { goal: 'pullup', equipment: ['floor'] }, state: { levels: { horizontalPush: { level: 1 } } }, unlockedLevel: 1
+});
+assert.ok(unlockedWallPushAudit.candidateCountFinal > 0, 'Wall push-up exposes Swap when a same-track replacement is unlocked');
 assert.strictEqual(workouts.executableRounds(pike).length, 3);
 assert.ok(workouts.executableRounds(pike).every(round => round.seconds === 20));
 
@@ -416,6 +495,7 @@ assert.strictEqual(fullResult.progressionTrackKey, 'muscleupFull');
 const appSource = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const renderSource = fs.readFileSync(path.join(root, 'render.js'), 'utf8');
 const indexSource = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const workoutCssSource = fs.readFileSync(path.join(root, 'workout.css'), 'utf8');
 assert.ok(appSource.includes("['Success looks like', distinctSuccess]"));
 assert.ok(appSource.includes(".filter(([, values]) => Array.isArray(values) && values.some(Boolean))"));
 assert.ok(indexSource.includes('exerciseHelpContent'));
@@ -448,6 +528,14 @@ assert.ok(indexSource.includes("Choose today's energy to generate a workout."));
 assert.ok(indexSource.includes('class="today-recovery-modal hidden"'));
 assert.ok(appSource.includes('if (!authResolved)'));
 assert.ok(appSource.includes("querySelectorAll('.welcome-star')"));
+assert.ok(appSource.includes('state.current.sessionId !== renderedWorkoutSessionId'), 'new workout sessions reset the scroll owner');
+assert.ok(appSource.includes('class="preview-icon-btn preview-swap-btn swap-unavailable-btn"'), 'preview reserves disabled Swap position');
+assert.ok(appSource.includes('class="preview-icon-btn preview-swap-btn active-swap-btn swap-unavailable-btn"'), 'active workout reserves disabled Swap position');
+assert.ok(indexSource.includes('id="swapAvailabilityMessage"'));
+assert.match(workoutCssSource, /html\.workout-active,\s*body\.workout-active\s*\{[\s\S]*?overflow:\s*hidden;/);
+assert.match(workoutCssSource, /body\.workout-active \.app\s*\{[\s\S]*?padding:\s*0 0 env\(safe-area-inset-bottom\);[\s\S]*?overflow-y:\s*auto;/);
+assert.match(workoutCssSource, /body\.workout-active #today\.active\s*\{[\s\S]*?flex:\s*0 0 auto;/);
+assert.match(workoutCssSource, /#exerciseList\s*\{[\s\S]*?flex:\s*0 0 auto;/);
 assert.ok(indexSource.includes('Mastering skills'));
 
 assert.deepStrictEqual(Array.from(workouts.distinctSuccessCriteria(['Same sentence.'], ['same sentence!'])), []);
