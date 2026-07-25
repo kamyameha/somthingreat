@@ -164,7 +164,7 @@ for (let rotationIndex = 0; rotationIndex < 4; rotationIndex += 1) {
       profile: { goal: 'pullup', equipment: ['floor', 'pullupBar'] }
     });
     assert.ok(workout.exercises.some(item => integratedCoreTracks.has(item.progressionTrackKey)), `integrated core: ${workout.workoutName} ${mode}`);
-    assert.ok(workout.exercises.length <= workouts.energyOptions[mode].exerciseCount, `energy budget: ${workout.workoutName} ${mode}`);
+    assert.strictEqual(workout.exercises.length, workouts.energyOptions[mode].exerciseCount, `energy exercise count: ${workout.workoutName} ${mode}`);
     assert.notStrictEqual(workout.workoutName, 'Core');
     const allowedTracks = new Set(workouts.workoutEligibleTracks[workout.workoutName]);
     assert.ok(
@@ -193,6 +193,11 @@ for (const equipment of [['floor'], ['floor', 'pullupBar']]) {
     assert.ok(
       pullWorkout.exercises.every(item => item.id !== 'bodyweight-good-morning'),
       `Bodyweight good morning excluded from Pull: ${mode} ${equipment.join(',')}`
+    );
+    assert.strictEqual(
+      pullWorkout.exercises.length,
+      workouts.energyOptions[mode].exerciseCount,
+      `Pull preserves ${mode} exercise count: ${equipment.join(',')}`
     );
   }
 }

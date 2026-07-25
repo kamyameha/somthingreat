@@ -1558,6 +1558,7 @@
     posteriorChain: ids(['glute-bridge', 'paused-glute-bridge', 'single-leg-assisted-glute-bridge', 'single-leg-glute-bridge', 'hip-hinge-drill', 'bodyweight-good-morning', 'single-leg-romanian-deadlift']),
     calves: ids(['two-leg-calf-raise', 'paused-calf-raise', 'single-leg-assisted-calf-raise', 'single-leg-calf-raise', 'elevated-single-leg-calf-raise']),
     antiExtension: ids(['dead-bug', 'forearm-plank', 'plank', 'hollow-hold']),
+    pullCore: ids(['hollow-body-strength']),
     compression: ids(['reverse-crunch', 'seated-compression-lift', 'bent-knee-support-hold', 'tuck-support-hold']),
     lateralCore: ids(['side-plank']),
     lsit: ids(['seated-compression-lift', 'bent-knee-support-hold', 'foot-assisted-support-hold', 'tuck-support-hold', 'one-leg-extended-tuck-hold', 'alternating-one-leg-lsit', 'full-tuck-lsit', 'full-lsit-attempts', 'full-lsit-hold', 'longer-lsit-hold']),
@@ -1747,7 +1748,16 @@
 
   const workoutEligibleTracks = Object.freeze({
     Push: Object.freeze(['horizontalPush', 'dipStrength', 'antiExtension', 'verticalPush']),
-    Pull: Object.freeze(['horizontalPull', 'verticalPull', 'antiExtension', 'scapularPull']),
+    Pull: Object.freeze([
+      'horizontalPull',
+      'verticalPull',
+      'scapularPull',
+      'antiExtension',
+      'compression',
+      'lateralCore',
+      'pullCore',
+      'muscleupFoundation'
+    ]),
     'Lower Body': Object.freeze(['squat', 'posteriorChain', 'compression', 'unilateral', 'calves', 'antiExtension']),
     Skills: Object.freeze(['pistolSquat', 'handstandPushup', 'antiExtension', 'handstand', 'lsit', 'verticalPull', 'horizontalPull', 'posteriorChain'])
   });
