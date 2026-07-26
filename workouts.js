@@ -37,8 +37,16 @@
     pullup: 'pullup',
     handstand: 'handstand',
     lsit: 'lsit',
-    muscleup: 'muscleup',
-    generalFitness: 'generalFitness'
+    pistolSquat: 'pistolSquat'
+  });
+  const PRIORITY_SKILLS = Object.freeze(Object.values(MASTERY_SKILLS));
+  const FOUNDATIONAL_SKILL_TRACKS = new Set(['verticalPull', 'handstand', 'lsit', 'pistolSquat']);
+  const MILESTONE_EQUIVALENTS = Object.freeze({});
+  const ACHIEVEMENT_REQUIREMENTS = Object.freeze({
+    pullup: Object.freeze({ positiveFinalMilestoneExposures: 3 }),
+    handstand: Object.freeze({ positiveFinalMilestoneExposures: 3 }),
+    lsit: Object.freeze({ positiveFinalMilestoneExposures: 3 }),
+    pistolSquat: Object.freeze({ positiveFinalMilestoneExposures: 3 })
   });
 
   const legacyTrackMap = {
@@ -296,6 +304,8 @@
     'bent-knee-inverted-row': ["Pull chest up, keep body from shoulders to knees straight, and lower with control."],
     'straight-leg-inverted-row': ["Keep the body long, pull chest toward the anchor, and lower slowly."],
     'feet-elevated-inverted-row': ["Pull with a quiet body and pause briefly near the top."],
+    'seated-resistance-band-row': ["Every repetition draws both elbows to the ribs with the band secured around both feet, then returns under control without the torso rocking."],
+    'standing-resistance-band-row': ["Every repetition finishes with both elbows behind the torso and a brief upper-back squeeze while the feet keep the band pinned and the spine stays neutral."],
     'active-hang-preparation': ["Gently pull shoulders down away from ears and hold a quiet active hang.","The required position or movement continues until the timer reaches zero."],
     'scapular-pull-up': ["Without bending elbows, pull shoulders down, rise slightly, then relax with control."],
     'prone-pull-down': [
@@ -303,12 +313,16 @@
       "Both elbows travel evenly toward the ribs without the shoulders shrugging toward the ears.",
       "Every repetition is slow, controlled, and pain-free."
     ],
+    'prone-w-raise': ["Every repetition lifts both forearms and hands into a controlled W shape while the neck stays relaxed and the ribs remain on the floor."],
+    'reverse-snow-angel': ["Both arms travel through the same comfortable arc without shrugging, jerking, or lifting the ribs away from the floor."],
     'assisted-pull-up': ["Pull chest toward the bar and use only enough help to move smoothly."],
     'flexed-arm-hang': ["Hold chin near the bar with shoulders active, then step down safely.","The required position or movement continues until the timer reaches zero."],
     'negative-pull-up': ["Lower as slowly as you can while keeping shoulders active."],
     'partial-pull-up': ["Pull through the range you control, pause briefly, and lower calmly."],
     'strict-pull-up-singles': ["Perform one strict pull-up, rest fully, and repeat."],
     'strict-pull-up': ["Pull chin over the bar, keep body quiet, and lower with control."],
+    'tempo-pull-up': ["Every repetition starts from a controlled active hang, reaches chin clearly over the bar, and uses a three-second descent without swinging or dropping."],
+    'pause-pull-up': ["Every repetition pauses with the chin clearly over the bar before returning to a controlled active hang without kicking or uncontrolled swing."],
     'chest-to-bar-pull-up': ["Pull higher than a normal pull-up, aiming chest toward the bar."],
     'high-pull-up': ["Pull explosively but under control, trying to bring the bar lower on the chest."],
     'supported-chair-squat': ["Sit back to touch the chair, then stand by pressing through the feet."],
@@ -337,8 +351,12 @@
     'forearm-plank': ["Make a straight line from head to heels and breathe steadily.","The required position or movement continues until the timer reaches zero."],
     'plank': ["Push the floor away, squeeze glutes lightly, and breathe.","The required position or movement continues until the timer reaches zero."],
     'hollow-hold': ["Lift shoulders and legs only as far as you can keep the back connected.","The required position or movement continues until the timer reaches zero."],
+    'hollow-tuck-hold': ["The shoulders and tucked legs remain lifted while the lower back stays in contact with the floor for the full prescribed hold."],
+    'long-lever-plank': ["The elbows remain slightly ahead of the shoulders while the ribs, pelvis and legs hold one straight controlled line for the full prescribed hold."],
     'dead-bug': ["Slowly reach opposite arm and leg away, then return without arching.","The prescribed work is completed separately on each side."],
-    'side-plank': ["Lift hips and hold a straight line while breathing.","The required position or movement continues until the timer reaches zero."],
+    'bent-knee-side-plank': ["Each side maintains a straight line from shoulder to knee with the hips lifted and the supporting shoulder controlled for the full prescribed hold."],
+    'side-plank': ["Each side maintains a straight line from shoulder to ankle with the hips lifted for the full prescribed hold."],
+    'side-plank-reach': ["Each side completes every reach without the hips dropping or the chest rotating toward the floor."],
     'reverse-crunch': ["Curl hips slightly off the floor using abs, then lower slowly."],
     'seated-compression-lift': ["Press hands down and lift one or both heels briefly without leaning back."],
     'bent-knee-support-hold': ["Press down, lift hips as able, and keep shoulders away from ears.","The required position or movement continues until the timer reaches zero."],
@@ -729,6 +747,40 @@
       execution: 'Pull with a quiet body and pause briefly near the top.',
       safety: 'Both the row anchor and foot support must be stable. ' + PAIN_NOTICE
     }),
+    exercise('seated-resistance-band-row', 'Seated resistance-band row', 'horizontal-pull', 2, { sets: 3, reps: 10 }, {
+      equipment: ['bands'],
+      primaryAreas: ['upper-back', 'biceps'],
+      loadedAreas: ['elbow', 'shoulder'],
+      purpose: 'Provides progressively loaded horizontal pulling without relying on furniture, doors, towels, or an external anchor.',
+      setup: 'Sit tall with legs comfortably extended, loop the centre of an intact resistance band around both feet, and hold one end in each hand.',
+      movement: [
+        'Begin with arms long and enough band tension to remove slack.',
+        'Drive both elbows toward the ribs while keeping the torso quiet.',
+        'Pause briefly, then return the hands forward under control.'
+      ],
+      execution: 'Row both elbows toward the ribs, pause briefly, and let the arms lengthen without the torso rocking.',
+      focus: ['Keep the band centred around both feet.', 'Lead with the elbows.', 'Keep the neck and torso quiet.'],
+      commonMistakes: ['Looping the band around only the toes.', 'Leaning backward to finish the row.', 'Letting the band snap the arms forward.'],
+      safety: 'Inspect the band before use, keep it around the middle of both feet rather than the toes, and stop if it slips, frays, or causes pain. Do not attach it to a door or furniture.',
+      visualGuidance: 'Show a seated side view with the band centred around both feet and both elbows rowing evenly toward the ribs.'
+    }),
+    exercise('standing-resistance-band-row', 'Standing resistance-band row', 'horizontal-pull', 4, { sets: 3, reps: 8 }, {
+      equipment: ['bands'],
+      primaryAreas: ['upper-back', 'biceps'],
+      loadedAreas: ['elbow', 'shoulder', 'lower-back'],
+      purpose: 'Builds stronger loaded rowing while the user secures the band under their own feet instead of using an unverified anchor.',
+      setup: 'Stand on the centre of an intact resistance band with both feet, hold the ends, soften the knees, and hinge forward with a long spine.',
+      movement: [
+        'Brace the trunk and begin with arms long.',
+        'Row both elbows behind the torso without shrugging.',
+        'Pause briefly and lower the hands under control.'
+      ],
+      execution: 'Hold the hinge position, row both elbows toward the hips, pause, and return slowly.',
+      focus: ['Keep equal band length under both feet.', 'Keep the spine neutral.', 'Pull elbows toward the hips.'],
+      commonMistakes: ['Standing on the band with only one foot.', 'Jerking the torso upright.', 'Shrugging at the top.'],
+      safety: 'Inspect the band, pin it securely under the middle of both feet, use modest tension, and stop if the band shifts, frays, or the lower back cannot stay neutral.',
+      visualGuidance: 'Show a three-quarter view of the band secured beneath both feet, a stable hip hinge, and both elbows rowing toward the hips.'
+    }),
 
     exercise('active-hang-preparation', 'Active hang preparation', 'vertical-pull', 1, { sets: 3, seconds: 10 }, {
       equipment: ['pullupBar'],
@@ -761,6 +813,42 @@
       execution: 'Reach long through the arms, then pull the elbows down toward the ribs while gently drawing the shoulder blades down and back. Pause briefly, then reach overhead again.',
       safety: 'Use only a comfortable overhead range. Do not lift the chest aggressively or compensate by arching the lower back. Stop if the shoulder pinches or the movement causes pain.',
       visualGuidance: 'Show a face-down position with arms overhead, followed by both elbows drawing evenly toward the ribs while the ribs and pelvis stay on the floor.'
+    }),
+    exercise('prone-w-raise', 'Prone W raise', 'pull-accessory', 2, { sets: 3, reps: 8 }, {
+      equipment: ['floor'],
+      primaryAreas: ['upper-back', 'shoulder'],
+      loadedAreas: ['shoulder', 'lower-back'],
+      type: 'preparation',
+      purpose: 'Builds upper-back control and external-rotation endurance as a Pull accessory, without pretending to replace loaded rowing.',
+      setup: 'Lie face down with the forehead supported, elbows bent beside the body, and hands forming a W shape.',
+      movement: [
+        'Keep the ribs and pelvis heavy on the floor.',
+        'Lift the forearms and hands a small distance while drawing the shoulder blades gently together.',
+        'Pause, then lower completely before the next repetition.'
+      ],
+      execution: 'Lift the W shape a small distance, pause with a relaxed neck, and lower slowly.',
+      focus: ['Keep the forehead supported.', 'Use a small shoulder-led lift.', 'Keep ribs on the floor.'],
+      commonMistakes: ['Lifting the chest high.', 'Shrugging toward the ears.', 'Forcing the hands upward.'],
+      safety: 'Use a very small range and stop for shoulder pinching or lower-back tension. This is a floor accessory, not a substitute for loaded horizontal pulling.',
+      visualGuidance: 'Show a face-down W arm position with a small even lift while the forehead, ribs and pelvis remain supported.'
+    }),
+    exercise('reverse-snow-angel', 'Reverse snow angel', 'pull-accessory', 3, { sets: 3, reps: 6 }, {
+      equipment: ['floor'],
+      primaryAreas: ['upper-back', 'shoulder'],
+      loadedAreas: ['shoulder', 'lower-back'],
+      type: 'preparation',
+      purpose: 'Develops controlled scapular movement through a larger shoulder arc for Pull-session accessory variety.',
+      setup: 'Lie face down with forehead supported, arms near the sides, palms facing down, and ribs resting on the floor.',
+      movement: [
+        'Lift the hands only slightly from the floor.',
+        'Sweep both arms through a comfortable arc toward overhead without shrugging.',
+        'Reverse the arc and return the arms to the sides under control.'
+      ],
+      execution: 'Sweep both arms slowly from the sides toward overhead and back while the torso remains still.',
+      focus: ['Keep the neck relaxed.', 'Use the same arc on both sides.', 'Keep ribs and pelvis grounded.'],
+      commonMistakes: ['Rushing the arm sweep.', 'Arching to gain range.', 'Forcing the arms through a pinch.'],
+      safety: 'Keep the hands low and reduce the arc if the shoulders pinch. This is an accessory and does not replace progressively loaded rowing.',
+      visualGuidance: 'Show an overhead view of both arms tracing the same slow arc while the torso remains supported.'
     }),
     exercise('assisted-pull-up', 'Assisted pull-up', 'vertical-pull', 3, { sets: 3, reps: 4 }, {
       equipment: ['pullupBar'],
@@ -810,7 +898,29 @@
       execution: 'Pull chin over the bar, keep body quiet, and lower with control.',
       safety: 'Stop before reps become swinging attempts. ' + PAIN_NOTICE
     }),
-    exercise('chest-to-bar-pull-up', 'Chest-to-bar pull-up', 'vertical-pull', 9, { sets: 3, reps: 3 }, {
+    exercise('tempo-pull-up', 'Tempo pull-up', 'vertical-pull', 9, { sets: 3, reps: 3 }, {
+      equipment: ['pullupBar'],
+      primaryAreas: ['upper-back', 'biceps', 'grip'],
+      loadedAreas: ['elbow', 'shoulder'],
+      purpose: 'Builds control and strength beyond the first multiple strict Pull-ups without introducing an advanced figure pathway.',
+      setup: 'Begin from a still active hang on a stable pull-up bar.',
+      execution: 'Pull the chin over the bar, then lower for three controlled seconds to the active hang.',
+      focus: ['Keep the body quiet.', 'Clear the bar before descending.', 'Use the full three-second lowering phase.'],
+      commonMistakes: ['Kipping to start.', 'Shortening the top position.', 'Dropping through the final part of the descent.'],
+      safety: 'Stop before grip or shoulder control fades and step down rather than dropping from the bar. ' + PAIN_NOTICE
+    }),
+    exercise('pause-pull-up', 'Pause pull-up', 'vertical-pull', 10, { sets: 3, reps: 3 }, {
+      equipment: ['pullupBar'],
+      primaryAreas: ['upper-back', 'biceps', 'grip'],
+      loadedAreas: ['elbow', 'shoulder'],
+      purpose: 'Develops repeatable top-range Pull-up strength before higher chest-to-bar work.',
+      setup: 'Begin from a still active hang with a secure grip on a stable pull-up bar.',
+      execution: 'Pull the chin over the bar, pause for one controlled second, then lower to the active hang.',
+      focus: ['Keep the legs quiet.', 'Hold the top without craning the neck.', 'Lower under control.'],
+      commonMistakes: ['Jumping into the first repetition.', 'Losing the top position immediately.', 'Relaxing into an uncontrolled bottom swing.'],
+      safety: 'Use fewer repetitions if the top pause changes shoulder position, and step down before grip failure. ' + PAIN_NOTICE
+    }),
+    exercise('chest-to-bar-pull-up', 'Chest-to-bar pull-up', 'vertical-pull', 10, { sets: 3, reps: 3 }, {
       equipment: ['pullupBar'],
       primaryAreas: ['upper-back', 'biceps'],
       loadedAreas: ['elbow', 'shoulder'],
@@ -1091,6 +1201,14 @@
       execution: 'Make a straight line from head to heels and breathe steadily.',
       safety: 'Stop before the lower back sags. ' + PAIN_NOTICE
     }),
+    exercise('hollow-tuck-hold', 'Hollow tuck hold', 'anti-extension', 2, { sets: 3, seconds: 15 }, {
+      equipment: ['floor'],
+      primaryAreas: ['core'],
+      loadedAreas: ['hip', 'lower-back'],
+      setup: 'Lie on your back with hips and knees bent, arms reaching forward, and the lower back gently pressed into the floor.',
+      execution: 'Lift the shoulders and tucked legs, breathe behind the brace, and hold only while the lower back stays connected.',
+      safety: 'Rest the head or feet if the lower back arches or the neck strains. ' + PAIN_NOTICE
+    }),
     exercise('plank', 'Plank', 'anti-extension', 2, { sets: 3, seconds: 30 }, {
       equipment: ['floor'],
       primaryAreas: ['core'],
@@ -1107,6 +1225,14 @@
       execution: 'Lift shoulders and legs only as far as you can keep the back connected.',
       safety: 'Bend knees if the lower back lifts. ' + PAIN_NOTICE
     }),
+    exercise('long-lever-plank', 'Long-lever plank', 'anti-extension', 5, { sets: 3, seconds: 15 }, {
+      equipment: ['floor'],
+      primaryAreas: ['core', 'shoulder'],
+      loadedAreas: ['shoulder', 'lower-back'],
+      setup: 'Start in a forearm plank, then walk the elbows a small distance ahead of the shoulders.',
+      execution: 'Brace the ribs toward the pelvis, squeeze the glutes lightly, and hold the longer lever without sagging.',
+      safety: 'Keep the elbow shift small and return to a normal forearm plank if the shoulders or lower back lose control. ' + PAIN_NOTICE
+    }),
     exercise('dead-bug', 'Dead bug', 'anti-extension', 1, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['core'],
@@ -1115,13 +1241,29 @@
       execution: 'Slowly reach opposite arm and leg away, then return without arching.',
       safety: 'Keep the range small enough to control the lower back. ' + PAIN_NOTICE
     }),
-    exercise('side-plank', 'Side plank', 'lateral-core', 2, { sets: 3, seconds: 15 }, {
+    exercise('bent-knee-side-plank', 'Bent-knee side plank', 'lateral-core', 1, { sets: 3, seconds: 15, perSide: true }, {
+      equipment: ['floor'],
+      primaryAreas: ['core'],
+      loadedAreas: ['shoulder', 'hip'],
+      setup: 'Lie on one side with knees bent and the supporting elbow directly beneath the shoulder.',
+      execution: 'Lift the hips until the shoulder, hip and knee form one line, then hold while breathing.',
+      safety: 'Keep pressure comfortable at the shoulder and use padding under the elbow. ' + PAIN_NOTICE
+    }),
+    exercise('side-plank', 'Side plank', 'lateral-core', 2, { sets: 3, seconds: 15, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['core'],
       loadedAreas: ['shoulder', 'hip'],
       setup: 'Lie on one side with elbow under shoulder.',
       execution: 'Lift hips and hold a straight line while breathing.',
       safety: 'Use bent knees if the full shape is too much. ' + PAIN_NOTICE
+    }),
+    exercise('side-plank-reach', 'Side plank reach', 'lateral-core', 4, { sets: 3, reps: 5, perSide: true }, {
+      equipment: ['floor'],
+      primaryAreas: ['core', 'shoulder'],
+      loadedAreas: ['shoulder', 'hip'],
+      setup: 'Set a stable side plank with the top arm reaching toward the ceiling.',
+      execution: 'Reach the top arm forward and slightly under the torso, then reopen without letting the hips drop.',
+      safety: 'Use the bent-knee variation or a smaller reach if the supporting shoulder or balance is not controlled. ' + PAIN_NOTICE
     }),
     exercise('reverse-crunch', 'Reverse crunch', 'compression', 1, { sets: 3, reps: 10 }, {
       equipment: ['floor'],
@@ -1571,7 +1713,8 @@
   }
 
   const generalSupportIds = stableIdSet([
-    'dead-bug', 'forearm-plank', 'plank', 'hollow-hold', 'side-plank'
+    'dead-bug', 'forearm-plank', 'hollow-tuck-hold', 'plank', 'hollow-hold',
+    'long-lever-plank', 'bent-knee-side-plank', 'side-plank', 'side-plank-reach'
   ]);
   const foundationControlIds = stableIdSet([
     'top-support-hold', 'scapular-support-movement',
@@ -1609,7 +1752,7 @@
   const skillProgressionIds = stableIdSet([
     'assisted-pull-up', 'flexed-arm-hang', 'negative-pull-up',
     'partial-pull-up', 'strict-pull-up-singles', 'strict-pull-up',
-    'chest-to-bar-pull-up', 'high-pull-up',
+    'tempo-pull-up', 'pause-pull-up', 'chest-to-bar-pull-up', 'high-pull-up',
     'tuck-support-hold', 'one-leg-extended-tuck-hold',
     'alternating-one-leg-lsit', 'full-tuck-lsit', 'full-lsit-attempts',
     'full-lsit-hold', 'longer-lsit-hold',
@@ -1642,11 +1785,12 @@
       preparation: stableIdSet(['active-hang-preparation', 'scapular-pull-up', 'prone-pull-down']),
       progression: stableIdSet([
         'assisted-pull-up', 'flexed-arm-hang', 'negative-pull-up', 'partial-pull-up',
-        'strict-pull-up-singles', 'strict-pull-up', 'chest-to-bar-pull-up', 'high-pull-up'
+        'strict-pull-up-singles', 'strict-pull-up', 'tempo-pull-up', 'pause-pull-up',
+        'chest-to-bar-pull-up', 'high-pull-up'
       ]),
       foundation: stableIdSet([
-        'standing-towel-row-isometric', 'seated-towel-row-isometric', 'high-angle-table-row',
-        'bent-knee-inverted-row', 'straight-leg-inverted-row', 'feet-elevated-inverted-row',
+        'seated-resistance-band-row', 'standing-resistance-band-row',
+        'prone-w-raise', 'reverse-snow-angel',
         'dead-bug', 'forearm-plank', 'plank', 'hollow-hold'
       ])
     }),
@@ -1680,6 +1824,21 @@
         'close-grip-wall-push-up', 'close-grip-incline-push-up',
         'close-grip-push-up-dip-prep', 'assisted-split-squat',
         'single-leg-romanian-deadlift'
+      ])
+    }),
+    pistolSquat: Object.freeze({
+      preparation: stableIdSet([
+        'assisted-single-leg-sit-to-stand', 'two-leg-calf-raise',
+        'paused-calf-raise', 'hip-hinge-drill'
+      ]),
+      progression: stableIdSet([
+        'elevated-pistol-squat', 'counterbalance-pistol-squat',
+        'assisted-pistol-squat', 'pistol-squat-negative', 'full-pistol-squat'
+      ]),
+      foundation: stableIdSet([
+        'supported-chair-squat', 'chair-squat', 'bodyweight-squat',
+        'assisted-split-squat', 'split-squat', 'glute-bridge',
+        'paused-glute-bridge', 'single-leg-romanian-deadlift'
       ])
     }),
     muscleup: Object.freeze({
@@ -1723,7 +1882,6 @@
     item.programmeRoles = intrinsicProgrammeRoles(item.id);
     item.masteryRelationships = Object.fromEntries(
       Object.values(MASTERY_SKILLS)
-        .filter(skill => skill !== MASTERY_SKILLS.generalFitness)
         .map(skill => [skill, masteryRelationshipFor(item.id, skill)])
         .filter(([, relationship]) => Boolean(relationship))
     );
@@ -1731,15 +1889,17 @@
 
   const byId = Object.fromEntries(exerciseCatalog.map(item => [item.id, item]));
   // These movements remain documented for migration/history lookup, but are
-  // intentionally excluded from generation because their household anchors
-  // cannot be verified by the app.
+  // intentionally excluded from the current programme. The household-anchor
+  // movements cannot be verified by the app; Jump rope is retained only for
+  // compatibility with existing workouts and history.
   const disabledExerciseIds = new Set([
     'standing-towel-row-isometric',
     'seated-towel-row-isometric',
     'high-angle-table-row',
     'bent-knee-inverted-row',
     'straight-leg-inverted-row',
-    'feet-elevated-inverted-row'
+    'feet-elevated-inverted-row',
+    'jump-rope'
   ]);
 
   function ids(values) {
@@ -1753,18 +1913,18 @@
     horizontalPush: ids(['wall-push-up', 'high-incline-push-up', 'medium-incline-push-up', 'low-incline-push-up', 'eccentric-push-up', 'full-push-up-singles', 'full-push-up', 'tempo-push-up', 'pause-push-up', 'close-grip-push-up', 'decline-push-up']),
     verticalPush: ids(['wrist-preparation', 'elevated-plank-shoulder-shift', 'pike-hold', 'pike-shoulder-taps', 'wall-walk-preparation', 'chest-to-wall-handstand-hold']),
     dipStrength: ids(['close-grip-wall-push-up', 'close-grip-incline-push-up', 'close-grip-push-up-dip-prep', 'top-support-hold', 'scapular-support-movement', 'feet-assisted-dip', 'negative-dip', 'partial-dip', 'full-dip-singles', 'full-dip', 'tempo-dip']),
-    horizontalPull: ids(['standing-towel-row-isometric', 'seated-towel-row-isometric', 'high-angle-table-row', 'bent-knee-inverted-row', 'straight-leg-inverted-row', 'feet-elevated-inverted-row']),
-    verticalPull: ids(['active-hang-preparation', 'scapular-pull-up', 'assisted-pull-up', 'flexed-arm-hang', 'negative-pull-up', 'partial-pull-up', 'strict-pull-up-singles', 'strict-pull-up', 'chest-to-bar-pull-up', 'high-pull-up']),
-    scapularPull: ids(['standing-towel-row-isometric', 'seated-towel-row-isometric', 'scapular-pull-up']),
-    pullAccessory: ids(['prone-pull-down']),
+    horizontalPull: ids(['seated-resistance-band-row', 'standing-resistance-band-row']),
+    verticalPull: ids(['active-hang-preparation', 'scapular-pull-up', 'assisted-pull-up', 'flexed-arm-hang', 'negative-pull-up', 'partial-pull-up', 'strict-pull-up-singles', 'strict-pull-up', 'tempo-pull-up', 'pause-pull-up', 'chest-to-bar-pull-up', 'high-pull-up']),
+    scapularPull: ids(['prone-w-raise', 'scapular-pull-up', 'reverse-snow-angel']),
+    pullAccessory: ids(['prone-pull-down', 'prone-w-raise', 'reverse-snow-angel']),
     squat: ids(['supported-chair-squat', 'chair-squat', 'bodyweight-squat', 'tempo-squat', 'pause-squat', 'narrow-squat']),
     unilateral: ids(['assisted-split-squat', 'split-squat', 'bulgarian-split-squat', 'assisted-shrimp-squat', 'shrimp-squat']),
     pistolSquat: ids(['assisted-single-leg-sit-to-stand', 'elevated-pistol-squat', 'counterbalance-pistol-squat', 'assisted-pistol-squat', 'pistol-squat-negative', 'full-pistol-squat']),
     posteriorChain: ids(['glute-bridge', 'paused-glute-bridge', 'single-leg-assisted-glute-bridge', 'single-leg-glute-bridge', 'hip-hinge-drill', 'bodyweight-good-morning', 'single-leg-romanian-deadlift']),
     calves: ids(['two-leg-calf-raise', 'paused-calf-raise', 'single-leg-assisted-calf-raise', 'single-leg-calf-raise', 'elevated-single-leg-calf-raise']),
-    antiExtension: ids(['dead-bug', 'forearm-plank', 'plank', 'hollow-hold']),
+    antiExtension: ids(['dead-bug', 'forearm-plank', 'hollow-tuck-hold', 'plank', 'hollow-hold', 'long-lever-plank']),
     compression: ids(['reverse-crunch', 'seated-compression-lift', 'bent-knee-support-hold', 'tuck-support-hold']),
-    lateralCore: ids(['side-plank']),
+    lateralCore: ids(['bent-knee-side-plank', 'side-plank', 'side-plank-reach']),
     lsit: ids(['seated-compression-lift', 'bent-knee-support-hold', 'foot-assisted-support-hold', 'tuck-support-hold', 'one-leg-extended-tuck-hold', 'alternating-one-leg-lsit', 'full-tuck-lsit', 'full-lsit-attempts', 'full-lsit-hold', 'longer-lsit-hold']),
     handstand: ids(['wrist-preparation', 'elevated-plank-shoulder-shift', 'pike-hold', 'pike-shoulder-taps', 'wall-walk-preparation', 'chest-to-wall-handstand-hold', 'chest-to-wall-alignment-hold', 'wall-weight-shifts', 'heel-pulls', 'controlled-wall-exit', 'back-to-wall-kick-up-practice', 'freestanding-kick-up-practice', 'freestanding-balance-attempts']),
     handstandPushup: ids(['pike-hold', 'elevated-pike-hold', 'pike-push-up', 'feet-elevated-pike-push-up', 'wall-handstand-push-up-negative', 'partial-wall-handstand-push-up', 'full-wall-handstand-push-up']),
@@ -1772,8 +1932,7 @@
     muscleupPower: ids(['chest-to-bar-pull-up', 'high-pull-up', 'explosive-pull-up', 'straight-bar-dip-preparation']),
     muscleupTransition: ids(['low-bar-transition-drill', 'feet-assisted-transition', 'band-assisted-transition', 'jumping-muscle-up-transition', 'slow-negative-muscle-up']),
     muscleupFull: ids(['assisted-muscle-up', 'full-muscle-up-attempt', 'full-muscle-up']),
-    crow: ids(['crow-weight-shift', 'crow-one-foot-lift', 'crow-hold']),
-    rope: ids(['jump-rope'])
+    crow: ids(['crow-weight-shift', 'crow-one-foot-lift', 'crow-hold'])
   };
 
   const baseTracks = {
@@ -1954,17 +2113,23 @@
     Push: Object.freeze({
       primaryFocusTracks: Object.freeze(['horizontalPush', 'dipStrength', 'verticalPush']),
       focusAccessoryTracks: Object.freeze([]),
-      generalSupportTracks: Object.freeze(['antiExtension', 'lateralCore'])
+      generalSupportTracks: Object.freeze(['antiExtension', 'lateralCore']),
+      requiredMovementFamilies: Object.freeze(['horizontalPush', 'verticalPush', 'dipStrength']),
+      maximumPerTrack: 1
     }),
     Pull: Object.freeze({
       primaryFocusTracks: Object.freeze(['verticalPull', 'horizontalPull', 'scapularPull']),
       focusAccessoryTracks: Object.freeze(['pullAccessory']),
-      generalSupportTracks: Object.freeze(['antiExtension', 'compression', 'lateralCore'])
+      generalSupportTracks: Object.freeze(['antiExtension', 'compression', 'lateralCore']),
+      requiredMovementFamilies: Object.freeze(['verticalPull', 'scapularPull', 'horizontalPull']),
+      maximumPerTrack: 1
     }),
     'Lower Body': Object.freeze({
       primaryFocusTracks: Object.freeze(['squat', 'posteriorChain', 'unilateral', 'calves']),
       focusAccessoryTracks: Object.freeze([]),
-      generalSupportTracks: Object.freeze(['compression', 'antiExtension', 'lateralCore'])
+      generalSupportTracks: Object.freeze(['compression', 'antiExtension', 'lateralCore']),
+      requiredMovementFamilies: Object.freeze(['squat', 'posteriorChain', 'unilateral']),
+      maximumPerTrack: 1
     })
   });
 
@@ -1982,6 +2147,11 @@
     lsit: Object.freeze({
       Push: Object.freeze(['dipStrength', 'horizontalPush', 'verticalPush', 'antiExtension', 'lateralCore']),
       Pull: Object.freeze(['horizontalPull', 'scapularPull', 'pullAccessory', 'verticalPull', 'antiExtension', 'compression', 'lateralCore']),
+      'Lower Body': Object.freeze(['unilateral', 'posteriorChain', 'squat', 'calves', 'compression', 'antiExtension', 'lateralCore'])
+    }),
+    pistolSquat: Object.freeze({
+      Push: Object.freeze(['horizontalPush', 'verticalPush', 'dipStrength', 'antiExtension', 'lateralCore']),
+      Pull: Object.freeze(['verticalPull', 'scapularPull', 'horizontalPull', 'pullAccessory', 'antiExtension', 'compression', 'lateralCore']),
       'Lower Body': Object.freeze(['unilateral', 'posteriorChain', 'squat', 'calves', 'compression', 'antiExtension', 'lateralCore'])
     }),
     muscleup: Object.freeze({
@@ -2008,11 +2178,10 @@
       ...workoutCompositionPolicies['Lower Body'].focusAccessoryTracks,
       ...workoutCompositionPolicies['Lower Body'].generalSupportTracks
     ]),
-    Skills: Object.freeze([
-      'pistolSquat', 'handstandPushup', 'antiExtension', 'lateralCore',
-      'handstand', 'crow', 'lsit', 'compression', 'dipStrength',
-      'verticalPull', 'scapularPull', 'pullAccessory', 'verticalPush',
-      'muscleupFoundation', 'muscleupPower', 'muscleupTransition', 'muscleupFull'
+    'Skill lab': Object.freeze([
+      'pistolSquat', 'antiExtension', 'lateralCore',
+      'handstand', 'lsit', 'compression', 'dipStrength',
+      'verticalPull', 'scapularPull', 'pullAccessory', 'verticalPush', 'calves'
     ])
   });
 
@@ -2160,6 +2329,7 @@
     Object.keys(baseTracks).forEach(key => {
       levels[key] = {
         level: 0,
+        milestoneId: baseTracks[key]?.[0]?.id || null,
         points: 0,
         positiveExposures: 0,
         difficultExposures: 0,
@@ -2237,8 +2407,6 @@
       tracks.dipStrength = tracks.dipStrength.filter(item => !item.equipment.includes('dipBars'));
     }
 
-    if (!equipmentSet.has('jumpRope')) tracks.rope = [];
-
     const muscleGate = getMuscleUpGate(profile, state);
     tracks.pushup = tracks.horizontalPush;
     tracks.pullup = tracks.verticalPull.length ? tracks.verticalPull : tracks.horizontalPull;
@@ -2253,37 +2421,29 @@
   function getGoalTrackKey(goal, profile = null, state = {}) {
     if (goal === 'handstand') return 'handstand';
     if (goal === 'lsit') return 'lsit';
-    if (goal === 'muscleup') return getMuscleUpGate(profile, state).trackKey;
-    if (goal === 'general') return MASTERY_SKILLS.generalFitness;
-    return 'verticalPull';
+    if (goal === 'pistolSquat') return 'pistolSquat';
+    if (goal === 'pullup') return 'verticalPull';
+    return null;
   }
 
   function resolveMasterySkill(goal) {
     if (goal === 'handstand') return MASTERY_SKILLS.handstand;
     if (goal === 'lsit') return MASTERY_SKILLS.lsit;
-    if (goal === 'muscleup') return MASTERY_SKILLS.muscleup;
-    if (goal === 'general') return MASTERY_SKILLS.generalFitness;
-    return MASTERY_SKILLS.pullup;
+    if (goal === 'pistolSquat') return MASTERY_SKILLS.pistolSquat;
+    if (goal === 'pullup') return MASTERY_SKILLS.pullup;
+    return null;
   }
 
   function getRotation(profile = null, state = {}) {
-    const goal = profile?.goal || 'pullup';
-    const muscleGate = getMuscleUpGate(profile, state);
+    const goal = profile ? profile.goal : 'pullup';
     const skillTrack = getGoalTrackKey(goal, profile, state);
     return [
       { name: 'Push', tracks: ['horizontalPush', 'dipStrength', 'antiExtension', 'verticalPush'] },
       { name: 'Lower Body', tracks: ['squat', 'posteriorChain', 'compression', 'unilateral', 'calves'] },
       { name: 'Pull', tracks: ['horizontalPull', 'verticalPull', 'pullAccessory', 'antiExtension', 'scapularPull'] },
       {
-        name: 'Skills',
-        focusLabel: goal === 'muscleup' ? muscleGate.label : '',
-        tracks: unique([
-          ...(goal === 'general' ? ['crow', 'handstand', 'lsit', 'pistolSquat', 'handstandPushup'] : [skillTrack]),
-          'antiExtension',
-          goal === 'pullup' || goal === 'muscleup' ? 'scapularPull' : null,
-          goal === 'lsit' ? 'compression' : null,
-          goal === 'handstand' ? 'verticalPush' : null
-        ].filter(Boolean))
+        name: 'Skill lab',
+        tracks: unique([skillTrack, 'handstand', 'lsit', 'pistolSquat', 'verticalPull', 'compression', 'scapularPull', 'pullAccessory', 'calves'])
       }
     ];
   }
@@ -2293,7 +2453,7 @@
     if (normalized === 'push') return 0;
     if (['lower body', 'legs', 'legs & core'].includes(normalized)) return 1;
     if (normalized === 'pull') return 2;
-    if (normalized === 'skills') return 3;
+    if (normalized === 'skills' || normalized === 'skill lab') return 3;
     return -1;
   }
 
@@ -2367,6 +2527,7 @@
       trackKey: current.trackKey || replacement.trackKey,
       progressionTrackKey: current.progressionTrackKey || current.trackKey || replacement.progressionTrackKey || replacement.trackKey,
       progressionEvidenceTarget: current.progressionEvidenceTarget || current.progressionTrackKey || current.trackKey,
+      progressionMilestoneId: current.progressionMilestoneId || replacement.progressionMilestoneId || null,
       workoutRole: current.workoutRole || replacement.workoutRole,
       programmeRole: current.programmeRole || replacement.programmeRole,
       selectedMasterySkill: current.selectedMasterySkill || replacement.selectedMasterySkill,
@@ -2544,6 +2705,7 @@
       trackKey: normalized.trackKey,
       progressionTrackKey: normalized.progressionTrackKey || null,
       progressionEvidenceTarget: normalized.progressionEvidenceTarget || normalized.progressionTrackKey || null,
+      progressionMilestoneId: normalized.progressionMilestoneId || null,
       progressionLevel: normalized.level || null,
       programmeRole: normalized.programmeRole || null,
       selectedMasterySkill: normalized.selectedMasterySkill || null,
@@ -2562,20 +2724,50 @@
     if (!result.rating || result.completedSets < 1) {
       return { applied: false, reason: 'no-completed-sets-or-rating' };
     }
+    if (result.isAddOn) return { applied: false, reason: 'add-on-has-no-progression-evidence' };
     if (
       result.progressionEvidenceTarget &&
       result.progressionEvidenceTarget !== result.progressionTrackKey
     ) {
       return { applied: false, reason: 'progression-evidence-target-mismatch' };
     }
+    const canonicalTrack = baseTracks[result.progressionTrackKey] || movementTracks[result.progressionTrackKey] || [];
+    const trackState = levels[result.progressionTrackKey];
+    const savedMilestoneIndex = typeof trackState.milestoneId === 'string'
+      ? canonicalTrack.findIndex(exercise => exercise.id === trackState.milestoneId)
+      : -1;
+    const currentLevel = Math.max(0, Math.min(
+      Number.isFinite(Number(trackState.level)) ? Number(trackState.level) : savedMilestoneIndex >= 0 ? savedMilestoneIndex : 0,
+      Math.max(0, canonicalTrack.length - 1)
+    ));
+    const currentMilestoneId = canonicalTrack[currentLevel]?.id || null;
+    const authoredEquivalent = Boolean(
+      currentMilestoneId &&
+      MILESTONE_EQUIVALENTS[result.progressionTrackKey]?.[currentMilestoneId]?.includes(result.exerciseId)
+    );
+    if (
+      result.progressionMilestoneId &&
+      currentMilestoneId &&
+      result.progressionMilestoneId !== currentMilestoneId
+    ) {
+      return { applied: false, reason: 'stale-workout-milestone-mismatch' };
+    }
+    if (currentMilestoneId && result.exerciseId !== currentMilestoneId && !authoredEquivalent) {
+      return { applied: false, reason: 'reinforcement-only-not-current-milestone' };
+    }
     const isFullyCompleted = result.completedSets === result.targetSets;
     if (!isFullyCompleted && ['easy', 'good'].includes(result.rating)) {
       return { applied: false, reason: 'positive-rating-requires-full-completion' };
     }
-    applyRating(levels, result.progressionTrackKey, result.rating, profile);
+    applyRating(levels, result.progressionTrackKey, result.rating, profile, {
+      positiveEvidence: isFullyCompleted && ['easy', 'good'].includes(result.rating),
+      milestoneId: currentMilestoneId
+    });
     return {
       applied: true,
-      reason: isFullyCompleted ? 'full-completion' : 'partial-difficulty-signal'
+      reason: isFullyCompleted && ['easy', 'good'].includes(result.rating)
+        ? 'positive-current-milestone-evidence'
+        : isFullyCompleted ? 'full-difficult-exposure' : 'partial-difficulty-signal'
     };
   }
 
@@ -2726,9 +2918,20 @@
 
   function chooseLevel(trackKey, track, config, state = {}, recovery = null) {
     const trackState = state?.levels?.[trackKey] || { level: 0, points: 0 };
+    const canonicalTrack = baseTracks[trackKey] || movementTracks[trackKey] || track;
+    const milestoneIndex = typeof trackState.milestoneId === 'string'
+      ? canonicalTrack.findIndex(item => item.id === trackState.milestoneId)
+      : -1;
+    const canonicalLevel = Number.isFinite(Number(trackState.level))
+      ? Number(trackState.level)
+      : milestoneIndex >= 0 ? milestoneIndex : 0;
     const levelShift = recovery?.mode === 'reduce' ? Math.min(config.levelShift || 0, -2) : config.levelShift || 0;
-    const baseLevel = Math.min(Math.max(trackState.level || 0, 0), track.length - 1);
-    return Math.max(0, Math.min(baseLevel + levelShift, track.length - 1));
+    const targetCanonicalLevel = Math.max(0, Math.min(canonicalLevel + levelShift, canonicalTrack.length - 1));
+    const eligibleIndexes = track
+      .map((item, index) => ({ index, canonicalIndex: canonicalTrack.findIndex(canonical => canonical.id === item.id) }))
+      .filter(item => item.canonicalIndex >= 0 && item.canonicalIndex <= targetCanonicalLevel)
+      .sort((first, second) => second.canonicalIndex - first.canonicalIndex);
+    return eligibleIndexes[0]?.index ?? 0;
   }
 
   function levelSearchOrder(startLevel, length) {
@@ -2796,15 +2999,23 @@
   function unlockedTrackCandidates(trackKey, config, state = {}, profile = null, recovery = null) {
     const tracks = getTracks(profile, state);
     if (!isTrackAvailable(trackKey, tracks)) return [];
-    const originalTrack = tracks[trackKey] || [];
+    const availableIds = new Set((tracks[trackKey] || []).map(exercise => exercise.id));
+    const canonicalTrack = baseTracks[trackKey] || movementTracks[trackKey] || [];
     const trackState = state?.levels?.[trackKey] || {};
+    const savedMilestoneIndex = typeof trackState.milestoneId === 'string'
+      ? canonicalTrack.findIndex(exercise => exercise.id === trackState.milestoneId)
+      : -1;
+    const canonicalLevel = Number.isFinite(Number(trackState.level))
+      ? Number(trackState.level)
+      : savedMilestoneIndex >= 0 ? savedMilestoneIndex : 0;
     const levelShift = recovery?.mode === 'reduce' ? Math.min(config.levelShift || 0, -2) : config.levelShift || 0;
-    const unlockedLevel = Math.max(0, Math.min(Number(trackState.level || 0) + levelShift, originalTrack.length - 1));
+    const unlockedLevel = Math.max(0, Math.min(canonicalLevel + levelShift, canonicalTrack.length - 1));
     const plateauCount = Math.max(0, Math.floor(trackState.plateauCount || 0));
-    return originalTrack
+    return canonicalTrack
       .map((baseExercise, index) => ({ baseExercise, index }))
       .filter(({ baseExercise, index }) => (
         index <= unlockedLevel &&
+        availableIds.has(baseExercise.id) &&
         isExerciseEligibleForGeneration(baseExercise, profile, state, recovery) &&
         isExerciseAllowedForRecovery(baseExercise, recovery)
       ))
@@ -2817,7 +3028,9 @@
         basePrescription: baseExercise.prescription,
         basePrescriptionData: baseExercise.prescriptionData,
         level: index + 1,
-        originalLevel: Math.min(Math.max(trackState.level || 0, 0), originalTrack.length - 1) + 1,
+        canonicalMilestoneIndex: index,
+        progressionMilestoneId: canonicalTrack[canonicalLevel]?.id || null,
+        originalLevel: Math.min(Math.max(canonicalLevel, 0), canonicalTrack.length - 1) + 1,
         plateau: plateauCount > 0
       }));
   }
@@ -2867,51 +3080,41 @@
     );
   }
 
+  const foundationalSkillTracks = Object.freeze({
+    pullup: Object.freeze(['verticalPull', 'scapularPull', 'pullAccessory']),
+    handstand: Object.freeze(['handstand', 'verticalPush', 'antiExtension']),
+    lsit: Object.freeze(['lsit', 'compression', 'dipStrength']),
+    pistolSquat: Object.freeze(['pistolSquat', 'calves', 'unilateral'])
+  });
+
+  function secondaryFoundationalSkill(profile = null, state = {}) {
+    const prioritySkill = resolveMasterySkill(profile?.goal) || (profile ? null : MASTERY_SKILLS.pullup);
+    if (!prioritySkill) return null;
+    const availableSkills = PRIORITY_SKILLS.filter(skill => skill !== prioritySkill);
+    const completedSkillLabs = (state.history || []).filter(item => rotationIndexForWorkoutName(item?.workout) === 3).length;
+    return availableSkills[completedSkillLabs % availableSkills.length];
+  }
+
   function skillCompositionPolicy(profile = null, state = {}) {
-    const goal = profile?.goal || 'pullup';
-    const selectedTrack = getGoalTrackKey(goal, profile, state);
-    if (goal === 'handstand') {
-      return {
-        primaryFocusTracks: unique([selectedTrack, 'handstandPushup']),
-        focusAccessoryTracks: ['verticalPush', 'antiExtension'],
-        generalSupportTracks: ['lateralCore']
-      };
-    }
-    if (goal === 'lsit') {
-      return {
-        primaryFocusTracks: unique([selectedTrack]),
-        focusAccessoryTracks: ['compression', 'dipStrength'],
-        generalSupportTracks: ['antiExtension', 'lateralCore']
-      };
-    }
-    if (goal === 'muscleup') {
-      return {
-        primaryFocusTracks: unique([selectedTrack, 'verticalPull', 'scapularPull', 'dipStrength']),
-        focusAccessoryTracks: ['pullAccessory'],
-        generalSupportTracks: ['antiExtension']
-      };
-    }
-    if (goal === 'general') {
-      return {
-        primaryFocusTracks: ['crow', 'handstand', 'lsit', 'pistolSquat', 'handstandPushup'],
-        focusAccessoryTracks: [],
-        generalSupportTracks: ['antiExtension']
-      };
-    }
+    const selectedMasterySkill = resolveMasterySkill(profile?.goal) || (profile ? null : MASTERY_SKILLS.pullup);
+    const secondaryMasterySkill = secondaryFoundationalSkill(profile, state);
     return {
-      primaryFocusTracks: unique([selectedTrack, 'scapularPull']),
-      focusAccessoryTracks: ['pullAccessory'],
-      generalSupportTracks: ['antiExtension', 'lateralCore']
+      primaryFocusTracks: [...(foundationalSkillTracks[selectedMasterySkill] || [])],
+      secondaryFocusTracks: [...(foundationalSkillTracks[secondaryMasterySkill] || [])],
+      focusAccessoryTracks: [],
+      generalSupportTracks: ['antiExtension', 'lateralCore'],
+      selectedMasterySkill,
+      secondaryMasterySkill,
+      maximumPerTrack: 2
     };
   }
 
   function compositionPolicyForWorkout(workout, profile = null, state = {}) {
     const masterySkill = resolveMasterySkill(profile?.goal);
-    if (workout.name === 'Skills') {
+    if (workout.name === 'Skill lab') {
       return {
         ...skillCompositionPolicy(profile, state),
         policyType: 'directSkills',
-        selectedMasterySkill: masterySkill,
         rankingTrackOrder: []
       };
     }
@@ -2947,7 +3150,7 @@
     if (
       policy.policyType === 'directSkills' &&
       relationship?.direct &&
-      policy.selectedMasterySkill !== MASTERY_SKILLS.generalFitness
+      Boolean(policy.selectedMasterySkill)
     ) {
       return getGoalTrackKey(profile?.goal || 'pullup', profile, state);
     }
@@ -2986,11 +3189,10 @@
       .map(candidate => {
         const relationship = masteryRelationshipFor(candidate.exercise.id, policy.selectedMasterySkill);
         const programmeRole = resolveContextualProgrammeRole(candidate.exercise, role, policy);
-        const reservedDirectProgression = Boolean(policy.policyType === 'foundation' && relationship?.direct);
+        const reservedDirectProgression = false;
         const rankedTrackIndex = rankingTrackOrder.indexOf(candidate.sourceTrack);
         const masteryRelevant = Boolean(
-          policy.selectedMasterySkill !== MASTERY_SKILLS.generalFitness &&
-          relationship
+          policy.selectedMasterySkill && relationship
         );
         const prioritisationReason = policy.policyType === 'directSkills'
           ? relationship?.relationship || 'eligible-introductory-skill-practice'
@@ -3119,6 +3321,19 @@
       diversity,
       candidateContext
     );
+    const secondaryCandidates = collectCompositionCandidates(
+      policy.secondaryFocusTracks || [],
+      'focusAccessory',
+      config,
+      state,
+      profile,
+      recovery,
+      diversity,
+      {
+        ...candidateContext,
+        policy: { ...policy, selectedMasterySkill: policy.secondaryMasterySkill }
+      }
+    );
     const supportCandidates = collectCompositionCandidates(
       policy.generalSupportTracks,
       'generalSupport',
@@ -3132,40 +3347,44 @@
     const targetCount = config.exerciseCount;
     const exercises = [];
     const usedIds = new Set();
+    const trackCounts = {};
     const takeCandidates = (candidates, maximum) => {
       for (const candidate of candidates) {
         if (exercises.length >= targetCount || maximum <= 0) break;
         if (!candidate?.id || usedIds.has(candidate.id)) continue;
+        const sourceTrack = candidate.sourceTrack || candidate.developmentDiagnostics?.sourceTrack || candidate.progressionTrackKey;
+        const maximumPerTrack = policy.maximumPerTrack || 2;
+        if (Number(trackCounts[sourceTrack] || 0) >= maximumPerTrack) continue;
+        const nextFatigue = exercises.reduce((sum, exercise) => sum + Number(exercise.fatigue || 0), 0) + Number(candidate.fatigue || 0);
+        const nextSkill = exercises.reduce((sum, exercise) => sum + Number(exercise.skill || 0), 0) + Number(candidate.skill || 0);
+        if (nextFatigue > config.fatigueBudget.max + config.fatigueBudget.tolerance || nextSkill > config.skillLimit) continue;
         exercises.push(candidate.developmentDiagnostics?.appearedEarlierSameDay
           ? annotateControlledOverlap(candidate)
           : candidate);
         usedIds.add(candidate.id);
+        trackCounts[sourceTrack] = Number(trackCounts[sourceTrack] || 0) + 1;
         maximum -= 1;
       }
     };
+    const takeTrack = (candidates, trackKey, maximum = 1) => {
+      takeCandidates(candidates.filter(candidate => (
+        (candidate.sourceTrack || candidate.developmentDiagnostics?.sourceTrack || candidate.progressionTrackKey) === trackKey
+      )), maximum);
+    };
 
-    if (workout.name === 'Pull') {
+    if (workout.name === 'Skill lab') {
       takeCandidates(primaryCandidates, 2);
-      if (targetCount === 4) takeCandidates(accessoryCandidates, 1);
-      takeCandidates(supportCandidates, 1);
-      // If a future three-exercise Pull catalogue cannot supply both primary
-      // slots, an unlocked Pull accessory may complete the required focus
-      // minimum before general support is considered.
-      if (targetCount === 3 && exercises.filter(item => item.workoutRole !== 'generalSupport').length < 2) {
-        const support = exercises.find(item => item.workoutRole === 'generalSupport');
-        if (support) {
-          exercises.splice(exercises.indexOf(support), 1);
-          usedIds.delete(support.id);
-        }
-        takeCandidates(accessoryCandidates, 2 - exercises.length);
-        takeCandidates(supportCandidates, 1);
-      }
-    } else {
-      takeCandidates(primaryCandidates, Math.max(1, targetCount - 1));
-      takeCandidates(accessoryCandidates, targetCount - exercises.length - 1);
-      takeCandidates(supportCandidates, 1);
+      takeCandidates(secondaryCandidates, 1);
+      if (targetCount === 4) takeCandidates(supportCandidates, 1);
       takeCandidates(primaryCandidates, targetCount - exercises.length);
+      takeCandidates(secondaryCandidates, targetCount - exercises.length);
+      takeCandidates(supportCandidates, targetCount - exercises.length);
+    } else {
+      (policy.requiredMovementFamilies || []).forEach(trackKey => takeTrack(primaryCandidates, trackKey));
+      if (workout.name === 'Lower Body') takeTrack(primaryCandidates, 'calves');
       takeCandidates(accessoryCandidates, targetCount - exercises.length);
+      takeCandidates(primaryCandidates, targetCount - exercises.length);
+      takeCandidates(supportCandidates, Math.min(1, targetCount - exercises.length));
     }
 
     const duplicateIds = exercises.length - usedIds.size;
@@ -3174,26 +3393,40 @@
     const generalSupportCount = exercises.filter(item => item.workoutRole === 'generalSupport').length;
     const focusCount = primaryFocusCount + focusAccessoryCount;
     const requiredCategoryCount = targetCount === 4 ? 3 : 2;
-    const foundationCompositionValid = workout.name === 'Skills' || (
+    const requiredFamiliesCovered = (policy.requiredMovementFamilies || []).filter(trackKey => (
+      exercises.some(exercise => exercise.sourceTrack === trackKey)
+    ));
+    const availableRequiredFamilies = (policy.requiredMovementFamilies || []).filter(trackKey => (
+      primaryCandidates.some(exercise => exercise.sourceTrack === trackKey)
+    ));
+    const foundationCompositionValid = workout.name === 'Skill lab' || (
       focusCount >= requiredCategoryCount &&
-      generalSupportCount <= 1
+      generalSupportCount <= 1 &&
+      requiredFamiliesCovered.length >= Math.min(availableRequiredFamilies.length, targetCount - 1)
     );
     const pullCompositionValid = workout.name !== 'Pull' || (
       primaryFocusCount >= 2 &&
       focusCount >= (targetCount === 4 ? 3 : 2) &&
-      generalSupportCount <= 1 &&
-      (targetCount !== 4 || focusAccessoryCount >= 1)
-    );
-    const skillCompositionValid = workout.name !== 'Skills' || (
-      focusCount > generalSupportCount &&
       generalSupportCount <= 1
     );
-    const generationFailure = exercises.length === targetCount && !duplicateIds && foundationCompositionValid && pullCompositionValid && skillCompositionValid
+    const prioritySkillCount = exercises.filter(item => item.workoutRole === 'primaryFocus').length;
+    const secondarySkillCount = exercises.filter(item => item.workoutRole === 'focusAccessory').length;
+    const skillCompositionValid = workout.name !== 'Skill lab' || (
+      prioritySkillCount >= (targetCount === 4 ? 2 : 1) &&
+      secondarySkillCount >= 1 &&
+      generalSupportCount <= 1
+    );
+    const prioritySkillRequired = workout.name === 'Skill lab' && Boolean(profile) && !resolveMasterySkill(profile.goal);
+    const generationFailure = !prioritySkillRequired && exercises.length === targetCount && !duplicateIds && foundationCompositionValid && pullCompositionValid && skillCompositionValid
       ? null
       : {
-          code: workout.name === 'Skills' ? 'skill-composition-unavailable' : 'exact-composition-unavailable',
+          code: prioritySkillRequired
+            ? 'priority-skill-required'
+            : workout.name === 'Skill lab'
+              ? 'skill-composition-unavailable'
+              : 'exact-composition-unavailable',
           workoutName: workout.name,
-          selectedSkillTrackKey: workout.name === 'Skills' ? getGoalTrackKey(profile?.goal || 'pullup', profile, state) : null,
+          selectedSkillTrackKey: workout.name === 'Skill lab' ? getGoalTrackKey(profile ? profile.goal : 'pullup', profile, state) : null,
           mode: config.mode,
           expectedCount: targetCount,
           actualCount: exercises.length,
@@ -3202,10 +3435,11 @@
           generalSupportCount,
           availablePrimaryFocusIds: primaryCandidates.map(item => item.id),
           availableFocusAccessoryIds: accessoryCandidates.map(item => item.id),
+          availableSecondarySkillIds: secondaryCandidates.map(item => item.id),
           availableGeneralSupportIds: supportCandidates.map(item => item.id)
         };
     const repeatedExercises = exercises.filter(item => item.developmentDiagnostics?.reducedVariety);
-    const candidateCountsByProgrammeRole = [...primaryCandidates, ...accessoryCandidates, ...supportCandidates]
+    const candidateCountsByProgrammeRole = [...primaryCandidates, ...accessoryCandidates, ...secondaryCandidates, ...supportCandidates]
       .reduce((counts, candidate) => {
         const role = candidate.programmeRole || PROGRAMME_ROLES.foundationStrength;
         counts[role] = Number(counts[role] || 0) + 1;
@@ -3227,6 +3461,7 @@
     const allowedTracks = new Set([
       ...policy.primaryFocusTracks,
       ...policy.focusAccessoryTracks,
+      ...(policy.secondaryFocusTracks || []),
       ...policy.generalSupportTracks
     ]);
 
@@ -3234,7 +3469,8 @@
       mode: config.mode,
       workoutName: workout.name,
       selectedMasterySkill: policy.selectedMasterySkill,
-      selectedSkillTrackKey: workout.name === 'Skills' ? getGoalTrackKey(profile?.goal || 'pullup', profile, state) : null,
+      selectedSkillTrackKey: workout.name === 'Skill lab' ? getGoalTrackKey(profile ? profile.goal : 'pullup', profile, state) : null,
+      secondarySkill: policy.secondaryMasterySkill || null,
       focusLabel: workout.focusLabel || '',
       energyTitle: config.title,
       energyDescription: config.description,
@@ -3251,6 +3487,7 @@
           policyType: policy.policyType,
           primaryFocusTracks: [...policy.primaryFocusTracks],
           focusAccessoryTracks: [...policy.focusAccessoryTracks],
+          secondaryFocusTracks: [...(policy.secondaryFocusTracks || [])],
           generalSupportTracks: [...policy.generalSupportTracks],
           rankingTrackOrder: [...(policy.rankingTrackOrder || [])]
         },
@@ -3260,6 +3497,9 @@
         recentHistoryIds: [...recentIds],
         finalStableIds,
         reducedVariety: repeatedExercises.length > 0 || identicalSameDayWorkout,
+        horizontalPullLimitation: workout.name === 'Pull' && !primaryCandidates.some(item => item.sourceTrack === 'horizontalPull')
+          ? 'No safe loaded horizontal-pull exercise is available for the selected equipment; floor Pull accessories are included only as accessories.'
+          : null,
         unavoidableOverlapExplanation: repeatedExercises.length
           ? 'Safe, unlocked, equipment-valid unused candidates were exhausted for a required role.'
           : identicalSameDayWorkout
@@ -3452,10 +3692,20 @@
   function isTrackMastered(trackKey, trackState = {}, track = []) {
     if (!Array.isArray(track) || !track.length || Number(trackState.level || 0) < track.length - 1) return false;
     const rules = ratingRulesForTrack(trackKey);
-    return Number(trackState.points || 0) >= rules.progressPoints && Number(trackState.positiveExposures || 0) >= rules.positiveExposures;
+    const achievementKey = trackKey === 'verticalPull' ? 'pullup' : trackKey;
+    const requiredFinalExposures = ACHIEVEMENT_REQUIREMENTS[achievementKey]?.positiveFinalMilestoneExposures || rules.positiveExposures;
+    return Number(trackState.points || 0) >= rules.progressPoints && Number(trackState.positiveExposures || 0) >= requiredFinalExposures;
   }
 
   const masteringSkillStages = Object.freeze({
+    pullup: Object.freeze([
+      { name: 'Active hang', endLevel: 0 },
+      { name: 'Scapular control', endLevel: 1 },
+      { name: 'Assisted strength', endLevel: 4 },
+      { name: 'Pull-up singles', endLevel: 6 },
+      { name: 'Controlled pull-ups', endLevel: 7 },
+      { name: 'Strong pull-up', endLevel: 11 }
+    ]),
     handstand: Object.freeze([
       { name: 'Foundation', endLevel: 2 },
       { name: 'Wall entry', endLevel: 4 },
@@ -3501,7 +3751,7 @@
   });
 
   function getMasteringSkillProgress(trackKey, trackState = {}, track = []) {
-    const stages = masteringSkillStages[trackKey] || [];
+    const stages = masteringSkillStages[trackKey === 'verticalPull' ? 'pullup' : trackKey] || [];
     if (!stages.length || !Array.isArray(track) || !track.length) {
       return { stages, completedStages: 0 };
     }
@@ -3553,7 +3803,7 @@
     let description = progressData.recentProgressSummary || `Your ${progressData.currentFocusName || 'training'} plan is underway`;
     if (cardState === 'focus_achieved') {
       headline = 'You did it!';
-      description = progressData.achievedFocusName || 'Your focus was achieved';
+      description = progressData.achievedFocusName || 'Your priority skill was achieved';
     } else if (cardState === 'new_exercise_unlocked') {
       headline = 'Nice work!';
       description = `${progressData.recentUnlockedExercise || 'New exercise'} unlocked`;
@@ -3611,25 +3861,28 @@
 
   function ratingRulesForTrack(trackKey) {
     const isBasic = BASIC_STRENGTH_TRACKS.has(trackKey);
+    const isFoundationalSkill = FOUNDATIONAL_SKILL_TRACKS.has(trackKey);
     return {
-      progressPoints: isBasic ? 5 : 7,
+      progressPoints: isBasic ? 5 : isFoundationalSkill ? 3 : 7,
       positiveExposures: isBasic ? 2 : 3,
       regressionDifficulty: 3,
       plateauExposures: isBasic ? 5 : 6
     };
   }
 
-  function applyRating(levels, trackKey, rating, profile = null) {
+  function applyRating(levels, trackKey, rating, profile = null, options = {}) {
     const trackState = levels?.[trackKey];
     const delta = { easy: 2, good: 1, hard: 0, failed: -2 }[rating];
     if (!trackState || delta === undefined) return;
 
-    const track = getTracks(profile, { levels })[trackKey] || baseTracks[trackKey] || [];
+    const track = baseTracks[trackKey] || movementTracks[trackKey] || [];
     const maxLevel = Math.max(0, track.length - 1);
     const rules = ratingRulesForTrack(trackKey);
-    trackState.points = Math.max(-6, Math.min((trackState.points || 0) + delta, 10));
+    const positiveEvidence = options.positiveEvidence !== false && ['easy', 'good'].includes(rating);
+    const appliedDelta = ['easy', 'good'].includes(rating) && !positiveEvidence ? 0 : delta;
+    trackState.points = Math.max(-6, Math.min((trackState.points || 0) + appliedDelta, 10));
     trackState.levelExposures = (trackState.levelExposures || 0) + 1;
-    trackState.positiveExposures = (trackState.positiveExposures || 0) + (rating === 'easy' ? 1 : rating === 'good' ? 0.5 : 0);
+    trackState.positiveExposures = (trackState.positiveExposures || 0) + (positiveEvidence ? 1 : 0);
     trackState.difficultExposures = rating === 'failed'
       ? (trackState.difficultExposures || 0) + 2
       : rating === 'hard'
@@ -3638,6 +3891,7 @@
 
     if (trackState.points >= rules.progressPoints && trackState.positiveExposures >= rules.positiveExposures && (trackState.level || 0) < maxLevel) {
       trackState.level = Math.min((trackState.level || 0) + 1, maxLevel);
+      trackState.milestoneId = track[trackState.level]?.id || null;
       trackState.points = 0;
       trackState.positiveExposures = 0;
       trackState.difficultExposures = 0;
@@ -3648,6 +3902,7 @@
 
     if (trackState.difficultExposures >= rules.regressionDifficulty && trackState.points <= -2) {
       trackState.level = Math.max((trackState.level || 0) - 1, 0);
+      trackState.milestoneId = track[trackState.level]?.id || null;
       trackState.points = 0;
       trackState.positiveExposures = 0;
       trackState.difficultExposures = 0;
@@ -3764,6 +4019,9 @@
     exerciseCatalog,
     PROGRAMME_ROLES,
     MASTERY_SKILLS,
+    PRIORITY_SKILLS,
+    ACHIEVEMENT_REQUIREMENTS,
+    MILESTONE_EQUIVALENTS,
     disabledExerciseIds,
     scoreSchema,
     scoringGuidelines,
@@ -3784,6 +4042,7 @@
     nextRotationIndexFromHistory,
     getGoalTrackKey,
     resolveMasterySkill,
+    secondaryFoundationalSkill,
     getMuscleUpGate,
     advancedSkillEligibility,
     evaluateAdvancedSkillEligibility,

@@ -447,8 +447,7 @@ const goalLabels = {
   pullup: 'Pull-up',
   handstand: 'Handstand',
   lsit: 'L-Sit',
-  muscleup: 'Muscle-up',
-  general: 'General fitness'
+  pistolSquat: 'Pistol squat'
 };
 
 const equipmentLabels = {
@@ -458,6 +457,7 @@ const equipmentLabels = {
   bands: 'Resistance bands',
   jumpRope: 'Jump rope'
 };
+const deprecatedProfileEquipment = new Set(['jumpRope']);
 
 const recoveryAreaLabels = {
   headNeck: 'Head & neck',
@@ -510,6 +510,10 @@ function getRotation() {
 
 function hasCompletedProfile() {
   return Boolean(state.profile?.goal && Array.isArray(state.profile?.equipment) && state.profile.equipment.length && state.profile?.pushups && state.profile?.squats);
+}
+
+function needsPrioritySkillSelection() {
+  return Boolean(state.profile?.prioritySkillRequired || (state.profile && !state.profile.goal));
 }
 
 function getSelectedAddOns() {
@@ -2445,6 +2449,7 @@ async function completeWorkoutNow(showFullConfirmation = true) {
       trackKey: result.trackKey,
       progressionTrackKey: result.progressionTrackKey,
       progressionEvidenceTarget: result.progressionEvidenceTarget,
+      progressionMilestoneId: result.progressionMilestoneId,
       programmeRole: result.programmeRole,
       selectedMasterySkill: result.selectedMasterySkill,
       prescribedData: result.prescriptionData,
@@ -2514,17 +2519,16 @@ function getGoalTrackKey(goal) {
   if (typeof workoutModule.getGoalTrackKey === 'function') {
     return workoutModule.getGoalTrackKey(goal, getProfile(), state);
   }
-  return goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'muscleup' ? 'muscleup' : 'pullup';
+  return goal === 'handstand' ? 'handstand' : goal === 'lsit' ? 'lsit' : goal === 'pistolSquat' ? 'pistolSquat' : goal === 'pullup' ? 'verticalPull' : null;
 }
 
 function getGoalJourneyTitle(goal) {
   return {
     pullup: 'Pull-up journey',
-    muscleup: 'Muscle-up journey',
     handstand: 'Handstand journey',
     lsit: 'L-sit journey',
-    general: 'General fitness path'
-  }[goal] || 'Goal journey';
+    pistolSquat: 'Pistol squat journey'
+  }[goal] || 'Priority skill journey';
 }
 
 function hasCountableWorkoutProgress(item) {
@@ -2638,26 +2642,17 @@ function progressPatternData() {
   return { recentProgressSummary, strongPattern };
 }
 
-function recommendedFocus(goal, profile) {
-  if (goal === 'pullup' && profile?.equipment?.includes('pullupBar')) return 'Muscle-up';
-  return null;
-}
-
 function buildProgressCardData(goal, profile, trackKey, track) {
   const trackState = trackKey ? state.levels?.[trackKey] || {} : {};
   const level = track?.length ? Math.max(0, Math.min(Number(trackState.level || 0), track.length - 1)) : 0;
-  const generalProgress = goal === 'general' ? workoutModule.getGeneralFitnessProgress(state.levels) : null;
-  const generalTrackKeys = goal === 'general'
-    ? ['horizontalPush', 'dipStrength', 'verticalPush', 'verticalPull', 'horizontalPull', 'scapularPull', 'squat', 'unilateral', 'posteriorChain', 'calves', 'antiExtension', 'compression', 'lateralCore']
-    : [trackKey];
-  const unlocked = latestUnacknowledgedUnlock(generalTrackKeys);
+  const unlocked = latestUnacknowledgedUnlock([trackKey]);
   const pattern = progressPatternData();
-  const focusAchieved = goal === 'general' ? generalProgress.achieved : workoutModule.isTrackMastered(trackKey, trackState, track);
+  const focusAchieved = workoutModule.isTrackMastered(trackKey, trackState, track);
   const completedWorkoutCount = countableHistory().length;
   return {
     focusAchieved,
-    achievedFocusName: focusAchieved ? `${goalLabels[goal] || 'Focus'} achieved` : null,
-    recommendedFocusName: focusAchieved ? recommendedFocus(goal, profile) : null,
+    achievedFocusName: focusAchieved ? `${goalLabels[goal] || 'Priority skill'} achieved` : null,
+    recommendedFocusName: null,
     relevantReadinessSummary: null,
     recentUnlockedExercise: unlocked?.name || null,
     unlockEventId: unlocked?.id || null,
@@ -2692,27 +2687,26 @@ function renderProgressCard(data) {
 function renderProgress() {
   const profile = getProfile();
   const goal = profile?.goal || 'pullup';
-  const goalTrackKey = goal === 'general' ? null : getGoalTrackKey(goal);
+  const goalTrackKey = getGoalTrackKey(goal);
   const tracks = getTracks();
-  const track = goalTrackKey ? (tracks[goalTrackKey]?.length ? tracks[goalTrackKey] : baseTracks[goalTrackKey] || []) : [];
+  const track = goalTrackKey ? (baseTracks[goalTrackKey] || []) : [];
   const level = track.length ? Math.max(0, Math.min(getTrackLevel(goalTrackKey), track.length - 1)) : 0;
 
   const heroTitle = document.getElementById('goalHeroTitle');
   if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'Pull-up';
-  const generalProgress = goal === 'general' ? workoutModule.getGeneralFitnessProgress(state.levels) : null;
-  const dotCount = goal === 'general' ? 0 : track.length;
-  const filledDots = goal === 'general' ? 0 : Math.min(level + 1, track.length);
+  const dotCount = track.length;
+  const filledDots = Math.min(level + 1, track.length);
   const focusDots = document.getElementById('focusProgressDots');
   const goalHero = document.querySelector('.progress-screen .goal-hero');
   if (goalHero) goalHero.classList.toggle('has-no-dots', !dotCount);
   if (focusDots) {
     focusDots.classList.toggle('hidden', !dotCount);
     focusDots.innerHTML = progressDotsMarkup(dotCount, filledDots);
-    focusDots.setAttribute('aria-label', dotCount ? `${filledDots} of ${dotCount} focus levels reached` : 'No capability progression available');
+    focusDots.setAttribute('aria-label', dotCount ? `${filledDots} of ${dotCount} priority-skill levels reached` : 'No capability progression available');
   }
   const milestone = document.getElementById('focusNextMilestone');
-  const focusAchieved = goal === 'general' ? generalProgress?.achieved : workoutModule.isTrackMastered(goalTrackKey, state.levels?.[goalTrackKey] || {}, track);
-  const nextMilestone = goal !== 'general' && !focusAchieved ? track[level + 1]?.name : null;
+  const focusAchieved = workoutModule.isTrackMastered(goalTrackKey, state.levels?.[goalTrackKey] || {}, track);
+  const nextMilestone = !focusAchieved ? track[level + 1]?.name : null;
   if (milestone) {
     milestone.classList.toggle('hidden', !nextMilestone);
     milestone.textContent = nextMilestone ? `Next milestone: ${nextMilestone}` : '';
@@ -2723,16 +2717,14 @@ function renderProgress() {
   if (!levels) return;
   levels.innerHTML = '';
   const skills = {
+    verticalPull: 'Pull-up',
     handstand: 'Handstand',
-    crow: 'Crow pose',
     lsit: 'L-sit',
-    muscleupTransition: 'Muscle-up',
-    handstandPushup: 'Handstand push-up',
     pistolSquat: 'Pistol squat'
   };
   Object.entries(skills).forEach(([key, label]) => {
     const item = state.levels[key];
-    const exerciseTrack = tracks[key] || baseTracks[key];
+    const exerciseTrack = baseTracks[key] || tracks[key];
     if (!item || !Array.isArray(exerciseTrack) || !exerciseTrack.length) return;
     const capability = workoutModule.getMasteringSkillProgress(key, item, exerciseTrack);
     const stageCount = capability.stages.length;
@@ -2829,6 +2821,15 @@ function renderOnboarding() {
   }
 
   onboarding.classList.remove('hidden');
+  const priorityOnly = needsPrioritySkillSelection();
+  onboarding.classList.toggle('priority-selection-only', priorityOnly);
+  document.querySelector('#onboardingStepOne .equipment-block')?.classList.toggle('hidden', priorityOnly);
+  const stepTitle = document.getElementById('onboardingStepOneTitle');
+  const stepCount = document.getElementById('onboardingStepOneCount');
+  const nextButton = document.getElementById('onboardingNextBtn');
+  if (stepTitle) stepTitle.textContent = priorityOnly ? 'Choose your priority skill' : 'Build your workout plan';
+  if (stepCount) stepCount.textContent = priorityOnly ? '1/1' : '1/2';
+  if (nextButton) nextButton.textContent = priorityOnly ? 'Save priority skill' : 'Next';
   hideAccountSubmenuPanel();
 	  document.documentElement.classList.remove('welcome-active', 'account-active');
 	  document.body.classList.remove('welcome-active', 'account-active');
@@ -2853,8 +2854,21 @@ function showOnboardingStepTwo() {
   const goal = document.querySelector('input[name="goal"]:checked')?.value;
   const equipment = Array.from(document.querySelectorAll('input[name="equipment"]:checked')).map(input => input.value);
 
+  if (needsPrioritySkillSelection()) {
+    if (!goal) {
+      setPanelMessage('onboardingMessage', 'Choose a priority skill to continue.', 'error');
+      return;
+    }
+    const { legacyGoal, prioritySkillRequired, ...preservedProfile } = state.profile || {};
+    state.profile = { ...preservedProfile, goal, updatedAt: new Date().toISOString() };
+    saveState();
+    setPanelMessage('onboardingMessage', '');
+    renderAll();
+    return;
+  }
+
   if (!goal || equipment.length === 0) {
-    setPanelMessage('onboardingMessage', 'Choose a focus and equipment to continue.', 'error');
+    setPanelMessage('onboardingMessage', 'Choose a priority skill and equipment to continue.', 'error');
     return;
   }
 
@@ -2882,7 +2896,7 @@ function saveProfileFromOnboarding() {
   const dip = equipment.includes('dipBars') ? document.querySelector('input[name="dip"]:checked')?.value : null;
 
   if (!goal || !pushups || !squats || equipment.length === 0) {
-    setPanelMessage('onboardingMessage', 'Choose a goal, equipment, push-up level, and squat level to continue.', 'error');
+    setPanelMessage('onboardingMessage', 'Choose a priority skill, equipment, push-up level, and squat level to continue.', 'error');
     return;
   }
   if (equipment.includes('pullupBar') && (!deadHang || !negativePullup)) {
@@ -3281,8 +3295,10 @@ function renderAccountMainSummary() {
   if (passwordSection) passwordSection.classList.toggle('hidden', !canChangePassword());
   if (goalSummary) goalSummary.textContent = goalLabels[profile.goal] || 'Not set';
   if (equipmentSummary) {
-    const equipment = profile.equipment || [];
-    equipmentSummary.textContent = equipment.length ? equipment.map(item => equipmentLabels[item] || item).join(', ') : 'Not set';
+    const equipment = (profile.equipment || []).filter(item => !deprecatedProfileEquipment.has(item));
+    equipmentSummary.textContent = equipment.length
+      ? equipment.map(item => equipmentLabels[item] || item).join(', ')
+      : equipmentLabels.none;
   }
   if (recoverySummary) {
     const recovery = getActiveRecovery();
@@ -3297,7 +3313,8 @@ function populateAccountGoal() {
 }
 
 function populateAccountEquipment() {
-  const equipment = getProfile()?.equipment || ['none'];
+  const selectableEquipment = (getProfile()?.equipment || []).filter(item => !deprecatedProfileEquipment.has(item));
+  const equipment = selectableEquipment.length ? selectableEquipment : ['none'];
   document.querySelectorAll('input[name="accountEquipment"]').forEach(input => {
     input.checked = equipment.includes(input.value);
   });
@@ -3413,8 +3430,10 @@ async function saveAccountGoal() {
 }
 
 async function saveAccountEquipment() {
-  const equipment = Array.from(document.querySelectorAll('input[name="accountEquipment"]:checked')).map(input => input.value);
-  if (equipment.length === 0) return setPanelMessage('accountEquipmentMessage', 'Choose at least one equipment option.', 'error');
+  const selectedEquipment = Array.from(document.querySelectorAll('input[name="accountEquipment"]:checked')).map(input => input.value);
+  if (selectedEquipment.length === 0) return setPanelMessage('accountEquipmentMessage', 'Choose at least one equipment option.', 'error');
+  const preservedDeprecatedEquipment = (state.profile?.equipment || []).filter(item => deprecatedProfileEquipment.has(item));
+  const equipment = [...new Set([...selectedEquipment, ...preservedDeprecatedEquipment])];
   setPanelMessage('accountEquipmentMessage', 'Saving equipment...', 'info');
   state.profile = { ...(state.profile || {}), equipment, updatedAt: new Date().toISOString() };
   state.current = null;

@@ -2,7 +2,9 @@
   const STORAGE_KEY = 'camille-calisthenics-v4';
   const LEGACY_STORAGE_KEY = 'camille-calisthenics-v2';
   const OLDER_LEGACY_STORAGE_KEY = 'camille-calisthenics-v1';
-  const STATE_SCHEMA_VERSION = 6;
+  const STATE_SCHEMA_VERSION = 7;
+  const DEPRECATED_PROFILE_EQUIPMENT = new Set(['jumpRope']);
+  const LEGACY_PRIORITY_SKILLS = new Set(['general', 'muscleup']);
 
   function applyWorkoutCatalogMigrations(workoutModule) {
     if (!workoutModule || workoutModule.catalogMigrationsApplied) return;
@@ -35,23 +37,31 @@
     function sanitizeProfile(profile) {
       if (!profile || typeof profile !== 'object') return null;
       const goal = validProfileValues.goals.has(profile.goal) ? profile.goal : null;
+      const legacyGoal = LEGACY_PRIORITY_SKILLS.has(profile.goal)
+        ? profile.goal
+        : LEGACY_PRIORITY_SKILLS.has(profile.legacyGoal) ? profile.legacyGoal : null;
       const equipment = Array.isArray(profile.equipment)
         ? profile.equipment.filter(item => validProfileValues.equipment.has(item))
         : [];
-      const cleanEquipment = equipment.includes('none') && equipment.length > 1
-        ? equipment.filter(item => item !== 'none')
-        : equipment;
+      const selectableEquipment = equipment.filter(item => !DEPRECATED_PROFILE_EQUIPMENT.has(item));
+      const deprecatedEquipment = equipment.filter(item => DEPRECATED_PROFILE_EQUIPMENT.has(item));
+      const cleanSelectableEquipment = selectableEquipment.includes('none') && selectableEquipment.length > 1
+        ? selectableEquipment.filter(item => item !== 'none')
+        : selectableEquipment;
+      const cleanEquipment = [...new Set([...cleanSelectableEquipment, ...deprecatedEquipment])];
       const pushups = validProfileValues.pushups.has(profile.pushups) ? profile.pushups : null;
       const squats = validProfileValues.squats.has(profile.squats) ? profile.squats : null;
       const deadHang = validProfileValues.yesNo.has(profile.deadHang) ? profile.deadHang : null;
       const negativePullup = validProfileValues.yesNo.has(profile.negativePullup) ? profile.negativePullup : null;
       const dip = validProfileValues.yesNo.has(profile.dip) ? profile.dip : null;
 
-      if (!goal || !pushups || !squats || !cleanEquipment.length) return null;
+      if ((!goal && !legacyGoal) || !pushups || !squats || !cleanEquipment.length) return null;
 
       return {
         ...profile,
         goal,
+        legacyGoal: goal ? null : legacyGoal,
+        prioritySkillRequired: !goal,
         equipment: cleanEquipment,
         pushups,
         squats,
@@ -69,11 +79,19 @@
       const tracks = workoutModule.getTracks(profile);
       Object.keys(defaults).forEach(key => {
         const source = migratedLevels[key] || {};
-        const trackLength = Math.max(1, (tracks[key] || baseTracks[key] || []).length);
-        const level = Number.isFinite(Number(source.level)) ? Number(source.level) : defaults[key].level;
+        const canonicalTrack = baseTracks[key] || [];
+        const trackLength = Math.max(1, canonicalTrack.length);
+        const savedMilestoneIndex = typeof source.milestoneId === 'string'
+          ? canonicalTrack.findIndex(exercise => exercise.id === source.milestoneId)
+          : -1;
+        const level = Number.isFinite(Number(source.level))
+          ? Number(source.level)
+          : savedMilestoneIndex >= 0 ? savedMilestoneIndex : defaults[key].level;
+        const canonicalLevel = Math.max(0, Math.min(Math.round(level), trackLength - 1));
         const points = Number.isFinite(Number(source.points)) ? Number(source.points) : defaults[key].points;
         defaults[key] = {
-          level: Math.max(0, Math.min(Math.round(level), trackLength - 1)),
+          level: canonicalLevel,
+          milestoneId: canonicalTrack[canonicalLevel]?.id || null,
           points: Math.max(-6, Math.min(Math.round(points), 10)),
           positiveExposures: Number.isFinite(Number(source.positiveExposures)) ? Math.max(0, Number(source.positiveExposures)) : 0,
           difficultExposures: Number.isFinite(Number(source.difficultExposures)) ? Math.max(0, Number(source.difficultExposures)) : 0,
@@ -140,6 +158,7 @@
                   progressionEvidenceTarget: typeof exercise.progressionEvidenceTarget === 'string'
                     ? exercise.progressionEvidenceTarget
                     : (typeof exercise.progressionTrackKey === 'string' ? exercise.progressionTrackKey : ''),
+                  progressionMilestoneId: typeof exercise.progressionMilestoneId === 'string' ? exercise.progressionMilestoneId : null,
                   progressionLevel: Number.isFinite(Number(exercise.progressionLevel)) ? Number(exercise.progressionLevel) : null,
                   programmeRole: typeof exercise.programmeRole === 'string' ? exercise.programmeRole : null,
                   selectedMasterySkill: typeof exercise.selectedMasterySkill === 'string' ? exercise.selectedMasterySkill : null,
@@ -294,6 +313,21 @@
       if (previousVersion < 4) {
         if (Number(migrated.rotationIndex) === 1) migrated.rotationIndex = 2;
         else if (Number(migrated.rotationIndex) === 2) migrated.rotationIndex = 1;
+      }
+      if (previousVersion < 7 && migrated.levels && typeof migrated.levels === 'object') {
+        const levels = Object.fromEntries(Object.entries(migrated.levels).map(([key, value]) => [key, { ...(value || {}) }]));
+        const remapLevel = (trackKey, mapper) => {
+          const track = levels[trackKey];
+          if (!track || track.milestoneId || !Number.isFinite(Number(track.level))) return;
+          track.level = mapper(Math.max(0, Math.round(Number(track.level))));
+        };
+        // Preserve the exercise represented by schema-6 canonical indexes
+        // after new authored stages were inserted into existing tracks.
+        ['verticalPull', 'pullup'].forEach(key => remapLevel(key, level => level >= 8 ? level + 2 : level));
+        remapLevel('scapularPull', level => level + 1);
+        remapLevel('antiExtension', level => level >= 2 ? level + 1 : level);
+        remapLevel('lateralCore', level => level + 1);
+        migrated.levels = levels;
       }
       return { ...migrated, schemaVersion: STATE_SCHEMA_VERSION };
     }

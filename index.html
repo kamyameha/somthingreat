@@ -152,7 +152,7 @@
 
           <div class="account-section">
             <h3>Preferences</h3>
-            <button class="account-list-btn" type="button" data-account-view="goal">Focus <span id="accountGoalSummary"></span></button>
+            <button class="account-list-btn" type="button" data-account-view="goal">Priority skill <span id="accountGoalSummary"></span></button>
             <button class="account-list-btn" type="button" data-account-view="equipment">Equipment <span id="accountEquipmentSummary"></span></button>
             <button class="account-list-btn" type="button" data-account-view="recovery">Recovery <span id="accountRecoverySummary"></span></button>
           </div>
@@ -183,16 +183,15 @@
 
         <div id="accountGoalView" class="account-view hidden">
           <button class="text-btn" type="button" data-account-view="main" aria-label="Back to account">← Back</button>
-		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Focus</h2>
-          <p class="muted">Choose the main goal your workouts should prioritize.</p>
+		          <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Priority skill</h2>
+          <p class="muted">Choose the foundational skill that should receive extra practice. You’ll still train all four.</p>
           <div class="account-goal-options">
             <label class="option-row"><input type="radio" name="accountGoal" value="pullup"> <span>Pull-up</span></label>
-            <label class="option-row"><input type="radio" name="accountGoal" value="muscleup"> <span>Muscle-up</span></label>
             <label class="option-row"><input type="radio" name="accountGoal" value="lsit"> <span>L-Sit</span></label>
             <label class="option-row"><input type="radio" name="accountGoal" value="handstand"> <span>Handstand</span></label>
-            <label class="option-row"><input type="radio" name="accountGoal" value="general"> <span>General fitness</span></label>
+            <label class="option-row"><input type="radio" name="accountGoal" value="pistolSquat"> <span>Pistol squat</span></label>
           </div>
-          <button id="saveAccountGoalBtn" class="primary-btn account-full-btn" type="button">Update goal</button>
+          <button id="saveAccountGoalBtn" class="primary-btn account-full-btn" type="button">Update priority skill</button>
           <p id="accountGoalMessage" class="auth-message" aria-live="polite"></p>
         </div>
 
@@ -204,7 +203,6 @@
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="pullupBar"> <span>Pull-up bar</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="dipBars"> <span>Dip bars</span></label>
           <label class="option-row"><input type="checkbox" name="accountEquipment" value="bands"> <span>Resistance bands</span></label>
-          <label class="option-row"><input type="checkbox" name="accountEquipment" value="jumpRope"> <span>Jump rope</span></label>
           <button id="saveAccountEquipmentBtn" class="primary-btn account-full-btn" type="button">Update equipment</button>
           <p id="accountEquipmentMessage" class="auth-message" aria-live="polite"></p>
         </div>
@@ -276,18 +274,18 @@
     <section id="onboarding" class="onboarding-panel hidden">
       <div id="onboardingStepOne" class="onboarding-step">
         <div class="onboarding-step-head">
-          <p>Build your workout plan</p>
-          <p>1/2</p>
+          <p id="onboardingStepOneTitle">Build your workout plan</p>
+          <p id="onboardingStepOneCount">1/2</p>
         </div>
 
         <div class="setup-block focus-block">
-          <h2>Focus</h2>
+          <h2>Priority skill</h2>
+          <p class="muted">This skill gets extra practice. Every plan still trains Pull-up, Handstand, L-sit and Pistol squat.</p>
           <div class="onboarding-chip-grid focus-chip-grid">
             <label class="onboarding-chip"><input type="radio" name="goal" value="pullup"> <span>Pull-up</span></label>
-            <label class="onboarding-chip"><input type="radio" name="goal" value="muscleup"> <span>Muscle-up</span></label>
             <label class="onboarding-chip"><input type="radio" name="goal" value="lsit"> <span>L-Sit</span></label>
             <label class="onboarding-chip"><input type="radio" name="goal" value="handstand"> <span>Handstand</span></label>
-            <label class="onboarding-chip wide-chip"><input type="radio" name="goal" value="general"> <span>General fitness</span></label>
+            <label class="onboarding-chip wide-chip"><input type="radio" name="goal" value="pistolSquat"> <span>Pistol squat</span></label>
           </div>
         </div>
 
@@ -298,7 +296,6 @@
             <label class="onboarding-chip equipment-chip"><input type="checkbox" name="equipment" value="pullupBar"> <span>Pull-up bar</span></label>
             <label class="onboarding-chip equipment-chip"><input type="checkbox" name="equipment" value="dipBars"> <span>Dip bars</span></label>
             <label class="onboarding-chip equipment-chip wide-chip"><input type="checkbox" name="equipment" value="bands"> <span>Resistance bands</span></label>
-            <label class="onboarding-chip equipment-chip"><input type="checkbox" name="equipment" value="jumpRope"> <span>Jump rope</span></label>
           </div>
         </div>
 
@@ -357,7 +354,7 @@
           <h2>You're set.</h2>
           <p>Your workout plan is ready.</p>
           <p>Choose today's energy to generate a workout.</p>
-          <p>You can change your focus and equipment anytime from the menu.</p>
+          <p>You can change your priority skill and equipment anytime from the menu.</p>
           <button id="startOnboardingPlanBtn" class="primary-btn onboarding-primary" type="button">Start</button>
         </div>
       </div>
@@ -443,7 +440,7 @@
     <section id="progress" class="screen progress-screen">
       <section class="hero-card goal-hero">
         <h2 id="goalHeroTitle">Pull-up</h2>
-        <div id="focusProgressDots" class="progress-dots focus-progress-dots" aria-label="Focus progression"></div>
+        <div id="focusProgressDots" class="progress-dots focus-progress-dots" aria-label="Priority skill progression"></div>
         <p id="focusNextMilestone" class="activity-summary-line focus-next-milestone hidden"></p>
       </section>
 
