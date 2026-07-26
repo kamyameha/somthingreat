@@ -2577,6 +2577,10 @@
       programmeRole: current.programmeRole || replacement.programmeRole,
       selectedMasterySkill: current.selectedMasterySkill || replacement.selectedMasterySkill,
       masteryRelationship: current.masteryRelationship || replacement.masteryRelationship,
+      prioritySpecificity: current.prioritySpecificity || replacement.prioritySpecificity || null,
+      skillLabRole: current.skillLabRole || replacement.skillLabRole || null,
+      roleMasterySkill: current.roleMasterySkill || replacement.roleMasterySkill || null,
+      workoutRoleLabel: current.workoutRoleLabel || replacement.workoutRoleLabel || null,
       developmentDiagnostics: {
         ...(replacement.developmentDiagnostics || {}),
         ...(current.developmentDiagnostics || {}),
@@ -3153,8 +3157,58 @@
     pistolSquat: Object.freeze(['pistolSquat', 'calves', 'unilateral'])
   });
 
+  const prioritySpecificPreparationTracks = Object.freeze({
+    pullup: Object.freeze([
+      Object.freeze({ trackKey: 'pullAccessory', exerciseIds: Object.freeze(['prone-pull-down']) })
+    ]),
+    handstand: Object.freeze([
+      Object.freeze({ trackKey: 'handstand', exerciseIds: Object.freeze(['elevated-plank-shoulder-shift']) })
+    ]),
+    lsit: Object.freeze([
+      Object.freeze({ trackKey: 'compression', exerciseIds: Object.freeze(['reverse-crunch']) })
+    ]),
+    pistolSquat: Object.freeze([
+      Object.freeze({ trackKey: 'unilateral', exerciseIds: Object.freeze(['assisted-split-squat']) })
+    ])
+  });
+
+  const skillDisplayLabels = Object.freeze({
+    pullup: 'Pull-up',
+    handstand: 'Handstand',
+    lsit: 'L-sit',
+    pistolSquat: 'Pistol squat'
+  });
+
   function directSkillTrackKey(skill) {
     return DIRECT_SKILL_TRACK_KEYS[skill] || null;
+  }
+
+  function isCanonicalSkillExercise(exercise, skill) {
+    const trackKey = directSkillTrackKey(skill);
+    return Boolean(
+      exercise?.id &&
+      trackKey &&
+      (movementTracks[trackKey] || []).some(candidate => candidate.id === exercise.id)
+    );
+  }
+
+  function isAuthoredPriorityPreparation(exercise, skill) {
+    return Boolean(
+      exercise?.id &&
+      (prioritySpecificPreparationTracks[skill] || []).some(track => (
+        track.exerciseIds.includes(exercise.id)
+      ))
+    );
+  }
+
+  function prioritySpecificityForExercise(exercise, skill) {
+    const canonicalTrackKey = directSkillTrackKey(skill);
+    if (
+      isCanonicalSkillExercise(exercise, skill) &&
+      (!exercise?.sourceTrack || exercise.sourceTrack === canonicalTrackKey)
+    ) return 'canonical';
+    if (isAuthoredPriorityPreparation(exercise, skill)) return 'authoredPreparation';
+    return null;
   }
 
   function isDirectSkillPracticeResult(result, skill) {
@@ -3185,7 +3239,7 @@
     return directSkillExposureRecency(skill, state) >= maximumWorkoutGap;
   }
 
-  function secondaryFoundationalSkill(profile = null, state = {}) {
+  function secondaryFoundationalSkill(profile = null, state = {}, options = {}) {
     const prioritySkill = resolveMasterySkill(profile?.goal) || (profile ? null : MASTERY_SKILLS.pullup);
     if (!prioritySkill) return null;
     const availableSkills = PRIORITY_SKILLS.filter(skill => skill !== prioritySkill);
@@ -3195,7 +3249,7 @@
       ...availableSkills.slice(rotationOffset),
       ...availableSkills.slice(0, rotationOffset)
     ];
-    return tieOrder
+    const rankedSkills = tieOrder
       .map((skill, tieIndex) => ({
         skill,
         tieIndex,
@@ -3204,12 +3258,24 @@
       .sort((first, second) => (
         second.recency - first.recency ||
         first.tieIndex - second.tieIndex
-      ))[0]?.skill || null;
+      ));
+    const config = getEnergyConfig(options.mode || 'normal');
+    const recovery = getActiveRecovery(state);
+    const safelyAvailable = rankedSkills.find(({ skill }) => (
+      unlockedTrackCandidates(
+        directSkillTrackKey(skill),
+        config,
+        state,
+        profile,
+        recovery
+      ).some(exercise => isCurrentMilestoneExercise(exercise, directSkillTrackKey(skill)))
+    ));
+    return safelyAvailable?.skill || rankedSkills[0]?.skill || null;
   }
 
-  function skillCompositionPolicy(profile = null, state = {}) {
+  function skillCompositionPolicy(profile = null, state = {}, config = energyOptions.normal) {
     const selectedMasterySkill = resolveMasterySkill(profile?.goal) || (profile ? null : MASTERY_SKILLS.pullup);
-    const secondaryMasterySkill = secondaryFoundationalSkill(profile, state);
+    const secondaryMasterySkill = secondaryFoundationalSkill(profile, state, { mode: config.mode });
     return {
       primaryFocusTracks: [...(foundationalSkillTracks[selectedMasterySkill] || [])],
       secondaryFocusTracks: [...(foundationalSkillTracks[secondaryMasterySkill] || [])],
@@ -3221,11 +3287,11 @@
     };
   }
 
-  function compositionPolicyForWorkout(workout, profile = null, state = {}) {
+  function compositionPolicyForWorkout(workout, profile = null, state = {}, config = energyOptions.normal) {
     const masterySkill = resolveMasterySkill(profile?.goal);
     if (workout.name === 'Skill lab') {
       return {
-        ...skillCompositionPolicy(profile, state),
+        ...skillCompositionPolicy(profile, state, config),
         policyType: 'directSkills',
         rankingTrackOrder: []
       };
@@ -3309,6 +3375,10 @@
       })
       .map(candidate => {
         const relationship = masteryRelationshipFor(candidate.exercise.id, policy.selectedMasterySkill);
+        const prioritySpecificity = prioritySpecificityForExercise(
+          { ...candidate.exercise, sourceTrack: candidate.sourceTrack },
+          policy.selectedMasterySkill
+        );
         const programmeRole = resolveContextualProgrammeRole(candidate.exercise, role, policy);
         const reservedDirectProgression = false;
         const rankedTrackIndex = rankingTrackOrder.indexOf(candidate.sourceTrack);
@@ -3350,6 +3420,7 @@
             progressionTrackKey: evidenceTarget,
             progressionEvidenceTarget: evidenceTarget,
             masteryRelationship: relationship?.relationship || null,
+            prioritySpecificity,
             developmentDiagnostics: {
               stableExerciseId: candidate.exercise.id,
               workoutType: workoutName,
@@ -3358,6 +3429,7 @@
               sourceTrack: candidate.sourceTrack,
               progressionEvidenceTarget: evidenceTarget,
               masteryRelationship: relationship?.relationship || null,
+              prioritySpecificity,
               prioritisationReason,
               supportsSelectedSkill: masteryRelevant,
               directPractice,
@@ -3393,6 +3465,90 @@
       .map(candidate => candidate.exercise);
   }
 
+  function collectAuthoredPriorityPreparationCandidates(
+    skill,
+    role,
+    config,
+    state,
+    profile,
+    recovery,
+    diversity,
+    workoutName
+  ) {
+    return (prioritySpecificPreparationTracks[skill] || [])
+      .flatMap(({ trackKey, exerciseIds }, trackOrder) => exerciseIds.map((exerciseId, depth) => ({
+        baseExercise: byId[exerciseId],
+        trackKey,
+        trackOrder,
+        depth
+      })))
+      .filter(({ baseExercise }) => (
+        baseExercise &&
+        isExerciseEligibleForGeneration(baseExercise, profile, state, recovery) &&
+        isExerciseAllowedForRecovery(baseExercise, recovery) &&
+        isExerciseAllowedForEnergy(baseExercise, config)
+      ))
+      .map(({ baseExercise, trackKey, trackOrder, depth }) => {
+        const canonicalTrack = baseTracks[trackKey] || movementTracks[trackKey] || [];
+        const currentLevel = Math.max(0, Math.min(
+          Number(state?.levels?.[trackKey]?.level || 0),
+          Math.max(0, canonicalTrack.length - 1)
+        ));
+        const exerciseLevel = canonicalTrack.findIndex(exercise => exercise.id === baseExercise.id);
+        const appearedSameDay = diversity.sameDayIds.has(baseExercise.id);
+        const appearedRecently = diversity.recentIds.has(baseExercise.id);
+        return normalizeExercise({
+          ...baseExercise,
+          trackKey,
+          progressionTrackKey: trackKey,
+          progressionEvidenceTarget: trackKey,
+          progressionMilestoneId: canonicalTrack[currentLevel]?.id || null,
+          prescriptionData: adaptPrescriptionData(baseExercise.prescriptionData, config, recovery),
+          basePrescription: baseExercise.prescription,
+          basePrescriptionData: baseExercise.prescriptionData,
+          level: exerciseLevel >= 0 ? exerciseLevel + 1 : 1,
+          originalLevel: currentLevel + 1,
+          workoutRole: role,
+          programmeRole: PROGRAMME_ROLES.skillPreparation,
+          selectedMasterySkill: skill,
+          sourceTrack: trackKey,
+          masteryRelationship: PROGRAMME_ROLES.skillPreparation,
+          prioritySpecificity: 'authoredPreparation',
+          developmentDiagnostics: {
+            stableExerciseId: baseExercise.id,
+            workoutType: workoutName,
+            selectedMasterySkill: skill,
+            programmeRole: PROGRAMME_ROLES.skillPreparation,
+            sourceTrack: trackKey,
+            progressionEvidenceTarget: trackKey,
+            masteryRelationship: PROGRAMME_ROLES.skillPreparation,
+            prioritySpecificity: 'authoredPreparation',
+            prioritisationReason: 'explicitly-authored-priority-specific-preparation',
+            supportsSelectedSkill: true,
+            directPractice: false,
+            foundationalSkillDirectPractice: false,
+            maintenance: false,
+            appearedEarlierSameDay: appearedSameDay,
+            appearedRecently,
+            fallbackReason: null,
+            overlapReason: null,
+            authoredPreparationTrackOrder: trackOrder,
+            authoredPreparationDepth: depth
+          }
+        });
+      })
+      .sort((first, second) => (
+        Number(first.developmentDiagnostics.appearedEarlierSameDay) -
+          Number(second.developmentDiagnostics.appearedEarlierSameDay) ||
+        Number(first.developmentDiagnostics.appearedRecently) -
+          Number(second.developmentDiagnostics.appearedRecently) ||
+        first.developmentDiagnostics.authoredPreparationTrackOrder -
+          second.developmentDiagnostics.authoredPreparationTrackOrder ||
+        first.developmentDiagnostics.authoredPreparationDepth -
+          second.developmentDiagnostics.authoredPreparationDepth
+      ));
+  }
+
   function variedRepeatedPrescriptionData(prescriptionData) {
     const source = normalizePrescriptionData(prescriptionData);
     if (!source) return source;
@@ -3424,7 +3580,7 @@
     const workout = rotation[rotationIndex % rotation.length];
     const config = getEnergyConfig(mode);
     const recovery = getActiveRecovery(state);
-    const policy = compositionPolicyForWorkout(workout, profile, state);
+    const policy = compositionPolicyForWorkout(workout, profile, state, config);
     const diversityHistory = workoutDiversityHistory(state);
     const sameDayIds = sameDayWorkoutExerciseIds(diversityHistory);
     const recentIds = recentWorkoutExerciseIds(diversityHistory);
@@ -3473,6 +3629,18 @@
       diversity,
       candidateContext
     );
+    const authoredPriorityPreparationCandidates = workout.name === 'Skill lab'
+      ? collectAuthoredPriorityPreparationCandidates(
+          policy.selectedMasterySkill,
+          'primaryFocus',
+          config,
+          state,
+          profile,
+          recovery,
+          diversity,
+          workout.name
+        )
+      : [];
     const scheduledFoundationSkills = [];
     if (workout.name === 'Push' && isDirectSkillPracticeDue(MASTERY_SKILLS.handstand, state)) {
       scheduledFoundationSkills.push({
@@ -3579,15 +3747,47 @@
     };
 
     if (workout.name === 'Skill lab') {
-      takeCandidates(primaryCandidates.filter(candidate => candidate.developmentDiagnostics?.foundationalSkillDirectPractice), 1);
-      if (!exercises.some(item => item.workoutRole === 'primaryFocus')) takeCandidates(primaryCandidates, 1);
-      takeCandidates(secondaryCandidates.filter(candidate => candidate.developmentDiagnostics?.foundationalSkillDirectPractice), 1);
-      if (!exercises.some(item => item.workoutRole === 'focusAccessory')) takeCandidates(secondaryCandidates, 1);
-      takeCandidates(primaryCandidates, 2 - exercises.filter(item => item.workoutRole === 'primaryFocus').length);
-      if (targetCount === 4) takeCandidates(supportCandidates, 1);
-      takeCandidates(primaryCandidates, targetCount - exercises.length);
-      takeCandidates(secondaryCandidates, targetCount - exercises.length);
-      takeCandidates(supportCandidates, targetCount - exercises.length);
+      const priorityDirectCandidates = primaryCandidates.filter(candidate => (
+        candidate.developmentDiagnostics?.foundationalSkillDirectPractice
+      ));
+      const secondaryDirectCandidates = secondaryCandidates.filter(candidate => (
+        candidate.developmentDiagnostics?.foundationalSkillDirectPractice
+      ));
+      const canonicalPriorityCandidates = primaryCandidates.filter(candidate => (
+        candidate.prioritySpecificity === 'canonical'
+      ));
+      const secondaryPreparationCandidates = secondaryCandidates.filter(candidate => (
+        candidate.prioritySpecificity ||
+        candidate.developmentDiagnostics?.supportsSelectedSkill
+      ));
+      const strongerMode = ['great', 'normal'].includes(config.mode);
+
+      takeCandidates(priorityDirectCandidates, 1);
+      if (!exercises.some(item => item.workoutRole === 'primaryFocus')) {
+        takeCandidates(canonicalPriorityCandidates, 1);
+      }
+      takeCandidates(secondaryDirectCandidates, 1);
+      if (!exercises.some(item => item.workoutRole === 'focusAccessory')) {
+        takeCandidates(secondaryPreparationCandidates, 1);
+      }
+
+      if (strongerMode) {
+        const requiredAdditionalPriority = 2 - exercises.filter(item => (
+          item.workoutRole === 'primaryFocus' &&
+          Boolean(item.prioritySpecificity)
+        )).length;
+        takeCandidates(canonicalPriorityCandidates, requiredAdditionalPriority);
+        const stillRequired = 2 - exercises.filter(item => (
+          item.workoutRole === 'primaryFocus' &&
+          Boolean(item.prioritySpecificity)
+        )).length;
+        takeCandidates(authoredPriorityPreparationCandidates, stillRequired);
+        if (targetCount === 4) takeCandidates(supportCandidates, 1);
+      } else {
+        takeCandidates(supportCandidates, Math.min(1, targetCount - exercises.length));
+        takeCandidates(authoredPriorityPreparationCandidates, targetCount - exercises.length);
+        takeCandidates(canonicalPriorityCandidates, targetCount - exercises.length);
+      }
     } else {
       scheduledFoundationCandidates.forEach(schedule => takeCandidates(schedule.candidates, 1));
       (policy.requiredMovementFamilies || []).forEach(trackKey => {
@@ -3626,10 +3826,36 @@
     );
     const prioritySkillCount = exercises.filter(item => item.workoutRole === 'primaryFocus').length;
     const secondarySkillCount = exercises.filter(item => item.workoutRole === 'focusAccessory').length;
+    const prioritySpecificCount = exercises.filter(item => (
+      item.workoutRole === 'primaryFocus' &&
+      Boolean(prioritySpecificityForExercise(item, policy.selectedMasterySkill))
+    )).length;
+    const directPrioritySkillCount = exercises.filter(item => (
+      item.workoutRole === 'primaryFocus' &&
+      item.developmentDiagnostics?.foundationalSkillDirectPractice &&
+      item.sourceTrack === directSkillTrackKey(policy.selectedMasterySkill)
+    )).length;
+    const directSecondarySkillCount = exercises.filter(item => (
+      item.workoutRole === 'focusAccessory' &&
+      item.developmentDiagnostics?.foundationalSkillDirectPractice &&
+      item.sourceTrack === directSkillTrackKey(policy.secondaryMasterySkill)
+    )).length;
+    const strongerSkillLab = workout.name === 'Skill lab' && ['great', 'normal'].includes(config.mode);
     const skillCompositionValid = workout.name !== 'Skill lab' || (
-      prioritySkillCount >= (targetCount === 4 ? 2 : 1) &&
-      secondarySkillCount >= 1 &&
-      generalSupportCount <= 1
+      generalSupportCount <= 1 &&
+      secondarySkillCount <= 1 &&
+      (
+        strongerSkillLab
+          ? (
+              prioritySpecificCount >= 2 &&
+              directPrioritySkillCount === 1 &&
+              directSecondarySkillCount === 1
+            )
+          : (
+              prioritySkillCount >= 1 &&
+              (secondarySkillCount === 1 || prioritySpecificCount >= Math.min(2, targetCount))
+            )
+      )
     );
     const prioritySkillRequired = workout.name === 'Skill lab' && Boolean(profile) && !resolveMasterySkill(profile.goal);
     const generationFailure = !prioritySkillRequired && exercises.length === targetCount && !duplicateIds && foundationCompositionValid && pullCompositionValid && skillCompositionValid
@@ -3648,10 +3874,14 @@
           primaryFocusCount,
           focusAccessoryCount,
           generalSupportCount,
+          prioritySpecificCount,
+          directPrioritySkillCount,
+          directSecondarySkillCount,
           availablePrimaryFocusIds: primaryCandidates.map(item => item.id),
           availableScheduledFoundationIds: scheduledFoundationCandidates.flatMap(schedule => schedule.candidates.map(item => item.id)),
           availableFocusAccessoryIds: accessoryCandidates.map(item => item.id),
           availableSecondarySkillIds: secondaryCandidates.map(item => item.id),
+          availableAuthoredPriorityPreparationIds: authoredPriorityPreparationCandidates.map(item => item.id),
           availableGeneralSupportIds: supportCandidates.map(item => item.id)
         };
     const repeatedExercises = exercises.filter(item => item.developmentDiagnostics?.reducedVariety);
@@ -3659,6 +3889,7 @@
       ...primaryCandidates,
       ...accessoryCandidates,
       ...secondaryCandidates,
+      ...authoredPriorityPreparationCandidates,
       ...supportCandidates,
       ...scheduledFoundationCandidates.flatMap(schedule => schedule.candidates)
     ]
@@ -3749,7 +3980,37 @@
             ? 'The current eligible catalogue produced an identical same-day stable-ID set.'
             : null
       },
-      exercises
+      exercises: exercises.map(exercise => {
+        if (workout.name !== 'Skill lab' || exercise.isAddOn) return exercise;
+        if (exercise.workoutRole === 'primaryFocus') {
+          return {
+            ...exercise,
+            skillLabRole: 'priority',
+            roleMasterySkill: policy.selectedMasterySkill,
+            workoutRoleLabel: 'Priority skill'
+          };
+        }
+        if (exercise.workoutRole === 'focusAccessory') {
+          const secondaryLabel = skillDisplayLabels[policy.secondaryMasterySkill];
+          const directSecondaryPractice = Boolean(
+            exercise.developmentDiagnostics?.foundationalSkillDirectPractice
+          );
+          return {
+            ...exercise,
+            skillLabRole: 'secondary',
+            roleMasterySkill: policy.secondaryMasterySkill,
+            workoutRoleLabel: secondaryLabel
+              ? `${directSecondaryPractice ? 'Secondary skill' : 'Foundational practice'} · ${secondaryLabel}`
+              : directSecondaryPractice ? 'Secondary skill' : 'Foundational practice'
+          };
+        }
+        return {
+          ...exercise,
+          skillLabRole: 'support',
+          roleMasterySkill: null,
+          workoutRoleLabel: 'Support'
+        };
+      })
     };
   }
 
@@ -3772,7 +4033,9 @@
     const policy = compositionPolicyForWorkout(workoutDescriptor, profile, state);
     const roleTracks = {
       primaryFocus: policy.primaryFocusTracks,
-      focusAccessory: policy.focusAccessoryTracks,
+      focusAccessory: policy.policyType === 'directSkills'
+        ? policy.secondaryFocusTracks
+        : policy.focusAccessoryTracks,
       generalSupport: policy.generalSupportTracks
     };
     const categoryTracks = roleTracks[exercise.workoutRole] || policy.primaryFocusTracks;
@@ -4287,6 +4550,11 @@
     getGoalTrackKey,
     resolveMasterySkill,
     directSkillTrackKey,
+    isCanonicalSkillExercise,
+    isAuthoredPriorityPreparation,
+    prioritySpecificityForExercise,
+    prioritySpecificPreparationTracks,
+    masteryRelationshipFor,
     directSkillExposureRecency,
     isDirectSkillPracticeDue,
     secondaryFoundationalSkill,

@@ -241,13 +241,36 @@ for (const priority of priorities) {
             if (Math.max(0, ...Object.values(trackCounts)) > 2) report.violations.push(`${scenario}: more than two exercises from one track`);
 
             if (generated.workoutName === 'Skill lab') {
+              const priorityExercises = generated.exercises.filter(exercise => exercise.workoutRole === 'primaryFocus');
+              const secondaryExercises = generated.exercises.filter(exercise => exercise.workoutRole === 'focusAccessory');
               report.skillLabScenarios += 1;
-              report.prioritySkillLabExercises += generated.exercises.filter(exercise => exercise.workoutRole === 'primaryFocus').length;
-              report.secondarySkillLabExercises += generated.exercises.filter(exercise => exercise.workoutRole === 'focusAccessory').length;
+              report.prioritySkillLabExercises += priorityExercises.length;
+              report.secondarySkillLabExercises += secondaryExercises.length;
+              if (priorityExercises.some(exercise => !workouts.prioritySpecificityForExercise(exercise, priority))) {
+                report.violations.push(`${scenario}: Priority skill role lacks canonical or explicitly authored relationship`);
+              }
+              if (secondaryExercises.length > 1) {
+                report.violations.push(`${scenario}: more than one secondary foundational slot`);
+              }
+              if (secondaryExercises.some(exercise => (
+                exercise.roleMasterySkill !== generated.secondarySkill ||
+                !(
+                  workouts.masteryRelationshipFor(exercise.id, generated.secondarySkill) ||
+                  workouts.isAuthoredPriorityPreparation(exercise, generated.secondarySkill)
+                )
+              ))) {
+                report.violations.push(`${scenario}: secondary exercise is attributed to the wrong foundational skill`);
+              }
+              if (priority === 'pistolSquat' && generated.exercises.some(exercise => (
+                workouts.isCanonicalSkillExercise(exercise, 'pullup') &&
+                exercise.workoutRole !== 'focusAccessory'
+              ))) {
+                report.violations.push(`${scenario}: Pull-up exercise presented as Pistol-squat practice`);
+              }
               if (recoveryScenario.name === 'none') {
                 report.baselineSkillLabScenarios += 1;
-                report.baselinePrioritySkillLabExercises += generated.exercises.filter(exercise => exercise.workoutRole === 'primaryFocus').length;
-                report.baselineSecondarySkillLabExercises += generated.exercises.filter(exercise => exercise.workoutRole === 'focusAccessory').length;
+                report.baselinePrioritySkillLabExercises += priorityExercises.length;
+                report.baselineSecondarySkillLabExercises += secondaryExercises.length;
               }
             }
 
@@ -266,8 +289,24 @@ for (const priority of priorities) {
                 report.violations.push(`${scenario}: available loaded horizontal Pull omitted`);
               }
               if (generated.workoutName === 'Skill lab') {
-                if (generated.exercises.filter(exercise => exercise.workoutRole === 'primaryFocus').length < 2) report.violations.push(`${scenario}: priority exposure below two`);
-                if (generated.exercises.filter(exercise => exercise.workoutRole === 'focusAccessory').length < 1) report.violations.push(`${scenario}: secondary skill missing`);
+                const priorityExercises = generated.exercises.filter(exercise => exercise.workoutRole === 'primaryFocus');
+                const secondaryExercises = generated.exercises.filter(exercise => exercise.workoutRole === 'focusAccessory');
+                const currentPriorityMilestones = priorityExercises.filter(exercise => (
+                  exercise.sourceTrack === workouts.directSkillTrackKey(priority) &&
+                  exercise.id === exercise.progressionMilestoneId
+                ));
+                if (currentPriorityMilestones.length !== 1) report.violations.push(`${scenario}: current canonical Priority milestone missing or duplicated`);
+                if (priorityExercises.length < 2) report.violations.push(`${scenario}: second priority-specific exercise missing`);
+                if (priorityExercises.some(exercise => !workouts.prioritySpecificityForExercise(exercise, priority))) {
+                  report.violations.push(`${scenario}: broadly useful accessory counted as Priority-specific`);
+                }
+                if (secondaryExercises.length !== 1) report.violations.push(`${scenario}: rotating secondary slot missing or duplicated`);
+                if (secondaryExercises.some(exercise => (
+                  exercise.sourceTrack !== workouts.directSkillTrackKey(generated.secondarySkill) ||
+                  exercise.id !== exercise.progressionMilestoneId
+                ))) {
+                  report.violations.push(`${scenario}: secondary slot is not the scheduled skill's current canonical milestone`);
+                }
               }
             }
           }

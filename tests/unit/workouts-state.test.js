@@ -316,6 +316,18 @@ assert.strictEqual(prioritySkillWorkout.selectedMasterySkill, 'pistolSquat');
 assert.strictEqual(prioritySkillWorkout.selectedSkillTrackKey, 'pistolSquat');
 assert.strictEqual(prioritySkillWorkout.exercises.filter(item => item.workoutRole === 'primaryFocus').length, 2);
 assert.strictEqual(prioritySkillWorkout.exercises.filter(item => item.workoutRole === 'focusAccessory').length, 1);
+assert.ok(prioritySkillWorkout.exercises
+  .filter(item => item.workoutRole === 'primaryFocus')
+  .every(item => workouts.prioritySpecificityForExercise(item, 'pistolSquat')));
+assert.deepStrictEqual(
+  Array.from(prioritySkillWorkout.exercises, item => item.workoutRoleLabel),
+  ['Priority skill', 'Secondary skill · Pull-up', 'Priority skill', 'Support']
+);
+assert.ok(prioritySkillWorkout.exercises.some(item => item.id === 'assisted-split-squat'));
+assert.ok(!prioritySkillWorkout.exercises.some(item => (
+  item.workoutRole === 'primaryFocus' &&
+  item.id === 'two-leg-calf-raise'
+)));
 const pullPrioritySecondary = workouts.getTodayWorkout({
   mode: 'normal',
   state: { rotationIndex: 3, levels: workouts.createDefaultLevels(), history: [] },
@@ -352,6 +364,164 @@ function programmeLevelsAt(ratio, achieved = false) {
   });
   return levels;
 }
+
+function assertSkillLabSemanticRoles(generated, priority, scenario) {
+  const priorityExercises = generated.exercises.filter(item => item.workoutRole === 'primaryFocus');
+  const secondaryExercises = generated.exercises.filter(item => item.workoutRole === 'focusAccessory');
+  const supportExercises = generated.exercises.filter(item => item.workoutRole === 'generalSupport');
+  assert.ok(priorityExercises.every(item => (
+    workouts.prioritySpecificityForExercise(item, priority)
+  )), `every Priority skill exercise has an authored mastery relationship: ${scenario}`);
+  priorityExercises.forEach(item => {
+    const specificity = workouts.prioritySpecificityForExercise(item, priority);
+    if (specificity === 'canonical') {
+      assert.ok(workouts.isCanonicalSkillExercise(item, priority), `canonical Priority skill track: ${scenario}/${item.id}`);
+      assert.ok(workouts.masteryRelationshipFor(item.id, priority), `canonical Priority skill relationship: ${scenario}/${item.id}`);
+    } else {
+      assert.strictEqual(specificity, 'authoredPreparation', `authored Priority preparation: ${scenario}/${item.id}`);
+      assert.ok(workouts.isAuthoredPriorityPreparation(item, priority), `explicit Priority preparation identity: ${scenario}/${item.id}`);
+    }
+    assert.strictEqual(item.skillLabRole, 'priority', `Priority UI role: ${scenario}/${item.id}`);
+    assert.strictEqual(item.roleMasterySkill, priority, `Priority mastery identity: ${scenario}/${item.id}`);
+  });
+  assert.ok(secondaryExercises.length <= 1, `no more than one rotating secondary slot: ${scenario}`);
+  secondaryExercises.forEach(item => {
+    assert.strictEqual(item.skillLabRole, 'secondary', `Secondary UI role: ${scenario}/${item.id}`);
+    assert.strictEqual(item.roleMasterySkill, generated.secondarySkill, `Secondary mastery identity: ${scenario}/${item.id}`);
+    assert.ok(
+      workouts.masteryRelationshipFor(item.id, generated.secondarySkill) ||
+        workouts.isAuthoredPriorityPreparation(item, generated.secondarySkill),
+      `Secondary exercise belongs only to its scheduled skill: ${scenario}/${item.id}`
+    );
+    if (item.developmentDiagnostics?.foundationalSkillDirectPractice) {
+      assert.ok(
+        workouts.isCanonicalSkillExercise(item, generated.secondarySkill),
+        `direct Secondary skill uses its canonical track: ${scenario}/${item.id}`
+      );
+      assert.ok(item.workoutRoleLabel.startsWith('Secondary skill'), `direct secondary label: ${scenario}/${item.id}`);
+    } else {
+      assert.ok(item.workoutRoleLabel.startsWith('Foundational practice'), `secondary preparation label: ${scenario}/${item.id}`);
+    }
+  });
+  supportExercises.forEach(item => {
+    assert.strictEqual(item.skillLabRole, 'support', `Support UI role: ${scenario}/${item.id}`);
+    assert.strictEqual(item.roleMasterySkill, null, `Support has no claimed mastery identity: ${scenario}/${item.id}`);
+  });
+  assert.ok(supportExercises.length <= 1, `at most one support exercise: ${scenario}`);
+  if (priority === 'pistolSquat') {
+    generated.exercises
+      .filter(item => workouts.isCanonicalSkillExercise(item, 'pullup'))
+      .forEach(item => {
+        assert.strictEqual(item.workoutRole, 'focusAccessory', `Pull-up only occupies secondary Pistol slot: ${scenario}/${item.id}`);
+        assert.strictEqual(item.roleMasterySkill, 'pullup', `Pull-up is labelled as Pull-up practice: ${scenario}/${item.id}`);
+      });
+  }
+}
+
+const skillLabEquipmentCombinations = [
+  ['none'],
+  ['bands'],
+  ['pullupBar'],
+  ['dipBars'],
+  ['pullupBar', 'bands'],
+  ['pullupBar', 'dipBars'],
+  ['dipBars', 'bands'],
+  ['pullupBar', 'dipBars', 'bands']
+];
+const skillLabRecoveryScenarios = [
+  { name: 'none', recovery: null },
+  { name: 'shoulder-rest', recovery: { area: 'leftShoulder', mode: 'rest' } },
+  { name: 'wrist-reduce', recovery: { area: 'leftWrist', mode: 'reduce' } },
+  { name: 'knee-rest', recovery: { area: 'leftKnee', mode: 'rest' } },
+  { name: 'ankle-rest', recovery: { area: 'leftAnkle', mode: 'rest' } }
+];
+for (const [stage, ratio] of [['beginner', 0], ['middle', 0.5], ['final', 1]]) {
+  for (const mode of ['great', 'normal', 'tired', 'exhausted']) {
+    for (const equipment of skillLabEquipmentCombinations) {
+      for (const recoveryScenario of skillLabRecoveryScenarios) {
+        const state = {
+          rotationIndex: 3,
+          levels: programmeLevelsAt(ratio),
+          history: [],
+          recovery: recoveryScenario.recovery
+        };
+        const generated = workouts.getTodayWorkout({
+          mode,
+          state,
+          profile: { goal: 'pistolSquat', equipment }
+        });
+        const scenario = `${stage}/${mode}/${equipment.join('+')}/${recoveryScenario.name}`;
+        assert.strictEqual(generated.workoutName, 'Skill lab', `Pistol Skill Lab scenario: ${scenario}`);
+        assertSkillLabSemanticRoles(generated, 'pistolSquat', scenario);
+        assert.ok(generated.exercises.every(item => (
+          workouts.isExerciseAllowedForRecovery(item, recoveryScenario.recovery)
+        )), `Skill Lab recovery safety: ${scenario}`);
+        if (['great', 'normal'].includes(mode) && !generated.generationFailure) {
+          const priorityExercises = generated.exercises.filter(item => item.workoutRole === 'primaryFocus');
+          const currentCanonical = priorityExercises.filter(item => (
+            item.sourceTrack === 'pistolSquat' &&
+            item.id === item.progressionMilestoneId
+          ));
+          const secondaryExercises = generated.exercises.filter(item => item.workoutRole === 'focusAccessory');
+          assert.strictEqual(currentCanonical.length, 1, `one current canonical Pistol milestone: ${scenario}`);
+          assert.ok(priorityExercises.length >= 2, `second Pistol-specific exercise: ${scenario}`);
+          assert.strictEqual(secondaryExercises.length, 1, `one rotating secondary skill: ${scenario}`);
+          assert.strictEqual(
+            secondaryExercises[0].sourceTrack,
+            workouts.directSkillTrackKey(generated.secondarySkill),
+            `secondary uses its canonical track: ${scenario}`
+          );
+          assert.strictEqual(
+            secondaryExercises[0].id,
+            secondaryExercises[0].progressionMilestoneId,
+            `secondary uses its current direct milestone: ${scenario}`
+          );
+        }
+      }
+    }
+  }
+}
+
+const preservedExposureHistory = [
+  {
+    date: '2026-01-01T10:00:00.000Z',
+    workout: 'Skill lab',
+    type: 'workout',
+    exercises: [{
+      exerciseId: 'wrist-preparation',
+      progressionTrackKey: 'handstand',
+      progressionMilestoneId: 'wrist-preparation',
+      completedSets: 3,
+      completionStatus: 'completed'
+    }]
+  },
+  {
+    date: '2026-01-02T10:00:00.000Z',
+    workout: 'Pull',
+    type: 'workout',
+    exercises: [{
+      exerciseId: 'active-hang-preparation',
+      progressionTrackKey: 'verticalPull',
+      progressionMilestoneId: 'active-hang-preparation',
+      completedSets: 3,
+      completionStatus: 'completed'
+    }]
+  }
+];
+const preservedExposureSnapshot = JSON.stringify(preservedExposureHistory);
+assert.strictEqual(
+  workouts.secondaryFoundationalSkill(
+    phaseTwoProfiles.pistolSquat,
+    { levels: workouts.createDefaultLevels(), history: preservedExposureHistory }
+  ),
+  'lsit',
+  'an unpractised foundational skill remains ahead of a recently practised former priority'
+);
+assert.strictEqual(
+  JSON.stringify(preservedExposureHistory),
+  preservedExposureSnapshot,
+  'changing Priority skill does not mutate or erase direct-practice history'
+);
 
 for (const [goal, profile] of Object.entries(phaseTwoProfiles)) {
   for (const ratio of [0, 0.5, 1]) {
@@ -1298,6 +1468,11 @@ assert.ok(indexSource.includes('exerciseHelpContent'));
 assert.ok(appSource.includes('Number.isFinite(item.completedCount) && item.completedCount > 0'));
 assert.ok(appSource.includes('exercises.some(exercise => !exercise.isAddOn)'));
 assert.ok(appSource.includes("pistolSquat: 'Pistol squat'"));
+assert.ok(appSource.includes('function exerciseWorkoutRoleLabel('));
+assert.ok(appSource.includes("return 'Priority skill'"));
+assert.ok(appSource.includes('Secondary skill ·'));
+assert.ok(appSource.includes('Foundational practice'));
+assert.ok(workoutCssSource.includes('.exercise-role-label'));
 const focusLabelsSource = appSource.match(/const goalLabels = \{([\s\S]*?)\n\};/)?.[1] || '';
 assert.deepStrictEqual(
   Array.from(focusLabelsSource.matchAll(/(pullup|handstand|lsit|pistolSquat):/g), match => match[1]),

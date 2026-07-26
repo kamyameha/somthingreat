@@ -1660,6 +1660,7 @@ function renderGeneratedWorkout() {
   preview.innerHTML = '';
   (generated.exercises || []).filter(Boolean).forEach((exercise, index) => {
     const name = exerciseDisplayName(exercise);
+    const roleLabel = exerciseWorkoutRoleLabel(exercise, generated);
     const hasHelp = !exercise.isAddOn && Boolean(getExerciseHelp(name));
     const swapAudit = previewSwapAudit(exercise);
     const canSwap = swapAudit.finalCandidates.length > 0;
@@ -1672,6 +1673,7 @@ function renderGeneratedWorkout() {
     row.className = 'preview-row preview-action-row';
     row.innerHTML = `
       <div class="preview-exercise-copy">
+        ${roleLabel ? `<small class="exercise-role-label">${escapeHTML(roleLabel)}</small>` : ''}
         <strong>${escapeHTML(name)}</strong>
         <span>${escapeHTML(exercise.prescription)}</span>
       </div>
@@ -1799,6 +1801,19 @@ function exerciseDisplayName(exerciseOrName) {
   return name || '';
 }
 
+function exerciseWorkoutRoleLabel(exercise, workout = null) {
+  if (!exercise || exercise.isAddOn || workout?.workoutName !== 'Skill lab') return '';
+  if (exercise.workoutRoleLabel) return exercise.workoutRoleLabel;
+  if (exercise.workoutRole === 'primaryFocus') return 'Priority skill';
+  if (exercise.workoutRole === 'focusAccessory') {
+    const secondarySkill = exercise.roleMasterySkill || workout?.secondarySkill;
+    return secondarySkill && goalLabels[secondarySkill]
+      ? `Secondary skill · ${goalLabels[secondarySkill]}`
+      : 'Foundational practice';
+  }
+  return exercise.workoutRole === 'generalSupport' ? 'Support' : '';
+}
+
 function slugForKey(value = '') {
   return String(value)
     .toLowerCase()
@@ -1909,6 +1924,10 @@ function renderExercises() {
     const isOpen = exerciseKey === openExerciseTrackKey;
     const isComplete = isExerciseComplete(exercise);
     const exerciseName = exerciseDisplayName(exercise);
+    const roleLabel = exerciseWorkoutRoleLabel(exercise, state.current);
+    const roleMarkup = roleLabel
+      ? `<small class="exercise-role-label">${escapeHTML(roleLabel)}</small>`
+      : '';
     const chipPrescription = isComplete ? '' : `<em>${escapeHTML(exerciseChipPrescription(exercise))}</em>`;
     const card = document.createElement('div');
     const isWarmup = exerciseName === 'Warm-up';
@@ -1941,13 +1960,16 @@ function renderExercises() {
       </div>`;
     card.innerHTML = `
       <button class="exercise-chip-toggle" type="button" data-track="${escapeHTML(exerciseKey)}">
-        <span>${escapeHTML(exerciseName)}</span>
+        <span>${roleMarkup}${escapeHTML(exerciseName)}</span>
         ${chipPrescription}
         <i aria-hidden="true"></i>
       </button>
       <div class="exercise-card-body">
         <div class="exercise-card-header">
-          <h3>${escapeHTML(exerciseName)} - ${escapeHTML(exercise.prescription)}</h3>
+          <div class="exercise-card-heading">
+            ${roleMarkup}
+            <h3>${escapeHTML(exerciseName)} - ${escapeHTML(exercise.prescription)}</h3>
+          </div>
           <div class="exercise-card-actions">${swapButton}${helpButton}</div>
         </div>
         <div class="set-list">${setRows}</div>
