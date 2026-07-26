@@ -2004,7 +2004,7 @@ body.today-active #today {
 }
 
 body.today-active .energy-grid {
-  margin-top: 20px;
+  margin-top: 60px;
 }
 
 .energy-grid::-webkit-scrollbar {
