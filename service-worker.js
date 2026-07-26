@@ -1,5 +1,5 @@
 importScripts('./app-version.js');
-// Recovery eligibility, semantic ordering, overscroll, and add-on completion release.
+// Menu boundary scrolling and responsive equipment-chip release.
 
 const APP_VERSION = self.SOMTHINGREAT_VERSION || self.APP_VERSION || 'dev';
 const CACHE_NAME = `somthingreat-${APP_VERSION}`;

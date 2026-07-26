@@ -68,6 +68,7 @@ let swapAvailabilityMessageTimer = null;
 let accountReturnState = null;
 let accountHistoryEntryActive = false;
 let accountHistoryBackInFlight = false;
+let accountScrollBoundaryGuard = null;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support', 'tracker']);
 const AUTH_LOADING_MIN_MS = 450;
@@ -666,6 +667,50 @@ function setAccountActive(active) {
   document.documentElement.classList.toggle('account-active', active);
   document.body.classList.toggle('account-active', active);
   if (active) setThemeColor('#1c1c1c');
+  else removeAccountScrollBoundaryGuard();
+}
+
+function removeAccountScrollBoundaryGuard(panel = null) {
+  if (!accountScrollBoundaryGuard) return;
+  if (panel && accountScrollBoundaryGuard.panel !== panel) return;
+  accountScrollBoundaryGuard.cleanup();
+  accountScrollBoundaryGuard = null;
+}
+
+function installAccountScrollBoundaryGuard(panel) {
+  removeAccountScrollBoundaryGuard();
+  if (!panel?.addEventListener) return;
+
+  let startX = 0;
+  let startY = 0;
+  const onTouchStart = event => {
+    if (event.touches?.length !== 1) return;
+    startX = event.touches[0].clientX;
+    startY = event.touches[0].clientY;
+  };
+  const onTouchMove = event => {
+    if (event.touches?.length !== 1) return;
+    const deltaX = event.touches[0].clientX - startX;
+    const deltaY = event.touches[0].clientY - startY;
+    if (Math.abs(deltaY) <= Math.abs(deltaX)) return;
+
+    const maximumScrollTop = Math.max(0, panel.scrollHeight - panel.clientHeight);
+    const atTop = panel.scrollTop <= 0;
+    const atBottom = panel.scrollTop >= maximumScrollTop - 1;
+    if (maximumScrollTop <= 0 || (atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+      event.preventDefault();
+    }
+  };
+
+  panel.addEventListener('touchstart', onTouchStart, { passive: true });
+  panel.addEventListener('touchmove', onTouchMove, { passive: false });
+  accountScrollBoundaryGuard = {
+    panel,
+    cleanup() {
+      panel.removeEventListener('touchstart', onTouchStart);
+      panel.removeEventListener('touchmove', onTouchMove);
+    }
+  };
 }
 
 function ensureAccountHistoryEntry() {
@@ -804,6 +849,7 @@ function closeAccountModal(fromHistory = false) {
   const panel = document.getElementById('accountPanel');
   const submenuPanel = document.getElementById('accountSubmenuPanel');
 
+  removeAccountScrollBoundaryGuard();
   panel?.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
   panel?.classList.add('hidden');
   panel?.setAttribute('aria-hidden', 'true');
@@ -3338,6 +3384,7 @@ function openAccountMain() {
 
   setAccountActive(true);
   renderAccountView('main', { panel, content: loggedIn });
+  installAccountScrollBoundaryGuard(panel);
   focusAccountViewHeading('main');
   updateUpdateBanner();
 }
@@ -3349,6 +3396,7 @@ function hideAllAccountViews() {
 function hideAccountMainPanel() {
   const panel = document.getElementById('accountPanel');
   if (!panel) return;
+  removeAccountScrollBoundaryGuard(panel);
   panel.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
   panel.classList.add('hidden');
   panel.setAttribute('aria-hidden', 'true');
@@ -3358,6 +3406,7 @@ function hideAccountMainPanel() {
 function hideAccountSubmenuPanel() {
   const submenuPanel = document.getElementById('accountSubmenuPanel');
   if (!submenuPanel) return;
+  removeAccountScrollBoundaryGuard(submenuPanel);
   submenuPanel.classList.remove('account-submenu-mode');
   submenuPanel.classList.add('hidden');
   submenuPanel.setAttribute('aria-hidden', 'true');
@@ -3380,6 +3429,7 @@ function openAccountSubmenu(view) {
   submenuPanel.classList.remove('hidden');
   submenuPanel.setAttribute('aria-hidden', 'false');
   submenuPanel.inert = false;
+  installAccountScrollBoundaryGuard(submenuPanel);
   focusAccountViewHeading(view);
   updateUpdateBanner();
 }
@@ -4264,6 +4314,7 @@ document.addEventListener('click', event => {
 
   if (event.target.matches('.nav-btn')) {
     const nextScreen = event.target.dataset.screen;
+    if (accountReturnState || accountHistoryEntryActive) closeAccountModal();
     resetMainRouteScroll();
     if (nextScreen !== 'today') resetTodaySession();
     document.querySelectorAll('.nav-btn').forEach(b => {

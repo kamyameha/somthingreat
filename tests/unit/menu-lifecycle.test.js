@@ -110,6 +110,7 @@ function runCloseFlow(route) {
   };
   vm.createContext(context);
   vm.runInContext(`
+    var accountScrollBoundaryGuard = null;
     var accountReturnState = {
       activeScreenId: '${isToday ? 'today' : route}',
       appScrollTop: 91,
@@ -125,6 +126,7 @@ function runCloseFlow(route) {
     };
     var accountHistoryEntryActive = false;
     var accountHistoryBackInFlight = false;
+    ${functionSource('removeAccountScrollBoundaryGuard')}
     ${functionSource('setAccountActive')}
     ${functionSource('restoreAccountReturnState')}
     ${functionSource('closeAccountModal')}
@@ -170,6 +172,6 @@ assert.match(functionSource('openAccountMain'), /ensureAccountHistoryEntry\(\)/)
 assert.match(functionSource('openAccountSubmenu'), /ensureAccountHistoryEntry\(\)/);
 assert.match(functionSource('resetAuthUI'), /accountReturnState \|\| accountHistoryEntryActive\) closeAccountModal\(\)/);
 assert.match(functionSource('renderAccount'), /!currentUser[\s\S]*accountReturnState \|\| accountHistoryEntryActive\) closeAccountModal\(\)/);
-assert.doesNotMatch(account, /body\.account-active \.app/);
+assert.match(account, /body\.account-active \.app\s*\{[^}]*height:\s*100dvh;[^}]*overflow:\s*hidden;[^}]*overscroll-behavior:\s*none/s);
 
 console.log('Validated repeatable Menu cleanup for Today, Progress, Activity, and workout states.');
