@@ -137,31 +137,14 @@
   }
 
   function injectActivityCounterUI() {
-    const card = document.getElementById('customChecklistCard');
-    if (card) {
-      const heading = card.querySelector('h2');
-      const copy = card.querySelector('p');
-      if (heading) heading.textContent = 'Activity counter';
-      if (copy) copy.remove();
-    }
     const form = document.getElementById('customChecklistForm');
     const nameInput = document.getElementById('customChecklistNameInput');
     const targetInput = document.getElementById('customChecklistTargetInput');
     const createButton = document.getElementById('createCustomChecklistBtn');
     if (!form || !nameInput) return;
-    nameInput.classList.add('hidden');
-    if (targetInput) targetInput.placeholder = 'Target';
-    if (createButton) createButton.textContent = 'Create counter';
-    let select = document.getElementById('activityQuickSelect');
-    if (!select) {
-      select = document.createElement('select');
-      select.id = 'activityQuickSelect';
-      select.className = 'activity-select';
-      select.setAttribute('aria-label', 'Select an activity');
-      select.innerHTML = '<option value="">Select an activity</option><option value="Stairs">Stairs</option><option value="Walking">Walking</option><option value="Mobility">Mobility</option><option value="Cycling">Cycling</option>';
-      form.insertBefore(select, nameInput);
-      select.addEventListener('change', () => { nameInput.value = select.value; });
-    }
+    nameInput.placeholder = 'Select an activity';
+    if (targetInput) targetInput.placeholder = 'Enter the target';
+    if (createButton) createButton.textContent = 'Create tracker';
   }
 
   function installActivityCounter() {
@@ -193,8 +176,7 @@
     };
 
     window.createCustomChecklist = createCustomChecklist = function () {
-      const select = document.getElementById('activityQuickSelect');
-      const name = select?.value || document.getElementById('customChecklistNameInput')?.value.trim() || '';
+      const name = document.getElementById('customChecklistNameInput')?.value.trim() || '';
       const type = document.querySelector('input[name="customChecklistType"]:checked')?.value || 'rounds';
       const target = Math.round(Number(document.getElementById('customChecklistTargetInput')?.value || 0));
       const max = type === 'minutes' ? 240 : 120;
@@ -208,34 +190,13 @@
         saveActivityTimer(previous?.type === 'minutes' && oldTimer ? { ...oldTimer, name, target, completedSoundPlayed: false } : { name, target, elapsedSeconds: 0, running: false, startedAt: null, completedSoundPlayed: false });
       } else saveActivityTimer(null);
       editingActivityCounter = false;
-      if (select) select.value = '';
       const button = document.getElementById('createCustomChecklistBtn');
-      if (button) button.textContent = 'Create counter';
+      if (button) button.textContent = 'Create tracker';
       resetCustomChecklistForm();
       saveState();
+      closeAccountModal();
       renderToday();
-    };
-
-    window.openCustomChecklistEdit = openCustomChecklistEdit = function () {
-      const checklist = state.customChecklist;
-      if (!checklist) return;
-      editingActivityCounter = true;
-      document.getElementById('customChecklistActive')?.classList.add('hidden');
-      document.getElementById('energyCard')?.classList.remove('hidden');
-      document.getElementById('customChecklistCard')?.classList.remove('hidden');
-      document.getElementById('customChecklistForm')?.classList.remove('hidden');
-      const select = document.getElementById('activityQuickSelect');
-      const name = document.getElementById('customChecklistNameInput');
-      const target = document.getElementById('customChecklistTargetInput');
-      const type = document.querySelector(`input[name="customChecklistType"][value="${checklist.type}"]`);
-      if (select) select.value = checklist.name;
-      if (name) name.value = checklist.name;
-      if (target) target.value = checklist.target;
-      if (type) type.checked = true;
-      const button = document.getElementById('createCustomChecklistBtn');
-      if (button) button.textContent = 'Update counter';
-      setCustomChecklistMessage('');
-      window.scrollTo({ top: 0, behavior: 'auto' });
+      renderCustomChecklist();
     };
 
     window.cancelCustomChecklist = cancelCustomChecklist = function () {

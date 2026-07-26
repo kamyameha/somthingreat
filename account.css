@@ -140,7 +140,7 @@ body {
 html.account-active,
 body.account-active,
 body.account-active .app {
-  background-color: var(--main);
+  background-color: #1c1c1c;
 }
 
 .account-panel.account-modal.account-main-mode {
@@ -296,9 +296,10 @@ body.account-active .app {
   min-height: 100vh;
   min-height: 100dvh;
   padding: 0;
-  background-color: var(--main);
+  background-color: #1c1c1c;
   color: #ffffff;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .account-submenu-panel.hidden {
@@ -308,13 +309,11 @@ body.account-active .app {
 .account-submenu-panel .account-submenu-panel__content {
   position: relative;
   width: min(100vw, var(--app-width));
-  height: 100vh;
-  height: 100dvh;
+  height: auto;
   max-height: none;
   min-height: 100dvh;
   margin: 0 auto;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
   padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(80px + env(safe-area-inset-bottom));
   border: 0;
   border-radius: 0;
@@ -1348,5 +1347,412 @@ body.account-active .app {
   .account-panel.account-password-mode .account-modal-content {
     width: min(100%, 680px);
     padding: 0;
+  }
+}
+
+/* Menu and submenu tile system */
+:root {
+  --account-tile-gap: 2px;
+  --account-header-height: 200px;
+}
+
+.account-panel.account-modal.account-main-mode,
+.account-submenu-panel {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: env(safe-area-inset-top) 0 0;
+  display: block;
+  background: #1c1c1c;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.account-panel.account-modal.account-main-mode .account-modal-content,
+.account-submenu-panel .account-submenu-panel__content {
+  width: min(100%, var(--app-width));
+  height: auto;
+  max-height: none;
+  min-height: calc(100dvh - env(safe-area-inset-top));
+  margin: 0 auto;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: var(--account-tile-gap);
+  border: 0;
+  border-radius: 0;
+  background: #1c1c1c;
+  box-shadow: none;
+  overflow: visible !important;
+}
+
+.account-panel.account-modal.account-main-mode .account-tile-header,
+.account-submenu-panel .account-tile-header {
+  flex: 0 0 var(--account-header-height);
+  width: 100%;
+  height: var(--account-header-height);
+  display: grid;
+  grid-template-columns: minmax(0, 252fr) minmax(0, 142fr);
+  gap: var(--account-tile-gap);
+  margin: 0;
+}
+
+.account-header-tile {
+  min-width: 0;
+  height: var(--account-header-height);
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+}
+
+.account-header-brand-tile,
+.account-header-back-tile {
+  background: #ffffff;
+}
+
+.account-header-action-tile {
+  background: var(--main);
+}
+
+.account-menu-logo {
+  display: block;
+  width: min(134px, calc(100% - 48px));
+  height: auto;
+}
+
+.account-panel.account-modal.account-main-mode #accountModalTitle,
+.account-submenu-panel #accountSubmenuTitle {
+  position: absolute;
+}
+
+.account-panel.account-modal.account-main-mode .menu-close-btn,
+.account-submenu-panel .menu-close-btn,
+.account-submenu-panel .account-back-btn {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+}
+
+.account-panel.account-modal.account-main-mode .menu-close-btn::before,
+.account-submenu-panel .menu-close-btn::before,
+.account-submenu-panel .account-back-btn::before {
+  content: "";
+  display: block;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  background: currentColor;
+}
+
+.account-panel.account-modal.account-main-mode .menu-close-btn,
+.account-submenu-panel .menu-close-btn {
+  color: #ffffff;
+}
+
+.account-panel.account-modal.account-main-mode .menu-close-btn::before,
+.account-submenu-panel .menu-close-btn::before {
+  mask: url("Assets/x.svg") center / 34px 34px no-repeat;
+  -webkit-mask: url("Assets/x.svg") center / 34px 34px no-repeat;
+}
+
+.account-submenu-panel .account-back-btn {
+  color: var(--main);
+}
+
+.account-submenu-panel .account-back-btn::before {
+  mask: url("Assets/arrow-left.svg") center / 34px 34px no-repeat;
+  -webkit-mask: url("Assets/arrow-left.svg") center / 34px 34px no-repeat;
+}
+
+.account-panel.account-modal.account-main-mode .menu-close-btn:focus-visible,
+.account-submenu-panel .menu-close-btn:focus-visible,
+.account-submenu-panel .account-back-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.account-panel.account-modal.account-main-mode #accountMainView,
+.account-submenu-panel .account-view {
+  flex: 1 0 auto;
+  width: 100%;
+  min-height: calc(100dvh - env(safe-area-inset-top) - var(--account-header-height) - var(--account-tile-gap));
+  margin: 0;
+  padding: 52px 28px calc(44px + env(safe-area-inset-bottom)) !important;
+  border-radius: var(--radius);
+  background: var(--main);
+  color: #ffffff;
+  overflow: visible;
+}
+
+.account-panel.account-modal.account-main-mode #accountMainView {
+  position: static;
+  display: flex;
+  flex-direction: column;
+}
+
+.account-panel.account-modal.account-main-mode #syncStatus,
+.account-panel.account-modal.account-main-mode .account-list-btn span {
+  display: none;
+}
+
+.account-panel.account-modal.account-main-mode .account-section {
+  padding: 0;
+  border: 0;
+}
+
+.account-panel.account-modal.account-main-mode .account-section + .account-section {
+  margin-top: 48px;
+}
+
+.account-panel.account-modal.account-main-mode .account-section h3 {
+  margin: 0 0 3px;
+  color: #F7F3E6;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.account-panel.account-modal.account-main-mode .account-list-btn {
+  width: auto;
+  min-height: 36px;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 32px;
+  line-height: 1.12;
+  font-weight: 500;
+  text-align: left;
+}
+
+.account-panel.account-modal.account-main-mode .account-list-btn + .account-list-btn {
+  margin-top: 4px;
+}
+
+.account-panel.account-modal.account-main-mode .account-menu-footer {
+  position: static !important;
+  width: 100%;
+  margin-top: auto !important;
+  padding: 72px 0 0 !important;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.account-panel.account-modal.account-main-mode .account-menu-footer-left {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.account-panel.account-modal.account-main-mode #accountEmail,
+.account-panel.account-modal.account-main-mode #logoutBtn,
+.account-panel.account-modal.account-main-mode .menu-footer-link {
+  margin: 0;
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 400;
+}
+
+.account-panel.account-modal.account-main-mode #accountEmail {
+  max-width: 220px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.account-panel.account-modal.account-main-mode #logoutBtn {
+  width: auto;
+  min-height: 44px;
+  margin-top: -12px;
+  padding: 12px 0;
+  border: 0;
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.account-submenu-panel .account-view {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  column-gap: 18px;
+  row-gap: 18px;
+}
+
+.account-submenu-panel .account-view.hidden {
+  display: none !important;
+}
+
+.account-submenu-panel .account-view > .text-btn {
+  display: none !important;
+}
+
+.account-submenu-panel .account-view h2 {
+  flex: 0 0 100%;
+  width: 100%;
+  margin: 0 0 12px;
+  color: #ffffff;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 500;
+}
+
+.account-submenu-panel .account-view > .muted {
+  flex: 0 0 100%;
+  width: 100%;
+  margin: 0 0 26px;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 400;
+}
+
+.account-submenu-panel .account-goal-options {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.account-submenu-panel .account-goal-options .option-row,
+.account-submenu-panel .account-goal-options .option-row:nth-child(n + 4) {
+  grid-column: auto;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.account-submenu-panel .option-row:has(input:checked),
+.account-submenu-panel .custom-type-row label:has(input:checked) {
+  border-color: #F7F3E6;
+  background: #F7F3E6;
+  color: var(--main);
+}
+
+.account-submenu-panel .account-full-btn {
+  background: #F7F3E6;
+  border-color: #F7F3E6;
+}
+
+.account-submenu-panel #accountTrackerView {
+  display: flex;
+}
+
+.account-submenu-panel #accountTrackerView.hidden {
+  display: none !important;
+}
+
+.account-submenu-panel #customChecklistForm {
+  flex: 0 0 100%;
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+.account-submenu-panel #customChecklistNameInput,
+.account-submenu-panel #customChecklistTargetInput,
+.account-submenu-panel #customChecklistMessage,
+.account-submenu-panel #createCustomChecklistBtn {
+  grid-column: 1 / -1;
+}
+
+.account-submenu-panel #customChecklistNameInput,
+.account-submenu-panel #customChecklistTargetInput {
+  width: 100% !important;
+  height: 46px !important;
+  min-height: 46px;
+  margin: 0 !important;
+  padding: 0 21px !important;
+  border: 1px solid #F7F3E6 !important;
+  border-radius: 20px !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  resize: none;
+}
+
+.account-submenu-panel #customChecklistNameInput::placeholder,
+.account-submenu-panel #customChecklistTargetInput::placeholder {
+  color: rgba(247, 243, 230, 0.72);
+}
+
+.account-submenu-panel .custom-type-row {
+  grid-column: 1 / -1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+  margin: 9px 0 !important;
+}
+
+.account-submenu-panel .custom-type-row label {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid #F7F3E6 !important;
+  border-radius: 20px !important;
+  background: transparent !important;
+  color: #F7F3E6 !important;
+  font-weight: 500;
+}
+
+.account-submenu-panel .custom-type-row label:has(input:checked) {
+  background: #F7F3E6 !important;
+  color: var(--main) !important;
+}
+
+.account-submenu-panel #createCustomChecklistBtn {
+  margin-top: 29px !important;
+}
+
+@media (max-width: 350px) {
+  .account-panel.account-modal.account-main-mode #accountMainView,
+  .account-submenu-panel .account-view {
+    padding-right: 20px !important;
+    padding-left: 20px !important;
+  }
+
+  .account-panel.account-modal.account-main-mode .account-list-btn {
+    font-size: 29px;
+  }
+
+  .account-submenu-panel .account-goal-options,
+  .account-submenu-panel .custom-type-row,
+  .account-submenu-panel .recovery-mode-row {
+    gap: 12px !important;
+  }
+
+  .account-submenu-panel .account-goal-options .option-row {
+    padding: 0 6px;
+    font-size: 16px;
   }
 }

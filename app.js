@@ -66,7 +66,7 @@ let workoutCompletionSaveInProgress = false;
 let renderedWorkoutSessionId = null;
 let swapAvailabilityMessageTimer = null;
 
-const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support']);
+const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support', 'tracker']);
 const AUTH_LOADING_MIN_MS = 450;
 const TODAY_PREVIEW_DELAY_MS = 900;
 const TODAY_REDUCED_PREVIEW_DELAY_MS = 600;
@@ -654,14 +654,15 @@ function syncScreenThemeColor() {
   const root = document.documentElement;
   const isConfirmationScreen = root.classList.contains('confirmation-active');
   const isBlueScreen = root.classList.contains('onboarding-active') ||
-    root.classList.contains('account-active');
-  setThemeColor(isConfirmationScreen ? '#D2F672' : isBlueScreen ? '#012ded' : '#ffffff');
+    root.classList.contains('workout-active');
+  const isMenuScreen = root.classList.contains('account-active');
+  setThemeColor(isConfirmationScreen ? '#D2F672' : isMenuScreen ? '#1c1c1c' : isBlueScreen ? '#012ded' : '#ffffff');
 }
 
 function setAccountActive(active) {
   document.documentElement.classList.toggle('account-active', active);
   document.body.classList.toggle('account-active', active);
-  if (active) setThemeColor('#012ded');
+  if (active) setThemeColor('#1c1c1c');
 }
 
 function focusAccountViewHeading(view) {
@@ -1252,8 +1253,6 @@ function resetTodaySession() {
 }
 
 function hideCustomChecklistViews() {
-  document.getElementById('customChecklistCard')?.classList.add('hidden');
-  document.getElementById('customChecklistForm')?.classList.add('hidden');
   document.getElementById('customChecklistActive')?.classList.add('hidden');
   document.getElementById('customChecklistEdit')?.classList.add('hidden');
 }
@@ -1273,9 +1272,7 @@ function setEditCustomChecklistMessage(message = '', type = 'info') {
 }
 
 function openCustomChecklistForm() {
-  document.getElementById('energyCard')?.classList.add('hidden');
-  document.getElementById('customChecklistCard')?.classList.add('hidden');
-  document.getElementById('customChecklistForm')?.classList.remove('hidden');
+  openAccountSubmenu('tracker');
   setCustomChecklistMessage('');
 }
 
@@ -3288,9 +3285,10 @@ function renderAccountView(view, { panel = null, content = null } = {}) {
   const target = document.getElementById(`account${view[0].toUpperCase()}${view.slice(1)}View`);
   if (target) target.classList.remove('hidden');
   const title = document.getElementById('accountModalTitle');
-  if (title) title.textContent = 'somthingreat';
+  if (title) title.textContent = 'Menu';
   const submenuTitle = document.getElementById('accountSubmenuTitle');
-  if (submenuTitle) submenuTitle.textContent = 'somthingreat';
+  const viewTitle = target?.querySelector('.account-view-title')?.textContent?.trim();
+  if (submenuTitle) submenuTitle.textContent = viewTitle || 'Submenu';
 
   if (panel) panel.scrollTop = 0;
   if (content) content.scrollTop = 0;
@@ -3302,6 +3300,7 @@ function renderAccountView(view, { panel = null, content = null } = {}) {
     populateAccountRecovery();
   }
   if (view === 'support') resetSupportForm();
+  if (view === 'tracker') setCustomChecklistMessage('');
   setPanelMessage('accountGoalMessage', '');
   setPanelMessage('accountEquipmentMessage', '');
   setPanelMessage('accountRecoveryMessage', '');
@@ -3438,8 +3437,8 @@ function removeAccountRecovery() {
 
 async function saveAccountGoal() {
   const goal = document.querySelector('input[name="accountGoal"]:checked')?.value;
-  if (!goal) return setPanelMessage('accountGoalMessage', 'Choose a goal first.', 'error');
-  setPanelMessage('accountGoalMessage', 'Saving goal...', 'info');
+  if (!goal) return setPanelMessage('accountGoalMessage', 'Choose a priority skill first.', 'error');
+  setPanelMessage('accountGoalMessage', 'Saving priority...', 'info');
   state.profile = { ...(state.profile || {}), goal, updatedAt: new Date().toISOString() };
   state.current = null;
   state.generated = null;
@@ -3448,7 +3447,7 @@ async function saveAccountGoal() {
   renderAll();
   populateAccountGoal();
   renderAccountMainSummary();
-  setPanelMessage('accountGoalMessage', 'Goal saved.', 'success');
+  setPanelMessage('accountGoalMessage', 'Priority saved.', 'success');
 }
 
 async function saveAccountEquipment() {
