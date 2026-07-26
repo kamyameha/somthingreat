@@ -5,7 +5,7 @@
   "scripts": {
     "release": "node scripts/release.js",
     "validate:release": "node scripts/validate-release.js",
-    "test": "node tests/unit/auth-ui-reset.test.js && node tests/unit/modal-visual-system.test.js && node tests/unit/menu-tile-system.test.js && node tests/unit/workout-inline-completion.test.js && node tests/unit/workouts-state.test.js",
+    "test": "node tests/unit/auth-ui-reset.test.js && node tests/unit/modal-visual-system.test.js && node tests/unit/menu-tile-system.test.js && node tests/unit/menu-lifecycle.test.js && node tests/unit/workout-inline-completion.test.js && node tests/unit/workouts-state.test.js",
     "simulate:programme": "node scripts/simulate-programme.js",
     "qa": "node --check auth.js && node --check workouts.js && node --check state.js && node --check account.js && node --check render.js && node --check app.js && node --check service-worker.js && npm run validate:release && npm test && npm run simulate:programme",
     "qa:visual": "playwright test"

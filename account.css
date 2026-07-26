@@ -138,8 +138,7 @@ body {
 }
 
 html.account-active,
-body.account-active,
-body.account-active .app {
+body.account-active {
   background-color: #1c1c1c;
 }
 
@@ -1352,7 +1351,7 @@ body.account-active .app {
 
 /* Menu and submenu tile system */
 :root {
-  --account-tile-gap: 2px;
+  --account-tile-gap: 0px;
   --account-header-height: 200px;
 }
 
@@ -1364,7 +1363,7 @@ body.account-active .app {
   height: 100dvh;
   min-height: 100dvh;
   margin: 0;
-  padding: env(safe-area-inset-top) 0 0;
+  padding: 0;
   display: block;
   background: #1c1c1c;
   overflow-y: auto !important;
@@ -1378,12 +1377,12 @@ body.account-active .app {
   width: min(100%, var(--app-width));
   height: auto;
   max-height: none;
-  min-height: calc(100dvh - env(safe-area-inset-top));
+  min-height: 100dvh;
   margin: 0 auto;
   padding: 0 !important;
   display: flex;
   flex-direction: column;
-  gap: var(--account-tile-gap);
+  gap: 0;
   border: 0;
   border-radius: 0;
   background: #1c1c1c;
@@ -1398,7 +1397,7 @@ body.account-active .app {
   height: var(--account-header-height);
   display: grid;
   grid-template-columns: minmax(0, 252fr) minmax(0, 142fr);
-  gap: var(--account-tile-gap);
+  gap: 0;
   margin: 0;
 }
 
@@ -1465,8 +1464,26 @@ body.account-active .app {
   color: #ffffff;
 }
 
+.account-panel.account-modal.account-main-mode #closeAccountModalBtn,
+.account-submenu-panel #closeAccountSubmenuBtn {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  color: #ffffff;
+}
+
 .account-panel.account-modal.account-main-mode .menu-close-btn::before,
 .account-submenu-panel .menu-close-btn::before {
+  mask: url("Assets/x.svg") center / 34px 34px no-repeat;
+  -webkit-mask: url("Assets/x.svg") center / 34px 34px no-repeat;
+}
+
+.account-panel.account-modal.account-main-mode #closeAccountModalBtn::before,
+.account-submenu-panel #closeAccountSubmenuBtn::before {
+  width: 34px;
+  height: 34px;
+  background: currentColor;
   mask: url("Assets/x.svg") center / 34px 34px no-repeat;
   -webkit-mask: url("Assets/x.svg") center / 34px 34px no-repeat;
 }
@@ -1491,7 +1508,7 @@ body.account-active .app {
 .account-submenu-panel .account-view {
   flex: 1 0 auto;
   width: 100%;
-  min-height: calc(100dvh - env(safe-area-inset-top) - var(--account-header-height) - var(--account-tile-gap));
+  min-height: calc(100dvh - var(--account-header-height));
   margin: 0;
   padding: 52px 28px calc(44px + env(safe-area-inset-bottom)) !important;
   border-radius: var(--radius);
@@ -1665,38 +1682,17 @@ body.account-active .app {
 }
 
 .account-submenu-panel #customChecklistForm {
-  flex: 0 0 100%;
-  width: 100%;
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 18px !important;
+  display: contents !important;
 }
 
-.account-submenu-panel #customChecklistNameInput,
+.account-submenu-panel #activityQuickSelect,
 .account-submenu-panel #customChecklistTargetInput,
 .account-submenu-panel #customChecklistMessage,
 .account-submenu-panel #createCustomChecklistBtn {
-  grid-column: 1 / -1;
+  flex: 0 0 100%;
+  width: 100%;
 }
 
-.account-submenu-panel #customChecklistNameInput,
-.account-submenu-panel #customChecklistTargetInput {
-  width: 100% !important;
-  height: 46px !important;
-  min-height: 46px;
-  margin: 0 !important;
-  padding: 0 21px !important;
-  border: 1px solid #F7F3E6 !important;
-  border-radius: 20px !important;
-  background: transparent !important;
-  color: #ffffff !important;
-  font: inherit !important;
-  font-size: 16px !important;
-  line-height: 1 !important;
-  resize: none;
-}
-
-.account-submenu-panel #customChecklistNameInput::placeholder,
 .account-submenu-panel #customChecklistTargetInput::placeholder {
   color: rgba(247, 243, 230, 0.72);
 }
@@ -1707,7 +1703,7 @@ body.account-active .app {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 18px !important;
-  margin: 9px 0 !important;
+  margin: 0 !important;
 }
 
 .account-submenu-panel .custom-type-row label {
@@ -1731,7 +1727,7 @@ body.account-active .app {
 }
 
 .account-submenu-panel #createCustomChecklistBtn {
-  margin-top: 29px !important;
+  margin: 33px 0 0 !important;
 }
 
 @media (max-width: 350px) {

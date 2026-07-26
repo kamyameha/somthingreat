@@ -21,10 +21,13 @@ assert.doesNotMatch(submenuHeader, /account-menu-logo/);
 assert.match(submenuHeader, /id="closeAccountSubmenuBtn"[^>]*aria-label="Close menu"/);
 
 assert.match(account, /--account-header-height:\s*200px/);
+assert.match(account, /--account-tile-gap:\s*0px/);
 assert.match(account, /grid-template-columns:\s*minmax\(0,\s*252fr\)\s+minmax\(0,\s*142fr\)/);
 assert.match(account, /\.account-panel\.account-modal\.account-main-mode \.menu-close-btn::before,[\s\S]*?width:\s*34px;[\s\S]*?height:\s*34px;/);
 assert.match(account, /\.account-submenu-panel \.account-back-btn::before\s*\{[^}]*34px[^}]*arrow-left\.svg/s);
-assert.match(account, /min-height:\s*calc\(100dvh - env\(safe-area-inset-top\) - var\(--account-header-height\) - var\(--account-tile-gap\)\)/);
+assert.match(account, /\.account-panel\.account-modal\.account-main-mode,[\s\S]*?padding:\s*0;/);
+assert.match(account, /\.account-modal-content,[\s\S]*?min-height:\s*100dvh;[\s\S]*?gap:\s*0;/);
+assert.match(account, /min-height:\s*calc\(100dvh - var\(--account-header-height\)\)/);
 assert.match(account, /padding:\s*52px 28px calc\(44px \+ env\(safe-area-inset-bottom\)\)/);
 assert.match(account, /\.account-panel\.account-modal\.account-main-mode \.account-modal-content,[\s\S]*?overflow:\s*visible !important;/);
 assert.match(account, /\.account-submenu-panel \.account-submenu-panel__content\s*\{[\s\S]*?overflow:\s*visible !important;/);
@@ -48,17 +51,30 @@ assert.match(html, /id="saveAccountGoalBtn"[^>]*>Update priority<\/button>/);
 const trackerView = html.match(/<div id="accountTrackerView"[\s\S]*?<\/section>\s*<\/div>/)?.[0] || '';
 assert.match(trackerView, /<h2[^>]*>Extra activity<\/h2>/);
 assert.match(trackerView, /Count rounds or track time outside your workouts\./);
-assert.ok(trackerView.indexOf('id="customChecklistNameInput"') < trackerView.indexOf('class="custom-type-row"'));
+assert.ok(trackerView.indexOf('id="activityQuickSelect"') < trackerView.indexOf('class="custom-type-row"'));
 assert.ok(trackerView.indexOf('class="custom-type-row"') < trackerView.indexOf('id="customChecklistTargetInput"'));
 assert.ok(trackerView.indexOf('id="customChecklistTargetInput"') < trackerView.indexOf('id="createCustomChecklistBtn"'));
-assert.match(trackerView, /placeholder="Select an activity"/);
+assert.match(trackerView, /<select id="activityQuickSelect" class="recovery-select"[^>]*>/);
+assert.match(trackerView, /<option value="">Select an activity<\/option>/);
+assert.deepEqual(
+  [...trackerView.matchAll(/<option value="([^"]+)">\1<\/option>/g)].map(match => match[1]),
+  ['Stairs', 'Walking', 'Mobility', 'Cycling']
+);
+assert.doesNotMatch(trackerView, /id="customChecklistNameInput"/);
 assert.match(trackerView, /placeholder="Enter the target"/);
+assert.match(trackerView, /id="customChecklistTargetInput" class="recovery-select tracker-target-input"/);
 assert.match(trackerView, /value="rounds"[\s\S]*?>Rounds</);
 assert.match(trackerView, /value="minutes"[\s\S]*?>Minutes</);
 assert.match(trackerView, />Create tracker<\/button>/);
 assert.match(account, /\.custom-type-row label:has\(input:checked\)[\s\S]*?background:\s*#F7F3E6 !important;[\s\S]*?color:\s*var\(--main\) !important;/);
+assert.match(account, /#customChecklistForm\s*\{[^}]*display:\s*contents !important;/s);
+assert.match(account, /\.account-submenu-panel \.account-full-btn\s*\{[^}]*background:\s*#F7F3E6;[^}]*border-color:\s*#F7F3E6;/s);
+assert.doesNotMatch(account, /#createCustomChecklistBtn\s*\{[^}]*(?:background|border-color|color):/s);
+assert.match(account, /\.account-section \+ \.account-section\s*\{\s*margin-top:\s*48px;/);
+assert.match(account, /\.account-list-btn \+ \.account-list-btn\s*\{\s*margin-top:\s*4px;/);
 
 assert.match(app, /ACCOUNT_SUBMENU_VIEWS = new Set\(\[[^\]]*'tracker'/);
+assert.match(app, /document\.getElementById\('activityQuickSelect'\)\?\.value/);
 assert.match(render, /state\.customChecklist = \{ name, type, target, items:/);
 assert.match(render, /saveActivityTimer\(/);
 assert.match(render, /closeAccountModal\(\);\s*renderToday\(\);\s*renderCustomChecklist\(\);/);

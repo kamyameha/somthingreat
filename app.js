@@ -65,6 +65,9 @@ let cloudSaveRequested = false;
 let workoutCompletionSaveInProgress = false;
 let renderedWorkoutSessionId = null;
 let swapAvailabilityMessageTimer = null;
+let accountReturnState = null;
+let accountHistoryEntryActive = false;
+let accountHistoryBackInFlight = false;
 
 const ACCOUNT_SUBMENU_VIEWS = new Set(['goal', 'equipment', 'recovery', 'password', 'support', 'tracker']);
 const AUTH_LOADING_MIN_MS = 450;
@@ -665,6 +668,87 @@ function setAccountActive(active) {
   if (active) setThemeColor('#1c1c1c');
 }
 
+function ensureAccountHistoryEntry() {
+  if (accountHistoryEntryActive) return;
+  window.history.pushState(
+    { ...(window.history.state || {}), somthingreatMenu: true },
+    document.title,
+    window.location.href
+  );
+  accountHistoryEntryActive = true;
+}
+
+function captureAccountReturnState() {
+  if (accountReturnState) return;
+  const root = document.documentElement;
+  const body = document.body;
+  const app = document.querySelector('.app');
+  const activeScreen = document.querySelector('.screen.active');
+  accountReturnState = {
+    activeScreenId: activeScreen?.id || '',
+    appScrollTop: app?.scrollTop || 0,
+    documentScrollTop: document.scrollingElement?.scrollTop || 0,
+    rootTodayActive: root.classList.contains('today-active'),
+    bodyTodayActive: body.classList.contains('today-active'),
+    rootWorkoutActive: root.classList.contains('workout-active'),
+    bodyWorkoutActive: body.classList.contains('workout-active'),
+    rootBackgroundColor: root.style.backgroundColor,
+    bodyBackgroundColor: body.style.backgroundColor,
+    themeColor: document.querySelector('meta[name="theme-color"]')?.content || '#ffffff',
+    focusedElement: document.activeElement
+  };
+}
+
+function restoreAccountReturnState() {
+  const saved = accountReturnState;
+  accountReturnState = null;
+  const root = document.documentElement;
+  const body = document.body;
+  const app = document.querySelector('.app');
+  const panel = document.getElementById('accountPanel');
+  const submenuPanel = document.getElementById('accountSubmenuPanel');
+
+  panel?.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
+  submenuPanel?.classList.remove('account-submenu-mode');
+  if (panel) {
+    panel.scrollTop = 0;
+    panel.inert = true;
+  }
+  if (submenuPanel) {
+    submenuPanel.scrollTop = 0;
+    submenuPanel.inert = true;
+  }
+  if (typeof document.activeElement?.blur === 'function') document.activeElement.blur();
+
+  if (!saved) {
+    syncScreenThemeColor();
+    syncBottomNavVisibility();
+    return;
+  }
+
+  root.classList.toggle('today-active', saved.rootTodayActive);
+  body.classList.toggle('today-active', saved.bodyTodayActive);
+  root.classList.toggle('workout-active', saved.rootWorkoutActive);
+  body.classList.toggle('workout-active', saved.bodyWorkoutActive);
+  root.style.backgroundColor = saved.rootBackgroundColor;
+  body.style.backgroundColor = saved.bodyBackgroundColor;
+  setMetaContent('theme-color', saved.themeColor);
+  syncBottomNavVisibility();
+  if (saved.activeScreenId === 'today' && saved.bodyTodayActive) syncTodayMascotSources();
+
+  const restoreScroll = () => {
+    if (app) app.scrollTop = saved.appScrollTop;
+    if (document.scrollingElement) document.scrollingElement.scrollTop = saved.documentScrollTop;
+  };
+  restoreScroll();
+  window.requestAnimationFrame(() => {
+    restoreScroll();
+    if (saved.focusedElement?.isConnected && typeof saved.focusedElement.focus === 'function') {
+      saved.focusedElement.focus({ preventScroll: true });
+    }
+  });
+}
+
 function focusAccountViewHeading(view) {
   const target = view === 'main'
     ? document.querySelector('#accountPanel .account-main-heading')
@@ -716,7 +800,7 @@ function showAccountView(view = 'main') {
   if (ACCOUNT_SUBMENU_VIEWS.has(view)) openAccountSubmenu(view);
 }
 
-function closeAccountModal() {
+function closeAccountModal(fromHistory = false) {
   const panel = document.getElementById('accountPanel');
   const submenuPanel = document.getElementById('accountSubmenuPanel');
 
@@ -728,8 +812,14 @@ function closeAccountModal() {
   submenuPanel?.setAttribute('aria-hidden', 'true');
   hideAllAccountViews();
   setAccountActive(false);
-  syncScreenThemeColor();
-  syncBottomNavVisibility();
+  restoreAccountReturnState();
+  if (accountHistoryEntryActive) {
+    accountHistoryEntryActive = false;
+    if (!fromHistory) {
+      accountHistoryBackInFlight = true;
+      window.history.back();
+    }
+  }
   updateUpdateBanner();
 }
 function authProviders() {
@@ -1032,6 +1122,7 @@ function applyLoggedOutAuthSurfaceState() {
 
   panel?.classList.remove('hidden', 'account-modal', 'account-open', 'account-main-mode', 'account-password-mode');
   panel?.setAttribute('aria-hidden', 'false');
+  if (panel) panel.inert = false;
   hideAccountSubmenuPanel();
   submenuPanel?.setAttribute('aria-hidden', 'true');
   loggedOut?.classList.remove('hidden');
@@ -1052,6 +1143,8 @@ function applyLoggedOutAuthSurfaceState() {
 
 function resetAuthUI(mode = 'welcome') {
   passwordRecoveryMode = false;
+  if (accountReturnState || accountHistoryEntryActive) closeAccountModal();
+  accountReturnState = null;
   clearRecoveryBootFlag();
   welcomeDismissed = mode !== 'welcome';
   clearTodaySelectionTimers();
@@ -1277,10 +1370,10 @@ function openCustomChecklistForm() {
 }
 
 function resetCustomChecklistForm() {
-  const name = document.getElementById('customChecklistNameInput');
+  const activity = document.getElementById('activityQuickSelect');
   const target = document.getElementById('customChecklistTargetInput');
   const rounds = document.querySelector('input[name="customChecklistType"][value="rounds"]');
-  if (name) name.value = '';
+  if (activity) activity.value = '';
   if (target) target.value = '';
   if (rounds) rounds.checked = true;
   setCustomChecklistMessage('');
@@ -1301,10 +1394,14 @@ function customChecklistItemLabel(checklist, index) {
 }
 
 function createCustomChecklist() {
-  const name = document.getElementById('customChecklistNameInput')?.value.trim() || 'Custom checklist';
+  const name = document.getElementById('activityQuickSelect')?.value || '';
   const type = document.querySelector('input[name="customChecklistType"]:checked')?.value || 'rounds';
   const target = Math.round(Number(document.getElementById('customChecklistTargetInput')?.value || 0));
   const max = type === 'minutes' ? 240 : 120;
+  if (!name) {
+    setCustomChecklistMessage('Select an activity first.', 'error');
+    return;
+  }
   if (!target || target < 1) {
     setCustomChecklistMessage(type === 'minutes' ? 'Enter how many minutes to track.' : 'Enter how many rounds to track.', 'error');
     return;
@@ -3160,6 +3257,7 @@ function renderAccount() {
 	  panel.classList.toggle('account-modal', Boolean(currentUser));
 
 	  if (!currentUser) {
+	    if (accountReturnState || accountHistoryEntryActive) closeAccountModal();
 	    panel.classList.remove('account-main-mode');
 	    hideAccountSubmenuPanel();
 	    setAccountActive(false);
@@ -3227,6 +3325,8 @@ function openAccountMain() {
   const loggedIn = document.getElementById('loggedInAccount');
   if (!panel || !currentUser) return;
 
+  captureAccountReturnState();
+  ensureAccountHistoryEntry();
   hideNormalAppChrome();
   hideAccountSubmenuPanel();
   hideAllAccountViews();
@@ -3235,6 +3335,7 @@ function openAccountMain() {
   panel.classList.remove('account-password-mode');
   panel.classList.remove('hidden');
   panel.setAttribute('aria-hidden', 'false');
+  panel.inert = false;
   if (loggedIn) loggedIn.classList.remove('hidden');
 
   setAccountActive(true);
@@ -3253,6 +3354,7 @@ function hideAccountMainPanel() {
   panel.classList.remove('account-open', 'account-main-mode', 'account-password-mode');
   panel.classList.add('hidden');
   panel.setAttribute('aria-hidden', 'true');
+  panel.inert = true;
 }
 
 function hideAccountSubmenuPanel() {
@@ -3261,6 +3363,7 @@ function hideAccountSubmenuPanel() {
   submenuPanel.classList.remove('account-submenu-mode');
   submenuPanel.classList.add('hidden');
   submenuPanel.setAttribute('aria-hidden', 'true');
+  submenuPanel.inert = true;
 }
 
 function openAccountSubmenu(view) {
@@ -3268,6 +3371,8 @@ function openAccountSubmenu(view) {
   const submenuContent = document.getElementById('accountSubmenuContent');
   if (!submenuPanel || !submenuContent || !currentUser) return;
 
+  captureAccountReturnState();
+  ensureAccountHistoryEntry();
   hideNormalAppChrome();
   hideAllAccountViews();
   hideAccountMainPanel();
@@ -3276,6 +3381,7 @@ function openAccountSubmenu(view) {
   submenuPanel.classList.add('account-submenu-mode');
   submenuPanel.classList.remove('hidden');
   submenuPanel.setAttribute('aria-hidden', 'false');
+  submenuPanel.inert = false;
   focusAccountViewHeading(view);
   updateUpdateBanner();
 }
@@ -3891,6 +3997,16 @@ document.addEventListener('keydown', event => {
 	    if (event.key === 'Escape') closeAccountModal();
 	    renderModule.trapTabKey(event, accountPanel);
 	  }
+});
+
+window.addEventListener('popstate', () => {
+  if (accountHistoryBackInFlight) {
+    accountHistoryBackInFlight = false;
+    return;
+  }
+  if (!accountHistoryEntryActive) return;
+  accountHistoryEntryActive = false;
+  closeAccountModal(true);
 });
 
 document.addEventListener('click', event => {

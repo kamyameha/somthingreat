@@ -27,11 +27,11 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.26.153154" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.26.153154" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.26.153154" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.26.153154" />
-  <link rel="stylesheet" href="account.css?v=2026.07.26.153154" />
+  <link rel="stylesheet" href="style.css?v=2026.07.26.161053" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.26.161053" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.26.161053" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.26.161053" />
+  <link rel="stylesheet" href="account.css?v=2026.07.26.161053" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
@@ -277,13 +277,19 @@
         <div id="accountTrackerView" class="account-view hidden">
           <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Extra activity</h2>
           <p class="muted">Count rounds or track time outside your workouts.</p>
-          <section id="customChecklistForm" class="custom-checklist-form">
-            <textarea id="customChecklistNameInput" class="text-input custom-checklist-name-input" placeholder="Select an activity" maxlength="40" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" rows="1" name="sg-activity-label" aria-label="Activity name"></textarea>
+          <section id="customChecklistForm" class="account-tracker-form">
+            <select id="activityQuickSelect" class="recovery-select" aria-label="Select an activity">
+              <option value="">Select an activity</option>
+              <option value="Stairs">Stairs</option>
+              <option value="Walking">Walking</option>
+              <option value="Mobility">Mobility</option>
+              <option value="Cycling">Cycling</option>
+            </select>
             <div class="custom-type-row" role="radiogroup" aria-label="Measurement">
               <label><input type="radio" name="customChecklistType" value="rounds" checked> <span>Rounds</span></label>
               <label><input type="radio" name="customChecklistType" value="minutes"> <span>Minutes</span></label>
             </div>
-            <input id="customChecklistTargetInput" class="text-input" type="number" inputmode="numeric" min="1" max="240" placeholder="Enter the target" aria-label="Target" autocomplete="new-password" enterkeyhint="done" name="sg-activity-count">
+            <input id="customChecklistTargetInput" class="recovery-select tracker-target-input" type="number" inputmode="numeric" min="1" max="240" placeholder="Enter the target" aria-label="Target" autocomplete="new-password" enterkeyhint="done" name="sg-activity-count">
             <p id="customChecklistMessage" class="auth-message panel-message" aria-live="polite"></p>
             <button id="createCustomChecklistBtn" class="primary-btn account-full-btn" type="button">Create tracker</button>
           </section>
@@ -551,12 +557,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.26.153154"></script>
-  <script src="workouts.js?v=2026.07.26.153154"></script>
-  <script src="state.js?v=2026.07.26.153154"></script>
-  <script src="account.js?v=2026.07.26.153154"></script>
-  <script src="render.js?v=2026.07.26.153154"></script>
-  <script src="app-version.js?v=2026.07.26.153154"></script>
-  <script src="app.js?v=2026.07.26.153154"></script>
+  <script src="auth.js?v=2026.07.26.161053"></script>
+  <script src="workouts.js?v=2026.07.26.161053"></script>
+  <script src="state.js?v=2026.07.26.161053"></script>
+  <script src="account.js?v=2026.07.26.161053"></script>
+  <script src="render.js?v=2026.07.26.161053"></script>
+  <script src="app-version.js?v=2026.07.26.161053"></script>
+  <script src="app.js?v=2026.07.26.161053"></script>
 </body>
 </html>

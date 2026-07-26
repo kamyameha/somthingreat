@@ -138,11 +138,10 @@
 
   function injectActivityCounterUI() {
     const form = document.getElementById('customChecklistForm');
-    const nameInput = document.getElementById('customChecklistNameInput');
+    const activitySelect = document.getElementById('activityQuickSelect');
     const targetInput = document.getElementById('customChecklistTargetInput');
     const createButton = document.getElementById('createCustomChecklistBtn');
-    if (!form || !nameInput) return;
-    nameInput.placeholder = 'Select an activity';
+    if (!form || !activitySelect) return;
     if (targetInput) targetInput.placeholder = 'Enter the target';
     if (createButton) createButton.textContent = 'Create tracker';
   }
@@ -176,7 +175,7 @@
     };
 
     window.createCustomChecklist = createCustomChecklist = function () {
-      const name = document.getElementById('customChecklistNameInput')?.value.trim() || '';
+      const name = document.getElementById('activityQuickSelect')?.value || '';
       const type = document.querySelector('input[name="customChecklistType"]:checked')?.value || 'rounds';
       const target = Math.round(Number(document.getElementById('customChecklistTargetInput')?.value || 0));
       const max = type === 'minutes' ? 240 : 120;
