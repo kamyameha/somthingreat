@@ -451,12 +451,17 @@ for (const [stage, ratio] of [['beginner', 0], ['middle', 0.5], ['final', 1]]) {
           profile: { goal: 'pistolSquat', equipment }
         });
         const scenario = `${stage}/${mode}/${equipment.join('+')}/${recoveryScenario.name}`;
-        assert.strictEqual(generated.workoutName, 'Skill lab', `Pistol Skill Lab scenario: ${scenario}`);
-        assertSkillLabSemanticRoles(generated, 'pistolSquat', scenario);
+        if (!recoveryScenario.recovery || generated.workoutName === 'Skill lab') {
+          assert.strictEqual(generated.workoutName, 'Skill lab', `Pistol Skill Lab scenario: ${scenario}`);
+          assertSkillLabSemanticRoles(generated, 'pistolSquat', scenario);
+        } else {
+          assert.strictEqual(generated.workoutName, 'Recovery workout', `Recovery fallback scenario: ${scenario}`);
+          assert.strictEqual(generated.originalScheduledWorkout, 'Skill lab', `Recovery preserves scheduled identity: ${scenario}`);
+        }
         assert.ok(generated.exercises.every(item => (
           workouts.isExerciseAllowedForRecovery(item, recoveryScenario.recovery)
         )), `Skill Lab recovery safety: ${scenario}`);
-        if (['great', 'normal'].includes(mode) && !generated.generationFailure) {
+        if (generated.workoutName === 'Skill lab' && ['great', 'normal'].includes(mode) && !generated.generationFailure) {
           const priorityExercises = generated.exercises.filter(item => item.workoutRole === 'primaryFocus');
           const currentCanonical = priorityExercises.filter(item => (
             item.sourceTrack === 'pistolSquat' &&

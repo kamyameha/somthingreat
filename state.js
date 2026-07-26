@@ -113,6 +113,12 @@
             ? new Date(item.completedAt).toISOString()
             : new Date(item.date).toISOString(),
           workout: typeof item.workout === 'string' ? item.workout : 'Workout',
+          originalScheduledWorkout: typeof item.originalScheduledWorkout === 'string' ? item.originalScheduledWorkout : null,
+          recoveryAdjusted: Boolean(item.recoveryAdjusted),
+          recoveryFamily: typeof item.recoveryFamily === 'string' ? item.recoveryFamily : null,
+          recoveryRestrictions: Array.isArray(item.recoveryRestrictions)
+            ? item.recoveryRestrictions.map(restriction => ({ ...restriction }))
+            : null,
           mode: typeof item.mode === 'string' ? item.mode : 'normal',
           type: item.type === 'custom' ? 'custom' : 'workout',
           customType: ['rounds', 'minutes'].includes(item.customType) ? item.customType : null,
@@ -186,6 +192,9 @@
           date: new Date(item.date || item.generatedAt).toISOString(),
           generatedAt: new Date(item.generatedAt || item.date).toISOString(),
           workout: typeof item.workout === 'string' ? item.workout : 'Workout',
+          originalScheduledWorkout: typeof item.originalScheduledWorkout === 'string' ? item.originalScheduledWorkout : null,
+          recoveryAdjusted: Boolean(item.recoveryAdjusted),
+          recoveryFamily: typeof item.recoveryFamily === 'string' ? item.recoveryFamily : null,
           mode: ['great', 'normal', 'tired', 'exhausted'].includes(item.mode) ? item.mode : 'normal',
           selectedMasterySkill: typeof item.selectedMasterySkill === 'string' ? item.selectedMasterySkill : null,
           exercises: Array.isArray(item.exercises)
@@ -276,6 +285,11 @@
       return { area, mode, duration, until, createdAt };
     }
 
+    function sanitizeRecoveries(recoveries) {
+      if (!Array.isArray(recoveries)) return [];
+      return recoveries.map(sanitizeRecovery).filter(Boolean);
+    }
+
     function defaultState() {
       const levels = {};
       Object.assign(levels, workoutModule.createDefaultLevels());
@@ -297,6 +311,7 @@
         includeRestTimer: false,
         restTimerSeconds: 60,
         recovery: null,
+        recoveries: [],
         pendingSessionRecords: [],
         progressInsights: sanitizeProgressInsights(null),
         restAdvice: sanitizeRestAdvice(null),
@@ -389,6 +404,7 @@
       nextState.includeRestTimer = Boolean(nextState.includeRestTimer);
       nextState.restTimerSeconds = 60;
       nextState.recovery = sanitizeRecovery(nextState.recovery);
+      nextState.recoveries = sanitizeRecoveries(nextState.recoveries);
       nextState.pendingSessionRecords = sanitizePendingSessionRecords(nextState.pendingSessionRecords);
       nextState.progressInsights = sanitizeProgressInsights(nextState.progressInsights);
       nextState.restAdvice = sanitizeRestAdvice(nextState.restAdvice);
@@ -537,6 +553,7 @@
         includeRestTimer: state.includeRestTimer,
         restTimerSeconds: state.restTimerSeconds,
         recovery: state.recovery,
+        recoveries: state.recoveries,
         pendingSessionRecords: state.pendingSessionRecords,
         progressInsights: state.progressInsights,
         restAdvice: state.restAdvice,

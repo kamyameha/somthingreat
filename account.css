@@ -1859,8 +1859,8 @@ body.tile-screen-active .screen.active {
 
 .tile-screen-mascot {
   display: block;
-  width: min(76%, 168px);
-  height: min(76%, 152px);
+  width: min(87.4%, 193.2px);
+  height: min(87.4%, 174.8px);
   object-fit: contain;
 }
 
@@ -1902,7 +1902,7 @@ body.tile-screen-active .screen.active {
 .progress-screen .progress-priority-tile {
   min-height: 168px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 104px;
+  grid-template-columns: minmax(0, 1fr) 112px;
   align-items: center;
   gap: 20px;
   padding: 28px;
@@ -1921,6 +1921,11 @@ body.tile-screen-active .screen.active {
   font-weight: 700;
 }
 
+.progress-screen .goal-hero h2.is-long-title {
+  font-size: clamp(30px, 8.6vw, 34px);
+  white-space: nowrap;
+}
+
 .progress-screen .focus-next-milestone {
   margin: 0;
   color: var(--main);
@@ -1931,21 +1936,21 @@ body.tile-screen-active .screen.active {
 
 .focus-circular-progress {
   position: relative;
-  width: 104px;
-  height: 104px;
+  width: 112px;
+  height: 112px;
   display: grid;
   place-items: center;
 }
 
 .focus-circular-progress svg {
-  width: 104px;
-  height: 104px;
+  width: 112px;
+  height: 112px;
   transform: rotate(-90deg);
 }
 
 .focus-circular-progress circle {
   fill: none;
-  stroke-width: 8;
+  stroke-width: 9;
 }
 
 .focus-circular-progress .focus-progress-track {
@@ -1981,6 +1986,11 @@ body.tile-screen-active .screen.active {
   font-size: 24px;
   line-height: 1.1;
   font-weight: 700;
+}
+
+.progress-screen .progress-insight-copy {
+  width: 100%;
+  margin: 0;
 }
 
 .progress-screen .progress-insight-copy p {
@@ -2199,15 +2209,19 @@ body.tile-screen-active .screen.active {
 
 @media (max-width: 350px) {
   .progress-screen .progress-priority-tile {
-    grid-template-columns: minmax(0, 1fr) 88px;
+    grid-template-columns: minmax(0, 1fr) 92px;
     padding-right: 20px;
     padding-left: 20px;
   }
 
   .focus-circular-progress,
   .focus-circular-progress svg {
-    width: 88px;
-    height: 88px;
+    width: 92px;
+    height: 92px;
+  }
+
+  .progress-screen .goal-hero h2.is-long-title {
+    white-space: normal;
   }
 
   .activity-stat-tile {

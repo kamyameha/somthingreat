@@ -486,6 +486,124 @@
     };
   }
 
+  const RECOVERY_SEVERITIES = Object.freeze(['none', 'low', 'moderate', 'high']);
+  const HAND_WEIGHT_BEARING_FAMILIES = new Set(['horizontal-push', 'dip-strength', 'lsit', 'handstand', 'crow']);
+  const FOOT_WEIGHT_BEARING_FAMILIES = new Set(['squat', 'unilateral', 'calves', 'rope']);
+  const GRIP_FAMILIES = new Set(['horizontal-pull', 'vertical-pull', 'scapular-pull', 'muscle-up']);
+  const HANGING_FAMILIES = new Set(['vertical-pull', 'scapular-pull', 'muscle-up']);
+  const OVERHEAD_FAMILIES = new Set(['handstand', 'muscle-up']);
+  const STRAIGHT_ARM_SUPPORT_FAMILIES = new Set(['dip-strength', 'lsit', 'handstand', 'crow']);
+  const INVERSION_FAMILIES = new Set(['handstand']);
+
+  function recoverySeverityFromStress(stress = 0) {
+    const value = clampStress(stress);
+    if (!value) return 'none';
+    if (value <= 3) return 'low';
+    if (value <= 6) return 'moderate';
+    return 'high';
+  }
+
+  function lighterPrescription(prescription = {}) {
+    const source = normalizePrescriptionData(prescription);
+    if (!source) return null;
+    const next = { ...source, sets: Math.min(source.sets, 2) };
+    const field = ['reps', 'seconds', 'attempts', 'minutes'].find(key => Number(source[key]) > 0);
+    if (field) next[field] = Math.max(1, Number(source[field]) - 1);
+    return next;
+  }
+
+  function authoredRecoveryAdaptations(movementFamily, difficulty, prescription, options = {}) {
+    if (options.recoveryAdaptations) return options.recoveryAdaptations;
+    const lighter = lighterPrescription(prescription);
+    if (!lighter) return {};
+    const adaptations = {};
+    if (movementFamily === 'horizontal-push' && difficulty <= 3) {
+      ['shoulder', 'elbow', 'wrist'].forEach(area => adaptations[area] = {
+        prescriptionData: lighter,
+        adjustment: 'supported-lower-leverage'
+      });
+    }
+    if (movementFamily === 'squat' && difficulty <= 3) {
+      ['knee', 'ankle'].forEach(area => adaptations[area] = {
+        prescriptionData: lighter,
+        adjustment: 'reduced-range-supported'
+      });
+    }
+    if (movementFamily === 'posterior-chain' && difficulty <= 4) {
+      ['knee', 'ankle'].forEach(area => adaptations[area] = {
+        prescriptionData: lighter,
+        adjustment: 'floor-supported-lower-load'
+      });
+    }
+    return adaptations;
+  }
+
+  function resolveRecoveryLoadProfile({
+    movementFamily,
+    difficulty,
+    prescription,
+    loadedAreas = [],
+    jointStress = {},
+    equipment = [],
+    options = {}
+  }) {
+    const perSide = Boolean(options.unilateral || prescription?.perSide);
+    const balanceDemand = options.balanceDemand || (
+      movementFamily === 'handstand' || movementFamily === 'crow'
+        ? 'high'
+        : movementFamily === 'unilateral'
+          ? (difficulty >= 6 ? 'high' : 'moderate')
+          : difficulty >= 8 ? 'moderate' : 'low'
+    );
+    const loads = {};
+    ['shoulder', 'elbow', 'wrist', 'knee', 'ankle'].forEach(area => {
+      const meaningfullyLoaded = loadedAreas.includes(area);
+      loads[area] = {
+        side: meaningfullyLoaded ? (perSide ? 'per-side' : 'bilateral') : 'none',
+        severity: meaningfullyLoaded ? recoverySeverityFromStress(jointStress[area]) : 'none'
+      };
+    });
+    const demandingHeadNeck = INVERSION_FAMILIES.has(movementFamily) || balanceDemand === 'high';
+    loads.headNeck = {
+      side: 'bilateral',
+      severity: demandingHeadNeck ? (INVERSION_FAMILIES.has(movementFamily) ? 'high' : 'moderate') : 'none'
+    };
+
+    return {
+      loads,
+      weightBearingHands: Boolean(
+        HAND_WEIGHT_BEARING_FAMILIES.has(movementFamily) ||
+        (loadedAreas.includes('wrist') && (loadedAreas.includes('elbow') || loadedAreas.includes('shoulder')))
+      ),
+      weightBearingFeet: Boolean(
+        FOOT_WEIGHT_BEARING_FAMILIES.has(movementFamily) ||
+        movementFamily === 'posterior-chain' ||
+        movementFamily === 'horizontal-push'
+      ),
+      gripRequirement: GRIP_FAMILIES.has(movementFamily)
+        ? (difficulty >= 6 ? 'high' : 'moderate')
+        : 'none',
+      hanging: HANGING_FAMILIES.has(movementFamily) && equipment.includes('pullupBar'),
+      overheadLoading: OVERHEAD_FAMILIES.has(movementFamily),
+      straightArmSupport: Boolean(
+        STRAIGHT_ARM_SUPPORT_FAMILIES.has(movementFamily) ||
+        (loadedAreas.includes('wrist') && loadedAreas.includes('shoulder'))
+      ),
+      inversion: INVERSION_FAMILIES.has(movementFamily),
+      impact: Boolean(options.explosive || movementFamily === 'rope'),
+      kneeling: Boolean(options.kneeling),
+      balanceDemand,
+      deepJointFlexion: Boolean(
+        options.deepJointFlexion ||
+        (['squat', 'unilateral', 'dip-strength'].includes(movementFamily) && difficulty >= 5)
+      ),
+      perSide,
+      healthySideOnlyAllowed: Boolean(options.healthySideOnlyAllowed),
+      authoredReducedLoad: authoredRecoveryAdaptations(movementFamily, difficulty, prescription, options),
+      recoveryCompatibleEquivalentId: options.recoveryCompatibleEquivalentId || null
+    };
+  }
+
   function exercise(id, name, movementFamily, difficulty, prescription, options = {}) {
     if (!Array.isArray(successCriteriaById[id]) || !successCriteriaById[id].length) {
       throw new Error(`Missing authored success criteria: ${id}`);
@@ -503,6 +621,7 @@
     const safety = options.safety || PAIN_NOTICE;
     const safeDifficulty = clampScore(difficulty);
     const stimulus = defaultStimulus(movementFamily, options);
+    const jointStress = defaultJointStress(loadedAreas, safeDifficulty, options);
     return {
       id,
       name,
@@ -512,7 +631,7 @@
       skill: estimateSkill(safeDifficulty, movementFamily, options),
       stability: estimateStability(safeDifficulty, movementFamily, options),
       stimulus,
-      jointStress: defaultJointStress(loadedAreas, safeDifficulty, options),
+      jointStress,
       equipment: options.equipment || [],
       primaryAreas,
       loadedAreas,
@@ -529,7 +648,16 @@
       phase: options.phase || null,
       highSkill: Boolean(options.highSkill),
       explosive: Boolean(options.explosive),
-      unilateral: Boolean(options.unilateral || prescription?.perSide)
+      unilateral: Boolean(options.unilateral || prescription?.perSide),
+      recoveryLoad: resolveRecoveryLoadProfile({
+        movementFamily,
+        difficulty: safeDifficulty,
+        prescription,
+        loadedAreas,
+        jointStress,
+        equipment: options.equipment || [],
+        options
+      })
     };
   }
 
@@ -2514,7 +2642,16 @@
 
   function nextRotationIndexFromHistory(history = [], fallbackIndex = 0) {
     const latest = (history || [])
-      .map((item, position) => ({ item, position, time: Date.parse(item?.date), workoutIndex: rotationIndexForWorkoutName(item?.workout) }))
+      .map((item, position) => ({
+        item,
+        position,
+        time: Date.parse(item?.date),
+        workoutIndex: rotationIndexForWorkoutName(
+          item?.recoveryAdjusted && item?.originalScheduledWorkout
+            ? item.originalScheduledWorkout
+            : item?.workout
+        )
+      }))
       .filter(entry => entry.item?.type !== 'custom' && !entry.item?.customType && Number.isFinite(entry.time) && entry.workoutIndex >= 0)
       .sort((first, second) => second.time - first.time || second.position - first.position)[0];
     if (!latest) return Math.max(0, Math.min(Number(fallbackIndex || 0), 3));
@@ -2529,11 +2666,13 @@
     return Array.isArray(tracks?.[trackKey]) && tracks[trackKey].length > 0;
   }
 
-  function adaptPrescriptionData(prescriptionData, config = energyOptions.great, recovery = null) {
-    const source = normalizePrescriptionData(prescriptionData);
+  function adaptPrescriptionData(prescriptionData, config = energyOptions.great, recovery = null, exercise = null) {
+    const source = recovery && exercise
+      ? recoveryPrescriptionData({ ...exercise, prescriptionData }, recovery)
+      : normalizePrescriptionData(prescriptionData);
     if (!source) return null;
-    const setMultiplier = recovery?.mode === 'reduce' ? Math.min(config.setMultiplier ?? 1, 0.75) : config.setMultiplier ?? 1;
-    const repMultiplier = recovery?.mode === 'reduce' ? Math.min(config.repMultiplier ?? 1, 0.75) : config.repMultiplier ?? 1;
+    const setMultiplier = config.setMultiplier ?? 1;
+    const repMultiplier = config.repMultiplier ?? 1;
     const adapted = { ...source, sets: Math.max(1, Math.round(source.sets * setMultiplier)) };
     ['seconds', 'minutes', 'attempts', 'reps'].forEach(field => {
       if (source[field]) adapted[field] = Math.max(1, Math.round(source[field] * repMultiplier));
@@ -2637,7 +2776,7 @@
     if (!isExerciseEligibleForGeneration(replacement, context.profile, context.state || {}, recovery, context.eligibilityConfig)) {
       throw new Error(`Exercise is not eligible for generation: ${replacement?.id || 'unknown'}`);
     }
-    const adaptedPrescriptionData = adaptPrescriptionData(replacement.prescriptionData, getEnergyConfig(mode), recovery);
+    const adaptedPrescriptionData = adaptPrescriptionData(replacement.prescriptionData, getEnergyConfig(mode), recovery, replacement);
     return replaceWorkoutExercise(current, {
       ...replacement,
       prescriptionData: adaptedPrescriptionData,
@@ -2938,11 +3077,40 @@
     };
   }
 
+  function activeRecoveryRestrictions(value = {}) {
+    const candidates = Array.isArray(value)
+      ? value
+      : Array.isArray(value?.restrictions)
+        ? value.restrictions
+        : value?.area
+          ? [value]
+          : [
+              ...(Array.isArray(value?.recovery) ? value.recovery : value?.recovery ? [value.recovery] : []),
+              ...(Array.isArray(value?.recoveries) ? value.recoveries : [])
+            ];
+    const byArea = new Map();
+    candidates.forEach(restriction => {
+      if (!restriction?.area) return;
+      if (
+        restriction.until &&
+        !Number.isNaN(new Date(restriction.until).getTime()) &&
+        new Date(restriction.until).getTime() < Date.now()
+      ) return;
+      const existing = byArea.get(restriction.area);
+      if (!existing || (existing.mode !== 'rest' && restriction.mode === 'rest')) {
+        byArea.set(restriction.area, {
+          ...restriction,
+          mode: restriction.mode === 'rest' ? 'rest' : 'reduce'
+        });
+      }
+    });
+    return [...byArea.values()];
+  }
+
   function getActiveRecovery(state = {}) {
-    const recovery = state?.recovery;
-    if (!recovery?.area) return null;
-    if (recovery.until && !Number.isNaN(new Date(recovery.until).getTime()) && new Date(recovery.until).getTime() < Date.now()) return null;
-    return recovery;
+    const restrictions = activeRecoveryRestrictions(state);
+    if (!restrictions.length) return null;
+    return restrictions.length === 1 ? restrictions[0] : { restrictions };
   }
 
   function recoveryAreaType(recovery) {
@@ -2954,52 +3122,169 @@
     if (area.includes('hip')) return 'hip';
     if (area.includes('knee')) return 'knee';
     if (area.includes('ankle')) return 'ankle';
-    if (area.includes('head') || area.includes('neck')) return 'other';
+    if (area.includes('head') || area.includes('neck')) return 'headNeck';
     return 'other';
   }
 
   const recoveryRules = {
-    shoulder: { restAreas: ['shoulder'], reduceAreas: ['shoulder'], fallbackTracks: ['squat', 'posteriorChain', 'calves', 'compression'] },
-    elbow: { restAreas: ['elbow'], reduceAreas: ['elbow'], fallbackTracks: ['squat', 'posteriorChain', 'calves', 'antiExtension'] },
-    wrist: { restAreas: ['wrist'], reduceAreas: ['wrist'], fallbackTracks: ['squat', 'posteriorChain', 'calves', 'forearmCore', 'antiExtension'] },
-    'lower-back': { restAreas: ['lower-back'], reduceAreas: ['lower-back'], fallbackTracks: ['horizontalPush', 'calves', 'compression'] },
-    hip: { restAreas: ['hip'], reduceAreas: ['hip'], fallbackTracks: ['horizontalPush', 'horizontalPull', 'calves'] },
-    knee: { restAreas: ['knee'], reduceAreas: ['knee'], fallbackTracks: ['horizontalPush', 'horizontalPull', 'antiExtension', 'compression'] },
-    ankle: { restAreas: ['ankle'], reduceAreas: ['ankle'], fallbackTracks: ['horizontalPush', 'horizontalPull', 'antiExtension', 'posteriorChain'] },
-    other: { restAreas: [], reduceAreas: [], fallbackTracks: ['antiExtension', 'horizontalPush', 'posteriorChain'] }
+    headNeck: { fallbackTracks: ['squat', 'posteriorChain', 'antiExtension', 'compression'] },
+    shoulder: { fallbackTracks: ['squat', 'posteriorChain', 'calves', 'compression'] },
+    elbow: { fallbackTracks: ['squat', 'posteriorChain', 'calves', 'compression'] },
+    wrist: { fallbackTracks: ['squat', 'posteriorChain', 'calves', 'compression', 'antiExtension'] },
+    knee: { fallbackTracks: ['horizontalPush', 'horizontalPull', 'antiExtension', 'compression', 'posteriorChain'] },
+    ankle: { fallbackTracks: ['horizontalPush', 'horizontalPull', 'antiExtension', 'compression', 'posteriorChain'] },
+    other: { fallbackTracks: ['antiExtension', 'horizontalPush', 'posteriorChain'] }
   };
 
-  const recoveryStressThresholds = {
-    reduce: 5,
-    rest: 2
-  };
-
-  function exerciseLoadsArea(exercise, areas) {
-    return areas.some(area => (exercise.loadedAreas || []).includes(area) || (exercise.contraindicationTags || []).includes(`${area}-load`));
-  }
-
-  function jointKeyForRecovery(recovery) {
-    const area = recoveryAreaType(recovery);
-    return area === 'lower-back' ? 'lowerBack' : jointKeys.includes(area) ? area : null;
-  }
-
-  function exerciseJointStress(exercise, recovery) {
-    const key = jointKeyForRecovery(recovery);
-    if (!key) return 0;
-    return clampStress(exercise?.jointStress?.[key]);
-  }
-
-  function isExerciseAllowedForRecovery(exercise, recovery, mode = recovery?.mode || 'reduce') {
-    if (!exercise || !recovery) return true;
-    const rule = recoveryRules[recoveryAreaType(recovery)] || recoveryRules.other;
-    const stress = exerciseJointStress(exercise, recovery);
-    if (mode === 'rest' && (stress > recoveryStressThresholds.rest || exerciseLoadsArea(exercise, rule.restAreas))) return false;
-    if (mode === 'reduce') {
-      if (exercise.explosive || exercise.highSkill) return false;
-      if (stress > recoveryStressThresholds.reduce) return false;
-      if (exerciseLoadsArea(exercise, rule.reduceAreas) && exercise.difficulty > 7) return false;
+  function recoveryConflictFlags(profile, areaType) {
+    if (areaType === 'headNeck') {
+      return [
+        ['inversion', profile.inversion],
+        ['balance', profile.balanceDemand === 'high'],
+        ['setup', profile.loads?.headNeck?.severity !== 'none']
+      ];
     }
-    return true;
+    if (areaType === 'shoulder') {
+      return [
+        ['weight-bearing', profile.weightBearingHands],
+        ['hanging', profile.hanging],
+        ['overhead', profile.overheadLoading],
+        ['straight-arm-support', profile.straightArmSupport]
+      ];
+    }
+    if (areaType === 'elbow') {
+      return [
+        ['weight-bearing', profile.weightBearingHands],
+        ['hanging', profile.hanging],
+        ['straight-arm-support', profile.straightArmSupport],
+        ['grip', profile.gripRequirement !== 'none']
+      ];
+    }
+    if (areaType === 'wrist') {
+      return [
+        ['weight-bearing', profile.weightBearingHands],
+        ['grip', profile.gripRequirement !== 'none'],
+        ['hanging', profile.hanging],
+        ['straight-arm-support', profile.straightArmSupport]
+      ];
+    }
+    if (areaType === 'knee') {
+      return [
+        ['impact', profile.impact],
+        ['kneeling', profile.kneeling],
+        ['balance', profile.balanceDemand === 'high'],
+        ['deep-flexion', profile.deepJointFlexion]
+      ];
+    }
+    if (areaType === 'ankle') {
+      return [
+        ['weight-bearing', profile.weightBearingFeet],
+        ['impact', profile.impact],
+        ['balance', profile.balanceDemand !== 'low'],
+        ['deep-flexion', profile.deepJointFlexion]
+      ];
+    }
+    return [];
+  }
+
+  function recoveryLoadProfileForExercise(exercise) {
+    if (exercise?.recoveryLoad?.loads) return exercise.recoveryLoad;
+    const movementFamily = exercise?.movementFamily || 'legacy';
+    const difficulty = clampScore(exercise?.difficulty, 1);
+    const loadedAreas = exercise?.loadedAreas || [];
+    const jointStress = exercise?.jointStress || defaultJointStress(loadedAreas, difficulty, exercise || {});
+    return resolveRecoveryLoadProfile({
+      movementFamily,
+      difficulty,
+      prescription: exercise?.prescriptionData,
+      loadedAreas,
+      jointStress,
+      equipment: exercise?.equipment || [],
+      options: exercise || {}
+    });
+  }
+
+  function evaluateExerciseRecovery(exercise, recovery) {
+    const restrictions = activeRecoveryRestrictions(recovery);
+    if (!exercise || !restrictions.length) return { allowed: true, restrictions: [], conflicts: [] };
+    const profile = recoveryLoadProfileForExercise(exercise);
+    const conflicts = [];
+    restrictions.forEach(restriction => {
+      const areaType = recoveryAreaType(restriction);
+      const areaLoad = profile.loads?.[areaType] || { side: 'none', severity: 'none' };
+      const flags = recoveryConflictFlags(profile, areaType).filter(([, active]) => active);
+      const adaptation = profile.authoredReducedLoad?.[areaType] || null;
+      const mode = restriction.mode === 'rest' ? 'rest' : 'reduce';
+      const severity = areaLoad.severity || 'none';
+      const meaningfulLoad = severity !== 'none';
+
+      if (mode === 'rest') {
+        if (meaningfulLoad || flags.length) {
+          conflicts.push({
+            area: restriction.area,
+            areaType,
+            mode,
+            severity,
+            side: areaLoad.side,
+            conflict: meaningfulLoad
+              ? (areaLoad.side === 'bilateral' ? 'bilateral' : 'direct')
+              : flags[0]?.[0] || 'setup',
+            flags: flags.map(([name]) => name)
+          });
+        }
+        return;
+      }
+
+      const prohibitedReduceFlag = (
+        profile.impact ||
+        profile.inversion ||
+        (
+          ['shoulder', 'elbow', 'wrist'].includes(areaType) &&
+          (profile.hanging || profile.overheadLoading || profile.straightArmSupport)
+        ) ||
+        (
+          ['knee', 'ankle'].includes(areaType) &&
+          (profile.impact || profile.balanceDemand === 'high' || profile.deepJointFlexion)
+        )
+      );
+      if (
+        prohibitedReduceFlag ||
+        severity === 'high' ||
+        (severity === 'moderate' && !adaptation)
+      ) {
+        conflicts.push({
+          area: restriction.area,
+          areaType,
+          mode,
+          severity,
+          side: areaLoad.side,
+          conflict: prohibitedReduceFlag ? flags[0]?.[0] || 'direct' : 'direct',
+          flags: flags.map(([name]) => name)
+        });
+      }
+    });
+    return { allowed: conflicts.length === 0, restrictions, conflicts, profile };
+  }
+
+  function isExerciseAllowedForRecovery(exercise, recovery) {
+    return evaluateExerciseRecovery(exercise, recovery).allowed;
+  }
+
+  function recoveryPrescriptionData(exercise, recovery) {
+    const source = normalizePrescriptionData(exercise?.prescriptionData);
+    if (!source) return source;
+    const profile = recoveryLoadProfileForExercise(exercise);
+    let prescription = source;
+    activeRecoveryRestrictions(recovery).forEach(restriction => {
+      if (restriction.mode !== 'reduce') return;
+      const areaType = recoveryAreaType(restriction);
+      const severity = profile.loads?.[areaType]?.severity || 'none';
+      const adaptation = profile.authoredReducedLoad?.[areaType];
+      if (severity === 'moderate' && adaptation?.prescriptionData) {
+        prescription = normalizePrescriptionData(adaptation.prescriptionData) || prescription;
+      }
+    });
+    return prescription;
   }
 
   function filteredTrackForRecovery(track, recovery) {
@@ -3016,7 +3301,8 @@
     const canonicalLevel = Number.isFinite(Number(trackState.level))
       ? Number(trackState.level)
       : milestoneIndex >= 0 ? milestoneIndex : 0;
-    const levelShift = recovery?.mode === 'reduce' ? Math.min(config.levelShift || 0, -2) : config.levelShift || 0;
+    const hasReducedRecovery = activeRecoveryRestrictions(recovery).some(item => item.mode === 'reduce');
+    const levelShift = hasReducedRecovery ? Math.min(config.levelShift || 0, -1) : config.levelShift || 0;
     const targetCanonicalLevel = Math.max(0, Math.min(canonicalLevel + levelShift, canonicalTrack.length - 1));
     const eligibleIndexes = track
       .map((item, index) => ({ index, canonicalIndex: canonicalTrack.findIndex(canonical => canonical.id === item.id) }))
@@ -3053,7 +3339,6 @@
     const budget = config.fatigueBudget || fatigueBudgets.normal;
     const fatigueLimit = budget.max + (budget.tolerance || 0);
     const skillLimit = config.skillLimit || budget.skillLimit || fatigueBudgets.normal.skillLimit;
-    const recoveryJoint = jointKeyForRecovery(recovery);
     const orderedLevels = levelSearchOrder(adjustedLevel, track.length).filter(level => !usedIds.has(track[level].id));
     const selectedLevel = orderedLevels.find(level => {
       const candidate = track[level];
@@ -3064,15 +3349,15 @@
       .sort((a, b) => {
         const first = track[a];
         const second = track[b];
-        const firstStress = recoveryJoint ? first.jointStress[recoveryJoint] : 0;
-        const secondStress = recoveryJoint ? second.jointStress[recoveryJoint] : 0;
-        return (first.fatigue + first.skill + firstStress) - (second.fatigue + second.skill + secondStress);
+        const firstConflicts = evaluateExerciseRecovery(first, recovery).conflicts.length;
+        const secondConflicts = evaluateExerciseRecovery(second, recovery).conflicts.length;
+        return (first.fatigue + first.skill + firstConflicts) - (second.fatigue + second.skill + secondConflicts);
       })[0]);
     if (selectedLevel === undefined) return null;
     const baseExercise = track[selectedLevel];
     const trackState = state?.levels?.[safeTrackKey] || {};
     const plateauCount = Math.max(0, Math.floor(trackState.plateauCount || 0));
-    const prescriptionData = adaptPrescriptionData(baseExercise.prescriptionData, config, recovery);
+    const prescriptionData = adaptPrescriptionData(baseExercise.prescriptionData, config, recovery, baseExercise);
 
     return normalizeExercise({
       ...baseExercise,
@@ -3115,7 +3400,8 @@
     const canonicalLevel = Number.isFinite(Number(trackState.level))
       ? Number(trackState.level)
       : savedMilestoneIndex >= 0 ? savedMilestoneIndex : 0;
-    const levelShift = recovery?.mode === 'reduce' ? Math.min(config.levelShift || 0, -2) : config.levelShift || 0;
+    const hasReducedRecovery = activeRecoveryRestrictions(recovery).some(item => item.mode === 'reduce');
+    const levelShift = hasReducedRecovery ? Math.min(config.levelShift || 0, -1) : config.levelShift || 0;
     const unlockedLevel = Math.max(0, Math.min(canonicalLevel + levelShift, canonicalTrack.length - 1));
     const plateauCount = Math.max(0, Math.floor(trackState.plateauCount || 0));
     return canonicalTrack
@@ -3132,7 +3418,7 @@
         ...baseExercise,
         trackKey,
         progressionTrackKey: trackKey,
-        prescriptionData: adaptPrescriptionData(baseExercise.prescriptionData, config, recovery),
+        prescriptionData: adaptPrescriptionData(baseExercise.prescriptionData, config, recovery, baseExercise),
         basePrescription: baseExercise.prescription,
         basePrescriptionData: baseExercise.prescriptionData,
         level: index + 1,
@@ -3581,7 +3867,7 @@
           progressionTrackKey: trackKey,
           progressionEvidenceTarget: trackKey,
           progressionMilestoneId: canonicalTrack[currentLevel]?.id || null,
-          prescriptionData: adaptPrescriptionData(baseExercise.prescriptionData, config, recovery),
+          prescriptionData: adaptPrescriptionData(baseExercise.prescriptionData, config, recovery, baseExercise),
           basePrescription: baseExercise.prescription,
           basePrescriptionData: baseExercise.prescriptionData,
           level: exerciseLevel >= 0 ? exerciseLevel + 1 : 1,
@@ -3650,6 +3936,160 @@
         reducedVariety: true
       }
     });
+  }
+
+  const recoveryWorkoutEmphases = Object.freeze([
+    Object.freeze({ key: 'lower-strength', tracks: Object.freeze(['squat', 'posteriorChain', 'calves', 'unilateral']) }),
+    Object.freeze({ key: 'posterior-core', tracks: Object.freeze(['posteriorChain', 'antiExtension', 'compression', 'lateralCore']) }),
+    Object.freeze({ key: 'unilateral-control', tracks: Object.freeze(['unilateral', 'calves', 'posteriorChain', 'antiExtension']) }),
+    Object.freeze({ key: 'low-load-core', tracks: Object.freeze(['antiExtension', 'compression', 'posteriorChain', 'horizontalPull']) })
+  ]);
+
+  function recoveryRestrictionSummary(recovery) {
+    return activeRecoveryRestrictions(recovery).map(item => ({
+      area: item.area,
+      areaType: recoveryAreaType(item),
+      mode: item.mode
+    }));
+  }
+
+  function recoveryWorkoutExplanation(originalWorkoutName, recovery, shortened = false) {
+    const restrictions = activeRecoveryRestrictions(recovery);
+    const first = restrictions[0];
+    const area = String(first?.area || '')
+      .replace(/^left/i, 'left ')
+      .replace(/^right/i, 'right ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .toLowerCase();
+    const action = first?.mode === 'rest' ? 'rest' : 'reduce load through';
+    const base = first
+      ? `Today’s ${originalWorkoutName} workout was adjusted to ${action} your ${area}.`
+      : 'Today’s workout was adjusted for your recovery settings.';
+    return shortened
+      ? `${base} It was shortened because fewer compatible exercises are currently available.`
+      : base;
+  }
+
+  function selectRecoveryWorkoutEmphasis(state, originalWorkoutName) {
+    const recent = workoutDiversityHistory(state)
+      .filter(item => item?.recoveryAdjusted && item?.recoveryFamily)
+      .sort((left, right) => (
+        Date.parse(right.date || right.generatedAt || right.completedAt || 0) -
+        Date.parse(left.date || left.generatedAt || left.completedAt || 0)
+      ))
+      .slice(0, 3)
+      .map(item => item.recoveryFamily);
+    const originalOffset = Math.max(0, rotationIndexForWorkoutName(originalWorkoutName));
+    return [...recoveryWorkoutEmphases]
+      .sort((first, second) => (
+        Number(recent.includes(first.key)) - Number(recent.includes(second.key)) ||
+        (
+          (recoveryWorkoutEmphases.indexOf(first) - originalOffset + recoveryWorkoutEmphases.length) %
+          recoveryWorkoutEmphases.length
+        ) -
+        (
+          (recoveryWorkoutEmphases.indexOf(second) - originalOffset + recoveryWorkoutEmphases.length) %
+          recoveryWorkoutEmphases.length
+        )
+      ))[0];
+  }
+
+  function buildRecoveryWorkout({
+    originalWorkout,
+    config,
+    state,
+    profile,
+    recovery,
+    scheduledResult
+  }) {
+    const emphasis = selectRecoveryWorkoutEmphasis(state, originalWorkout.name);
+    const diversityHistory = workoutDiversityHistory(state);
+    const sameDayIds = sameDayWorkoutExerciseIds(diversityHistory);
+    const recentIds = recentWorkoutExerciseIds(diversityHistory);
+    const candidateTracks = unique([
+      ...emphasis.tracks,
+      ...activeRecoveryRestrictions(recovery).flatMap(item => (
+        recoveryRules[recoveryAreaType(item)] || recoveryRules.other
+      ).fallbackTracks)
+    ]);
+    const candidates = candidateTracks
+      .flatMap((trackKey, trackOrder) => unlockedTrackCandidates(trackKey, config, state, profile, recovery)
+        .map(candidate => ({
+          ...candidate,
+          workoutRole: 'generalSupport',
+          sourceTrack: trackKey,
+          recoveryWorkoutRole: emphasis.key,
+          developmentDiagnostics: {
+            ...(candidate.developmentDiagnostics || {}),
+            recoveryWorkoutFamily: emphasis.key,
+            recoveryTrackOrder: trackOrder,
+            recoveryCompatibility: evaluateExerciseRecovery(candidate, recovery)
+          }
+        })))
+      .filter((candidate, index, all) => all.findIndex(item => item.id === candidate.id) === index)
+      .sort((first, second) => (
+        Number(sameDayIds.has(first.id)) - Number(sameDayIds.has(second.id)) ||
+        Number(recentIds.has(first.id)) - Number(recentIds.has(second.id)) ||
+        first.developmentDiagnostics.recoveryTrackOrder - second.developmentDiagnostics.recoveryTrackOrder ||
+        first.fatigue - second.fatigue
+      ));
+
+    const selected = [];
+    const trackCounts = {};
+    for (const candidate of candidates) {
+      if (selected.length >= config.exerciseCount) break;
+      const trackKey = candidate.sourceTrack || candidate.progressionTrackKey;
+      if (Number(trackCounts[trackKey] || 0) >= 2) continue;
+      const nextFatigue = selected.reduce((sum, item) => sum + Number(item.fatigue || 0), 0) + Number(candidate.fatigue || 0);
+      if (nextFatigue > config.fatigueBudget.max + config.fatigueBudget.tolerance) continue;
+      if (
+        isHighlyTechnicalExercise(candidate) &&
+        selected.filter(isHighlyTechnicalExercise).length >= maximumHighlyTechnicalExercises(config.mode)
+      ) continue;
+      selected.push(candidate);
+      trackCounts[trackKey] = Number(trackCounts[trackKey] || 0) + 1;
+    }
+
+    const shortened = selected.length < config.exerciseCount;
+    return {
+      ...scheduledResult,
+      workoutName: 'Recovery workout',
+      originalScheduledWorkout: originalWorkout.name,
+      recoveryAdjusted: true,
+      recoveryFamily: emphasis.key,
+      recoveryRestrictions: recoveryRestrictionSummary(recovery),
+      recoveryExplanation: recoveryWorkoutExplanation(originalWorkout.name, recovery, shortened),
+      focusLabel: 'Adjusted for recovery',
+      eligibleTrackKeys: candidateTracks,
+      generationFailure: shortened
+        ? {
+            code: 'recovery-workout-shortened',
+            workoutName: 'Recovery workout',
+            originalScheduledWorkout: originalWorkout.name,
+            expectedCount: config.exerciseCount,
+            actualCount: selected.length
+          }
+        : null,
+      developmentDiagnostics: {
+        ...(scheduledResult.developmentDiagnostics || {}),
+        scheduledWorkoutReplacement: {
+          originalWorkout: originalWorkout.name,
+          replacementWorkout: 'Recovery workout',
+          family: emphasis.key,
+          restrictions: recoveryRestrictionSummary(recovery)
+        },
+        removedByRecovery: exerciseCatalog
+          .map(exercise => ({ exercise, decision: evaluateExerciseRecovery(exercise, recovery) }))
+          .filter(item => !item.decision.allowed)
+          .map(item => ({
+            exerciseId: item.exercise.id,
+            conflicts: item.decision.conflicts
+          })),
+        missingSafeCandidates: shortened,
+        finalStableIds: selected.map(item => item.id)
+      },
+      exercises: selected
+    };
   }
 
   function getTodayWorkout({ mode = 'normal', state = {}, profile = null } = {}) {
@@ -4002,7 +4442,7 @@
       ...scheduledFoundationSkills.map(schedule => schedule.trackKey)
     ]);
 
-    return {
+    const scheduledResult = {
       mode: config.mode,
       workoutName: workout.name,
       selectedMasterySkill: policy.selectedMasterySkill,
@@ -4095,6 +4535,17 @@
         };
       })
     };
+    if (recovery && generationFailure) {
+      return buildRecoveryWorkout({
+        originalWorkout: workout,
+        config,
+        state,
+        profile,
+        recovery,
+        scheduledResult
+      });
+    }
+    return scheduledResult;
   }
 
   function getExtraSessionMinutes(addOns = {}) {
@@ -4172,10 +4623,59 @@
     return mainExercises;
   }
 
+  function isAddOnAllowedForRecovery(addOn, recovery) {
+    if (!addOn || !activeRecoveryRestrictions(recovery).length) return true;
+    const movementIds = addOn.movementExerciseIds || [];
+    const catalogMovements = movementIds.map(id => byId[id]).filter(Boolean);
+    return Boolean(
+      movementIds.length &&
+      catalogMovements.length === movementIds.length &&
+      catalogMovements.every(exercise => isExerciseAllowedForRecovery(exercise, recovery))
+    );
+  }
+
+  function revalidateWorkoutForRecovery(workout, recovery) {
+    if (!workout || !activeRecoveryRestrictions(recovery).length) return workout;
+    const originalWorkoutName = workout.originalScheduledWorkout || workout.workoutName || 'Workout';
+    const compatibleExercises = (workout.exercises || []).filter(exercise => (
+      exercise?.isAddOn
+        ? isAddOnAllowedForRecovery(exercise, recovery)
+        : isExerciseAllowedForRecovery(exercise, recovery)
+    ));
+    const removedExercises = (workout.exercises || []).filter(exercise => !compatibleExercises.includes(exercise));
+    if (!removedExercises.length) return workout;
+    const mainExercises = compatibleExercises.filter(exercise => !exercise?.isAddOn);
+    return {
+      ...workout,
+      workoutName: 'Recovery workout',
+      originalScheduledWorkout: originalWorkoutName,
+      recoveryAdjusted: true,
+      recoveryRestrictions: recoveryRestrictionSummary(recovery),
+      recoveryExplanation: recoveryWorkoutExplanation(originalWorkoutName, recovery, true),
+      generationFailure: {
+        code: 'restored-workout-recovery-filtered',
+        originalScheduledWorkout: originalWorkoutName,
+        removedExerciseIds: removedExercises.map(exercise => exercise.id)
+      },
+      exercises: compatibleExercises,
+      developmentDiagnostics: {
+        ...(workout.developmentDiagnostics || {}),
+        restoredWorkoutRecoveryFiltering: removedExercises.map(exercise => ({
+          exerciseId: exercise.id,
+          decision: evaluateExerciseRecovery(exercise, recovery)
+        })),
+        missingSafeCandidates: mainExercises.length < getEnergyConfig(workout.mode || 'normal').exerciseCount
+      }
+    };
+  }
+
   function applyWorkoutAddOns(workout, addOns = {}, context = {}) {
     const variantIndex = Math.floor(Date.now() / 86400000) % 2;
-    const warmup = addOns.warmup ? clone(workoutAddOns.warmups[variantIndex]) : null;
-    const stretch = addOns.stretch ? clone(workoutAddOns.stretches[variantIndex]) : null;
+    const recovery = getActiveRecovery(context.state || {});
+    const warmupCandidate = addOns.warmup ? clone(workoutAddOns.warmups[variantIndex]) : null;
+    const stretchCandidate = addOns.stretch ? clone(workoutAddOns.stretches[variantIndex]) : null;
+    const warmup = isAddOnAllowedForRecovery(warmupCandidate, recovery) ? warmupCandidate : null;
+    const stretch = isAddOnAllowedForRecovery(stretchCandidate, recovery) ? stretchCandidate : null;
     const addOnExercises = [warmup, stretch].filter(Boolean);
     const mainExercises = validateWorkoutSections(workout, addOnExercises, context);
     const expectedCount = getEnergyConfig(workout.mode || 'normal').exerciseCount;
@@ -4193,9 +4693,9 @@
     if (stretch) exercises.push(stretch);
     return {
       ...workout,
-      includeWarmup: Boolean(addOns.warmup),
-      includeStretch: Boolean(addOns.stretch),
-      extraMinutes: getExtraSessionMinutes(addOns),
+      includeStretch: Boolean(stretch),
+      includeWarmup: Boolean(warmup),
+      extraMinutes: getExtraSessionMinutes({ warmup: Boolean(warmup), stretch: Boolean(stretch) }),
       generationFailure,
       exercises
     };
@@ -4688,6 +5188,10 @@
     getProgressCardContent,
     applyRating,
     validateWorkoutSystem,
-    isExerciseAllowedForRecovery
+    activeRecoveryRestrictions,
+    evaluateExerciseRecovery,
+    recoveryLoadProfileForExercise,
+    isExerciseAllowedForRecovery,
+    revalidateWorkoutForRecovery
   };
 })();

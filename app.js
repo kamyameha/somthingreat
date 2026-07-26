@@ -1690,7 +1690,12 @@ function generateWorkout({ render = true } = {}) {
   if (baseWorkout.developmentDiagnostics?.reducedVariety) {
     console.warn('Workout reduced-catalogue diagnostic:', baseWorkout.developmentDiagnostics);
   }
+  if (baseWorkout.recoveryAdjusted) {
+    console.warn('Recovery workout diagnostic:', baseWorkout.developmentDiagnostics);
+  }
   state.generated = applyWorkoutAddOns(baseWorkout);
+  state.includeWarmup = Boolean(state.generated.includeWarmup);
+  state.includeStretch = Boolean(state.generated.includeStretch);
   state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
   state.generated.includeRestTimer = Boolean(state.includeRestTimer);
   state.generated.restTimerSeconds = 60;
@@ -1700,6 +1705,9 @@ function generateWorkout({ render = true } = {}) {
       date: new Date().toISOString(),
       generatedAt: new Date().toISOString(),
       workout: baseWorkout.workoutName,
+      originalScheduledWorkout: baseWorkout.originalScheduledWorkout || null,
+      recoveryAdjusted: Boolean(baseWorkout.recoveryAdjusted),
+      recoveryFamily: baseWorkout.recoveryFamily || null,
       mode: baseWorkout.mode,
       selectedMasterySkill: baseWorkout.selectedMasterySkill,
       exercises: baseWorkout.exercises.map(exercise => ({ exerciseId: exercise.id }))
@@ -1716,6 +1724,8 @@ function updateGeneratedWorkoutAddOns() {
     exercises: (state.generated.exercises || []).filter(exercise => !exercise?.isAddOn)
   };
   state.generated = applyWorkoutAddOns(baseWorkout);
+  state.includeWarmup = Boolean(state.generated.includeWarmup);
+  state.includeStretch = Boolean(state.generated.includeStretch);
   state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
   state.generated.includeRestTimer = Boolean(state.includeRestTimer);
   state.generated.restTimerSeconds = 60;
@@ -1759,6 +1769,7 @@ function activeSwapCandidates(exercise) {
 
 function swapAvailabilityCopy(reason = '') {
   if (/locked progression stages/i.test(reason)) return 'Keep progressing to unlock another option.';
+  if (/recovery setting/i.test(reason)) return 'No compatible alternative is currently available for your recovery settings.';
   if (/unavailable equipment/i.test(reason)) return 'No other suitable option works with your current equipment.';
   if (/already used/i.test(reason)) return 'Every suitable alternative is already in this workout.';
   return 'No other suitable option is available yet.';
@@ -1818,6 +1829,11 @@ function renderGeneratedWorkout() {
   document.getElementById('generatedWorkoutCard').classList.remove('hidden');
   document.getElementById('exercisePreview').classList.add('hidden');
   document.getElementById('workoutName').textContent = workoutModule.workoutDisplayName(generated.workoutName);
+  const recoveryMessage = document.getElementById('workoutRecoveryMessage');
+  if (recoveryMessage) {
+    recoveryMessage.textContent = generated.recoveryExplanation || '';
+    recoveryMessage.classList.toggle('hidden', !generated.recoveryExplanation);
+  }
   const workoutMeta = document.getElementById('workoutMeta');
   if (workoutMeta) workoutMeta.textContent = workoutToolSummary(generated);
 
@@ -1825,8 +1841,8 @@ function renderGeneratedWorkout() {
   const stretchInput = document.getElementById('includeStretch');
   const exerciseTimerInput = document.getElementById('includeExerciseTimer');
   const restTimerInput = document.getElementById('includeRestTimer');
-  if (warmupInput) warmupInput.checked = Boolean(state.includeWarmup);
-  if (stretchInput) stretchInput.checked = Boolean(state.includeStretch);
+  if (warmupInput) warmupInput.checked = Boolean(generated.includeWarmup);
+  if (stretchInput) stretchInput.checked = Boolean(generated.includeStretch);
   if (exerciseTimerInput) exerciseTimerInput.checked = Boolean(state.includeExerciseTimer);
   if (restTimerInput) restTimerInput.checked = Boolean(state.includeRestTimer);
   updateAddOnSummary();
@@ -2075,6 +2091,18 @@ function renderExercises() {
 
   state.current = sanitizeWorkout(state.current);
   if (!state.current) { renderToday(); return; }
+  const activeRecovery = typeof getActiveRecovery === 'function' ? getActiveRecovery() : null;
+  state.current = workoutModule.revalidateWorkoutForRecovery(state.current, activeRecovery);
+  if (!(state.current?.exercises || []).some(exercise => !exercise.isAddOn)) {
+    console.warn('Recovery filtering removed every exercise from the restored workout.', {
+      recovery: activeRecovery,
+      workout: state.current?.originalScheduledWorkout || state.current?.workoutName
+    });
+    state.current = null;
+    saveState();
+    renderToday();
+    return;
+  }
   const shouldResetWorkoutScroll = state.current.sessionId !== renderedWorkoutSessionId;
   renderedWorkoutSessionId = state.current.sessionId || null;
   state.current.exercises = (state.current.exercises || []).map((exercise, index) => ({
@@ -2595,6 +2623,10 @@ async function completeWorkoutNow(showFullConfirmation = true) {
     date: completedAt,
     completedAt,
     workout: state.current.workoutName,
+    originalScheduledWorkout: state.current.originalScheduledWorkout || null,
+    recoveryAdjusted: Boolean(state.current.recoveryAdjusted),
+    recoveryFamily: state.current.recoveryFamily || null,
+    recoveryRestrictions: state.current.recoveryRestrictions || null,
     mode: state.current.mode,
     energy: state.current.mode,
     status: completionStatus,
@@ -2667,7 +2699,12 @@ async function completeWorkoutNow(showFullConfirmation = true) {
     })),
     progressionEvents
   });
-  state.rotationIndex = workoutModule.nextRotationIndexFromHistory(state.history, state.rotationIndex);
+  const replacedRotationIndex = state.current.recoveryAdjusted
+    ? workoutModule.rotationIndexForWorkoutName(state.current.originalScheduledWorkout)
+    : -1;
+  state.rotationIndex = replacedRotationIndex >= 0
+    ? (replacedRotationIndex + 1) % 4
+    : workoutModule.nextRotationIndexFromHistory(state.history, state.rotationIndex);
   state.progressInsights = { ...(state.progressInsights || {}), returningSeenWorkoutId: '' };
   closeWorkoutSession(sessionId);
   state.current = null;
@@ -2898,7 +2935,10 @@ function renderProgress() {
   const level = track.length ? Math.max(0, Math.min(getTrackLevel(goalTrackKey), track.length - 1)) : 0;
 
   const heroTitle = document.getElementById('goalHeroTitle');
-  if (heroTitle) heroTitle.textContent = goalLabels[goal] || 'Pull-up';
+  if (heroTitle) {
+    heroTitle.textContent = goalLabels[goal] || 'Pull-up';
+    heroTitle.classList.toggle('is-long-title', heroTitle.textContent.length >= 12);
+  }
   const dotCount = track.length;
   const filledDots = Math.min(level + 1, track.length);
   const focusDots = document.getElementById('focusProgressDots');
@@ -2922,9 +2962,17 @@ function renderProgress() {
   const milestone = document.getElementById('focusNextMilestone');
   const focusAchieved = workoutModule.isTrackMastered(goalTrackKey, state.levels?.[goalTrackKey] || {}, track);
   const nextMilestone = !focusAchieved ? track[level + 1]?.name : null;
+  const activeRecovery = typeof getActiveRecovery === 'function' ? getActiveRecovery() : null;
+  const progressionPaused = Boolean(
+    activeRecovery &&
+    track[level] &&
+    !workoutModule.isExerciseAllowedForRecovery(track[level], activeRecovery)
+  );
   if (milestone) {
-    milestone.classList.toggle('hidden', !nextMilestone);
-    milestone.textContent = nextMilestone ? `Next milestone: ${nextMilestone}` : '';
+    milestone.classList.toggle('hidden', !nextMilestone && !progressionPaused);
+    milestone.textContent = progressionPaused
+      ? 'Paused by recovery'
+      : nextMilestone ? `Next milestone: ${nextMilestone}` : '';
   }
   renderProgressCard(buildProgressCardData(goal, profile, goalTrackKey, track));
 
@@ -3535,7 +3583,7 @@ function renderAccountMainSummary() {
       : equipmentLabels.none;
   }
   if (recoverySummary) {
-    const recovery = getActiveRecovery();
+    const recovery = getPrimaryRecovery();
     recoverySummary.textContent = recovery ? recoveryAreaLabels[recovery.area] || 'Active' : '';
   }
 }
@@ -3555,10 +3603,13 @@ function populateAccountEquipment() {
 }
 
 function getActiveRecovery() {
-  const recovery = state.recovery;
-  if (!recovery || typeof recovery !== 'object') return null;
-  if (recovery.until && !Number.isNaN(new Date(recovery.until).getTime()) && new Date(recovery.until).getTime() < Date.now()) return null;
-  return recovery.area ? recovery : null;
+  const restrictions = workoutModule.activeRecoveryRestrictions(state);
+  if (!restrictions.length) return null;
+  return restrictions.length === 1 ? restrictions[0] : { restrictions };
+}
+
+function getPrimaryRecovery() {
+  return workoutModule.activeRecoveryRestrictions(getActiveRecovery())[0] || null;
 }
 
 function recoveryEndDate(duration) {
@@ -3585,7 +3636,7 @@ function recoveryStatusText(recovery) {
 }
 
 function populateAccountRecovery() {
-  const recovery = getActiveRecovery();
+  const recovery = getPrimaryRecovery();
   const formRecovery = recoveryFormEditing ? recovery : null;
   const areaInput = document.getElementById('recoveryAreaInput');
   const durationInput = document.getElementById('recoveryDurationInput');
@@ -3620,6 +3671,7 @@ async function saveAccountRecovery() {
     until: until ? until.toISOString() : null,
     createdAt: new Date().toISOString()
   };
+  state.recoveries = [];
   state.current = null;
   state.generated = null;
   state.selectedEnergy = null;
@@ -3639,6 +3691,7 @@ function editAccountRecovery() {
 function removeAccountRecovery() {
   recoveryFormEditing = false;
   state.recovery = null;
+  state.recoveries = [];
   state.current = null;
   state.generated = null;
   state.selectedEnergy = null;
