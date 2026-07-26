@@ -261,6 +261,8 @@ const phaseTwoProfiles = {
   lsit: { goal: 'lsit', equipment: ['floor', 'pullupBar', 'dipBars', 'bands'] },
   pistolSquat: { goal: 'pistolSquat', equipment: ['floor', 'pullupBar', 'dipBars', 'bands'] }
 };
+const generatedFamily = exercise => exercise.developmentDiagnostics?.foundationFamilySlot || exercise.sourceTrack;
+const strongerReachedExerciseIds = new Set();
 for (const [goal, profile] of Object.entries(phaseTwoProfiles)) {
   for (let rotationIndex = 0; rotationIndex < 4; rotationIndex += 1) {
     for (const mode of ['great', 'normal', 'tired', 'exhausted']) {
@@ -296,7 +298,7 @@ const balancedPushFoundation = workouts.getTodayWorkout({
   profile: phaseTwoProfiles.handstand
 });
 assert.deepStrictEqual(
-  new Set(balancedPushFoundation.exercises.slice(0, 3).map(item => item.sourceTrack)),
+  new Set(balancedPushFoundation.exercises.slice(0, 3).map(generatedFamily)),
   new Set(['horizontalPush', 'verticalPush', 'dipStrength'])
 );
 const balancedLowerFoundation = workouts.getTodayWorkout({
@@ -304,7 +306,7 @@ const balancedLowerFoundation = workouts.getTodayWorkout({
   state: { rotationIndex: 1, levels: workouts.createDefaultLevels(), history: [] },
   profile: phaseTwoProfiles.pistolSquat
 });
-assert.ok(['squat', 'posteriorChain', 'unilateral'].every(trackKey => balancedLowerFoundation.exercises.some(item => item.sourceTrack === trackKey)));
+assert.ok(['squat', 'posteriorChain', 'unilateral'].every(trackKey => balancedLowerFoundation.exercises.some(item => generatedFamily(item) === trackKey)));
 const prioritySkillWorkout = workouts.getTodayWorkout({
   mode: 'great',
   state: { rotationIndex: 3, levels: workouts.createDefaultLevels(), history: [] },
@@ -314,6 +316,14 @@ assert.strictEqual(prioritySkillWorkout.selectedMasterySkill, 'pistolSquat');
 assert.strictEqual(prioritySkillWorkout.selectedSkillTrackKey, 'pistolSquat');
 assert.strictEqual(prioritySkillWorkout.exercises.filter(item => item.workoutRole === 'primaryFocus').length, 2);
 assert.strictEqual(prioritySkillWorkout.exercises.filter(item => item.workoutRole === 'focusAccessory').length, 1);
+const pullPrioritySecondary = workouts.getTodayWorkout({
+  mode: 'normal',
+  state: { rotationIndex: 3, levels: workouts.createDefaultLevels(), history: [] },
+  profile: phaseTwoProfiles.pullup
+}).exercises.find(item => item.workoutRole === 'focusAccessory');
+assert.strictEqual(pullPrioritySecondary.progressionTrackKey, 'handstand');
+assert.strictEqual(pullPrioritySecondary.progressionEvidenceTarget, 'handstand');
+assert.notStrictEqual(pullPrioritySecondary.progressionTrackKey, 'verticalPull');
 
 const rotatingSecondarySkills = [];
 for (let completedSkillLabs = 0; completedSkillLabs < 6; completedSkillLabs += 1) {
@@ -326,6 +336,360 @@ for (let completedSkillLabs = 0; completedSkillLabs < 6; completedSkillLabs += 1
   rotatingSecondarySkills.push(workouts.secondaryFoundationalSkill(phaseTwoProfiles.pullup, { history }));
 }
 assert.deepStrictEqual(rotatingSecondarySkills, ['handstand', 'lsit', 'pistolSquat', 'handstand', 'lsit', 'pistolSquat']);
+
+function programmeLevelsAt(ratio, achieved = false) {
+  const levels = workouts.createDefaultLevels();
+  Object.keys(levels).forEach(trackKey => {
+    const track = workouts.baseTracks[trackKey] || [];
+    if (!track.length) return;
+    const level = Math.round((track.length - 1) * ratio);
+    levels[trackKey].level = level;
+    levels[trackKey].milestoneId = track[level].id;
+    if (achieved && level === track.length - 1) {
+      levels[trackKey].points = 10;
+      levels[trackKey].positiveExposures = 3;
+    }
+  });
+  return levels;
+}
+
+for (const [goal, profile] of Object.entries(phaseTwoProfiles)) {
+  for (const ratio of [0, 0.5, 1]) {
+    for (let rotationIndex = 0; rotationIndex < 4; rotationIndex += 1) {
+      for (const mode of ['great', 'normal']) {
+        const generated = workouts.getTodayWorkout({
+          mode,
+          state: { rotationIndex, levels: programmeLevelsAt(ratio), history: [] },
+          profile
+        });
+        generated.exercises.forEach(exercise => strongerReachedExerciseIds.add(exercise.id));
+        assert.strictEqual(generated.generationFailure, null, `unrestricted stronger composition: ${goal}/${ratio}/${generated.workoutName}/${mode}`);
+        assert.strictEqual(generated.exercises.length, 4, `unrestricted stronger count: ${goal}/${ratio}/${generated.workoutName}/${mode}`);
+        assert.ok(generated.totalFatigue <= generated.fatigueBudget.max + generated.fatigueBudget.tolerance);
+        assert.ok(generated.highlyTechnicalExerciseCount <= generated.maximumHighlyTechnicalExercises);
+        if (ratio === 1 && generated.workoutName === 'Push') {
+          const families = new Set(generated.exercises.map(generatedFamily));
+          assert.ok(['horizontalPush', 'verticalPush', 'dipStrength'].every(family => families.has(family)), `final Push families: ${goal}/${mode}`);
+        }
+        if (ratio === 1 && generated.workoutName === 'Skill lab') {
+          assert.ok(generated.exercises.some(item => item.developmentDiagnostics?.foundationalSkillDirectPractice), `final priority direct practice: ${goal}/${mode}`);
+          assert.ok(generated.exercises.some(item => item.workoutRole === 'focusAccessory'), `final secondary practice: ${goal}/${mode}`);
+          assert.ok(generated.exercises.some(item => item.workoutRole === 'generalSupport'), `final compatible support: ${goal}/${mode}`);
+        }
+      }
+    }
+  }
+}
+assert.ok(strongerReachedExerciseIds.has('glute-bridge-walkout'), 'Glute-bridge walkout is reachable');
+assert.deepStrictEqual(
+  Array.from(workouts.movementTracks.posteriorChain, exercise => exercise.id),
+  [
+    'glute-bridge',
+    'paused-glute-bridge',
+    'long-lever-glute-bridge',
+    'single-leg-assisted-glute-bridge',
+    'single-leg-glute-bridge',
+    'hip-hinge-drill',
+    'bodyweight-good-morning',
+    'single-leg-romanian-deadlift',
+    'glute-bridge-walkout'
+  ]
+);
+assert.ok(!Array.from(workouts.movementTracks.posteriorChain, exercise => exercise.id).some(id => /nordic|slider/.test(id)));
+const longLeverLevels = workouts.createDefaultLevels();
+longLeverLevels.posteriorChain.level = 2;
+longLeverLevels.posteriorChain.milestoneId = 'long-lever-glute-bridge';
+const longLeverWorkout = workouts.getTodayWorkout({
+  mode: 'normal',
+  state: {
+    rotationIndex: 1,
+    levels: longLeverLevels,
+    history: [{
+      date: new Date(2026, 0, 1).toISOString(),
+      workout: 'Push',
+      exercises: [
+        {
+          exerciseId: 'assisted-single-leg-sit-to-stand',
+          progressionTrackKey: 'pistolSquat',
+          progressionMilestoneId: 'assisted-single-leg-sit-to-stand',
+          completedSets: 3,
+          completionStatus: 'completed'
+        },
+        {
+          exerciseId: 'seated-compression-lift',
+          progressionTrackKey: 'lsit',
+          progressionMilestoneId: 'seated-compression-lift',
+          completedSets: 3,
+          completionStatus: 'completed'
+        }
+      ]
+    }]
+  },
+  profile: phaseTwoProfiles.pullup
+});
+assert.ok(longLeverWorkout.exercises.some(exercise => exercise.id === 'long-lever-glute-bridge'), 'Long-lever Glute bridge is reachable');
+const posteriorRecoveryWorkout = workouts.getTodayWorkout({
+  mode: 'normal',
+  state: {
+    rotationIndex: 1,
+    levels: programmeLevelsAt(1),
+    history: [],
+    recovery: { area: 'lowerBack', mode: 'rest' }
+  },
+  profile: phaseTwoProfiles.pullup
+});
+assert.ok(
+  !posteriorRecoveryWorkout.exercises.some(exercise => ['long-lever-glute-bridge', 'glute-bridge-walkout'].includes(exercise.id)),
+  'Lower-back recovery suppresses the new posterior-chain stages'
+);
+assert.ok(posteriorRecoveryWorkout.exercises.every(exercise => workouts.isExerciseAllowedForRecovery(exercise, { area: 'lowerBack', mode: 'rest' })));
+
+const achievedSkillTracks = {
+  pullup: 'verticalPull',
+  handstand: 'handstand',
+  lsit: 'lsit',
+  pistolSquat: 'pistolSquat'
+};
+for (const [skill, trackKey] of Object.entries(achievedSkillTracks)) {
+  const achievedLevels = programmeLevelsAt(1, true);
+  const finalExercise = workouts.baseTracks[trackKey].at(-1);
+  for (const mode of ['great', 'normal']) {
+    const maintenanceWorkout = workouts.getTodayWorkout({
+      mode,
+      state: { rotationIndex: 3, levels: achievedLevels, history: [] },
+      profile: phaseTwoProfiles[skill]
+    });
+    const maintenanceExercise = maintenanceWorkout.exercises.find(item => (
+      item.id === finalExercise.id &&
+      item.progressionTrackKey === trackKey
+    ));
+    assert.ok(maintenanceExercise, `achieved ${skill} final milestone remains reachable in ${mode}`);
+    assert.strictEqual(maintenanceExercise.maintenance, true, `achieved ${skill} is marked as maintenance`);
+    assert.strictEqual(maintenanceExercise.developmentDiagnostics?.maintenance, true);
+  }
+  const tiredMaintenance = workouts.getTodayWorkout({
+    mode: 'tired',
+    state: { rotationIndex: 3, levels: achievedLevels, history: [] },
+    profile: phaseTwoProfiles[skill]
+  });
+  assert.strictEqual(tiredMaintenance.exercises.length, 3);
+  assert.ok(tiredMaintenance.highlyTechnicalExerciseCount <= tiredMaintenance.maximumHighlyTechnicalExercises);
+  const exhaustedMaintenance = workouts.getTodayWorkout({
+    mode: 'exhausted',
+    state: { rotationIndex: 3, levels: achievedLevels, history: [] },
+    profile: phaseTwoProfiles[skill]
+  });
+  assert.strictEqual(exhaustedMaintenance.exercises.length, 3);
+  assert.strictEqual(exhaustedMaintenance.highlyTechnicalExerciseCount, 0);
+  assert.ok(!exhaustedMaintenance.exercises.some(item => item.id === finalExercise.id), `Exhausted suppresses maximal ${skill} maintenance`);
+
+  const achievedLevelBefore = achievedLevels[trackKey].level;
+  const generatedFinal = workouts.getTodayWorkout({
+    mode: 'normal',
+    state: { rotationIndex: 3, levels: achievedLevels, history: [] },
+    profile: phaseTwoProfiles[skill]
+  }).exercises.find(item => item.id === finalExercise.id && item.progressionTrackKey === trackKey);
+  const maintenanceResult = workouts.exerciseResult(
+    generatedFinal,
+    Array(generatedFinal.setCount).fill(true),
+    'easy'
+  );
+  assert.strictEqual(workouts.applyExerciseResultToProgression(achievedLevels, maintenanceResult).reason, 'positive-current-milestone-evidence');
+  assert.strictEqual(achievedLevels[trackKey].level, achievedLevelBefore, `${skill} maintenance creates no nonexistent next level`);
+}
+
+const recoveryBySkill = {
+  pullup: { area: 'leftShoulder', mode: 'rest' },
+  handstand: { area: 'leftWrist', mode: 'rest' },
+  lsit: { area: 'leftWrist', mode: 'rest' },
+  pistolSquat: { area: 'leftKnee', mode: 'rest' }
+};
+for (const [skill, trackKey] of Object.entries(achievedSkillTracks)) {
+  const levels = programmeLevelsAt(1, true);
+  const restricted = workouts.getTodayWorkout({
+    mode: 'normal',
+    state: { rotationIndex: 3, levels, history: [], recovery: recoveryBySkill[skill] },
+    profile: phaseTwoProfiles[skill]
+  });
+  assert.ok(
+    !restricted.exercises.some(item => item.id === workouts.baseTracks[trackKey].at(-1).id),
+    `recovery can suppress final ${skill} maintenance`
+  );
+}
+
+for (const [goal, profile] of Object.entries(phaseTwoProfiles)) {
+  const cadenceState = { rotationIndex: 0, levels: programmeLevelsAt(0.5), history: [] };
+  const directExposureWorkouts = Object.fromEntries(workouts.PRIORITY_SKILLS.map(skill => [skill, []]));
+  for (let workoutNumber = 0; workoutNumber < 8; workoutNumber += 1) {
+    const generated = workouts.getTodayWorkout({ mode: 'normal', state: cadenceState, profile });
+    const results = generated.exercises.map(exercise => workouts.exerciseResult(
+      exercise,
+      Array(exercise.setCount).fill(true),
+      'good'
+    ));
+    workouts.PRIORITY_SKILLS.forEach(skill => {
+      const trackKey = workouts.directSkillTrackKey(skill);
+      if (results.some(result => (
+        result.progressionTrackKey === trackKey &&
+        result.exerciseId === result.progressionMilestoneId
+      ))) directExposureWorkouts[skill].push(workoutNumber);
+    });
+    cadenceState.history.push({
+      date: new Date(2026, 0, workoutNumber + 1).toISOString(),
+      workout: generated.workoutName,
+      exercises: results
+    });
+  }
+  assert.ok(directExposureWorkouts[goal].some(index => index < 4), `${goal} priority direct practice in first rotation`);
+  assert.ok(directExposureWorkouts[goal].some(index => index >= 4), `${goal} priority direct practice in second rotation`);
+  workouts.PRIORITY_SKILLS.filter(skill => skill !== goal).forEach(skill => {
+    assert.ok(directExposureWorkouts[skill].length > 0, `${skill} non-priority direct practice within two rotations for ${goal}`);
+  });
+  const exposureCounts = Object.values(directExposureWorkouts).map(items => items.length);
+  assert.ok(Math.max(...exposureCounts) - Math.min(...exposureCounts) <= 2, `Pull-up is not disproportionately favoured for ${goal}`);
+}
+
+const overdueHistory = [{
+  date: new Date(2026, 0, 1).toISOString(),
+  workout: 'Lower Body',
+  exercises: [{
+    exerciseId: 'seated-compression-lift',
+    progressionTrackKey: 'lsit',
+    progressionMilestoneId: 'seated-compression-lift',
+    completedSets: 3,
+    completionStatus: 'completed'
+  }]
+}, {
+  date: new Date(2026, 0, 2).toISOString(),
+  workout: 'Push',
+  exercises: [{
+    exerciseId: 'wrist-preparation',
+    progressionTrackKey: 'handstand',
+    progressionMilestoneId: 'wrist-preparation',
+    completedSets: 3,
+    completionStatus: 'completed'
+  }]
+}];
+assert.strictEqual(
+  workouts.secondaryFoundationalSkill(phaseTwoProfiles.pullup, { history: overdueHistory }),
+  'pistolSquat',
+  'secondary scheduling prefers the skill with no actual direct exposure'
+);
+
+const foundationEvidenceLevels = workouts.createDefaultLevels();
+const scheduledPushSkill = workouts.getTodayWorkout({
+  mode: 'normal',
+  state: { rotationIndex: 0, levels: foundationEvidenceLevels, history: [] },
+  profile: phaseTwoProfiles.pullup
+});
+const directHandstandInPush = scheduledPushSkill.exercises.find(item => item.progressionTrackKey === 'handstand');
+assert.ok(directHandstandInPush?.developmentDiagnostics?.foundationalSkillDirectPractice);
+assert.strictEqual(directHandstandInPush.progressionEvidenceTarget, 'handstand');
+workouts.applyExerciseResultToProgression(
+  foundationEvidenceLevels,
+  workouts.exerciseResult(directHandstandInPush, Array(directHandstandInPush.setCount).fill(true), 'easy')
+);
+assert.strictEqual(foundationEvidenceLevels.handstand.points, 2);
+assert.strictEqual(foundationEvidenceLevels.verticalPush.points, 0);
+
+const recentFoundationSkillHistory = [{
+  date: new Date(2026, 0, 1).toISOString(),
+  workout: 'Push',
+  exercises: [{
+    exerciseId: 'wrist-preparation',
+    progressionTrackKey: 'handstand',
+    progressionMilestoneId: 'wrist-preparation',
+    completedSets: 3,
+    completionStatus: 'completed'
+  }]
+}, {
+  date: new Date(2026, 0, 2).toISOString(),
+  workout: 'Lower Body',
+  exercises: [
+    {
+      exerciseId: 'assisted-single-leg-sit-to-stand',
+      progressionTrackKey: 'pistolSquat',
+      progressionMilestoneId: 'assisted-single-leg-sit-to-stand',
+      completedSets: 3,
+      completionStatus: 'completed'
+    },
+    {
+      exerciseId: 'seated-compression-lift',
+      progressionTrackKey: 'lsit',
+      progressionMilestoneId: 'seated-compression-lift',
+      completedSets: 3,
+      completionStatus: 'completed'
+    }
+  ]
+}, {
+  date: new Date(2026, 0, 3).toISOString(),
+  workout: 'Skill lab',
+  exercises: []
+}];
+const ordinaryPush = workouts.getTodayWorkout({
+  mode: 'normal',
+  state: { rotationIndex: 0, levels: workouts.createDefaultLevels(), history: recentFoundationSkillHistory },
+  profile: phaseTwoProfiles.pullup
+});
+const ordinaryVerticalPush = ordinaryPush.exercises.find(item => item.progressionTrackKey === 'verticalPush');
+assert.ok(ordinaryVerticalPush);
+assert.strictEqual(ordinaryVerticalPush.progressionEvidenceTarget, 'verticalPush');
+
+const scheduledLowerSkills = workouts.getTodayWorkout({
+  mode: 'normal',
+  state: { rotationIndex: 1, levels: workouts.createDefaultLevels(), history: [] },
+  profile: phaseTwoProfiles.pullup
+});
+const directPistolInLower = scheduledLowerSkills.exercises.find(item => item.progressionTrackKey === 'pistolSquat');
+const directLsitInLower = scheduledLowerSkills.exercises.find(item => item.progressionTrackKey === 'lsit');
+assert.ok(directPistolInLower?.developmentDiagnostics?.foundationalSkillDirectPractice);
+assert.ok(directLsitInLower?.developmentDiagnostics?.foundationalSkillDirectPractice);
+assert.strictEqual(directPistolInLower.progressionEvidenceTarget, 'pistolSquat');
+assert.strictEqual(directLsitInLower.progressionEvidenceTarget, 'lsit');
+
+const singleTrackEvidenceLevels = workouts.createDefaultLevels();
+workouts.applyExerciseResultToProgression(
+  singleTrackEvidenceLevels,
+  workouts.exerciseResult(directPistolInLower, Array(directPistolInLower.setCount).fill(true), 'easy')
+);
+assert.strictEqual(singleTrackEvidenceLevels.pistolSquat.points, 2);
+assert.strictEqual(singleTrackEvidenceLevels.unilateral.points, 0);
+assert.strictEqual(singleTrackEvidenceLevels.lsit.points, 0);
+workouts.applyExerciseResultToProgression(
+  singleTrackEvidenceLevels,
+  workouts.exerciseResult(directLsitInLower, Array(directLsitInLower.setCount).fill(true), 'good')
+);
+assert.strictEqual(singleTrackEvidenceLevels.lsit.points, 1);
+assert.strictEqual(singleTrackEvidenceLevels.compression.points, 0);
+
+const ordinaryUnilateral = workouts.getTodayWorkout({
+  mode: 'normal',
+  state: {
+    rotationIndex: 1,
+    levels: workouts.createDefaultLevels(),
+    history: [
+      ...recentFoundationSkillHistory,
+      { date: new Date(2026, 0, 4).toISOString(), workout: 'Push', exercises: [] }
+    ]
+  },
+  profile: phaseTwoProfiles.pullup
+}).exercises.find(item => item.progressionTrackKey === 'unilateral');
+assert.ok(ordinaryUnilateral);
+assert.strictEqual(ordinaryUnilateral.progressionEvidenceTarget, 'unilateral');
+const ordinaryCompression = workouts.normalizeExercise({
+  ...catalog('reverse-crunch'),
+  trackKey: 'compression',
+  progressionTrackKey: 'compression',
+  progressionEvidenceTarget: 'compression',
+  progressionMilestoneId: 'reverse-crunch'
+});
+const ordinaryFoundationLevels = workouts.createDefaultLevels();
+workouts.applyExerciseResultToProgression(
+  ordinaryFoundationLevels,
+  workouts.exerciseResult(ordinaryCompression, Array(ordinaryCompression.setCount).fill(true), 'good')
+);
+assert.strictEqual(ordinaryFoundationLevels.compression.points, 1);
+assert.strictEqual(ordinaryFoundationLevels.lsit.points, 0);
 
 const pullPriorityLab = workouts.getTodayWorkout({
   mode: 'normal',
@@ -1088,10 +1452,12 @@ delete legacyCanonicalLevels.verticalPull.milestoneId;
 delete legacyCanonicalLevels.scapularPull.milestoneId;
 delete legacyCanonicalLevels.antiExtension.milestoneId;
 delete legacyCanonicalLevels.lateralCore.milestoneId;
+delete legacyCanonicalLevels.posteriorChain.milestoneId;
 legacyCanonicalLevels.verticalPull.level = 8;
 legacyCanonicalLevels.scapularPull.level = 0;
 legacyCanonicalLevels.antiExtension.level = 2;
 legacyCanonicalLevels.lateralCore.level = 0;
+legacyCanonicalLevels.posteriorChain.level = 6;
 const remappedCanonicalState = stateStore.sanitizeState({
   ...stateStore.defaultState(),
   schemaVersion: 6,
@@ -1101,12 +1467,13 @@ assert.strictEqual(remappedCanonicalState.levels.verticalPull.milestoneId, 'ches
 assert.strictEqual(remappedCanonicalState.levels.scapularPull.milestoneId, 'scapular-pull-up');
 assert.strictEqual(remappedCanonicalState.levels.antiExtension.milestoneId, 'plank');
 assert.strictEqual(remappedCanonicalState.levels.lateralCore.milestoneId, 'side-plank');
+assert.strictEqual(remappedCanonicalState.levels.posteriorChain.milestoneId, 'single-leg-romanian-deadlift');
 const existingGeneralProfile = stateStore.sanitizeState({
   ...stateStore.defaultState(),
   schemaVersion: 5,
   profile: { goal: 'general', equipment: ['floor'], pushups: 'zero', squats: 'zeroFive', customPreference: 'preserved' },
   onboardingBaseline: { version: 1, equipment: ['floor'] },
-  levels: { ...stateStore.defaultState().levels, posteriorChain: { ...stateStore.defaultState().levels.posteriorChain, level: 2 } },
+  levels: { ...stateStore.defaultState().levels, posteriorChain: { ...stateStore.defaultState().levels.posteriorChain, level: 2, milestoneId: null } },
   history: [{ date: new Date().toISOString(), workout: 'Push', exercises: [{ name: 'Wall push-up', id: 'wall-push-up', prescription: '3 × 10' }] }]
 });
 assert.strictEqual(existingGeneralProfile.profile.goal, null);
@@ -1114,7 +1481,8 @@ assert.strictEqual(existingGeneralProfile.profile.legacyGoal, 'general');
 assert.strictEqual(existingGeneralProfile.profile.prioritySkillRequired, true);
 assert.strictEqual(existingGeneralProfile.profile.customPreference, 'preserved');
 assert.deepStrictEqual(Array.from(existingGeneralProfile.profile.equipment), ['floor']);
-assert.strictEqual(existingGeneralProfile.levels.posteriorChain.level, 2);
+assert.strictEqual(existingGeneralProfile.levels.posteriorChain.level, 3);
+assert.strictEqual(existingGeneralProfile.levels.posteriorChain.milestoneId, 'single-leg-assisted-glute-bridge');
 assert.strictEqual(existingGeneralProfile.history.length, 1);
 assert.strictEqual(existingGeneralProfile.onboardingBaseline.version, 1);
 assert.deepStrictEqual(Array.from(existingGeneralProfile.generationHistory), []);
@@ -1122,7 +1490,7 @@ const existingMuscleProfile = stateStore.sanitizeState({
   ...stateStore.defaultState(),
   schemaVersion: 6,
   profile: { goal: 'muscleup', equipment: ['pullupBar', 'bands'], pushups: 'sixTen', squats: 'sixTen' },
-  levels: { ...stateStore.defaultState().levels, verticalPull: { ...stateStore.defaultState().levels.verticalPull, level: 5 } },
+  levels: { ...stateStore.defaultState().levels, verticalPull: { ...stateStore.defaultState().levels.verticalPull, level: 5, milestoneId: null } },
   history: [{ date: new Date().toISOString(), workout: 'Skills', exercises: [{ name: 'Pull-up', id: 'pull-up', prescription: '3 × 5' }] }]
 });
 assert.strictEqual(existingMuscleProfile.profile.goal, null);

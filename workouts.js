@@ -41,6 +41,12 @@
   });
   const PRIORITY_SKILLS = Object.freeze(Object.values(MASTERY_SKILLS));
   const FOUNDATIONAL_SKILL_TRACKS = new Set(['verticalPull', 'handstand', 'lsit', 'pistolSquat']);
+  const DIRECT_SKILL_TRACK_KEYS = Object.freeze({
+    pullup: 'verticalPull',
+    handstand: 'handstand',
+    lsit: 'lsit',
+    pistolSquat: 'pistolSquat'
+  });
   const MILESTONE_EQUIVALENTS = Object.freeze({});
   const ACHIEVEMENT_REQUIREMENTS = Object.freeze({
     pullup: Object.freeze({ positiveFinalMilestoneExposures: 3 }),
@@ -338,11 +344,13 @@
     'shrimp-squat': ["Lower in a small controlled range and stand without bouncing.","The prescribed work is completed separately on each side."],
     'glute-bridge': ["Press through heels, lift hips by squeezing glutes, then lower slowly."],
     'paused-glute-bridge': ["Pause for two seconds at the top before lowering."],
+    'long-lever-glute-bridge': ["Every repetition reaches a controlled hip extension with both heels set farther from the hips, the ribs staying down, and no lower-back arch."],
     'single-leg-assisted-glute-bridge': ["Lift hips evenly, pause briefly, and lower with control.","The prescribed work is completed separately on each side."],
     'single-leg-glute-bridge': ["Drive through the planted foot and lift hips without twisting.","The prescribed work is completed separately on each side."],
     'hip-hinge-drill': ["Push hips back, keep spine neutral, then stand by squeezing glutes."],
     'bodyweight-good-morning': ["Hinge hips back, keep a long spine, and return to tall."],
     'single-leg-romanian-deadlift': ["Hinge forward as the back leg reaches behind, then stand tall with control.","The prescribed work is completed separately on each side."],
+    'glute-bridge-walkout': ["Every repetition walks both heels away and back through the prescribed steps while the hips stay lifted, level, and controlled without cramping or lower-back extension."],
     'two-leg-calf-raise': ["Rise onto the balls of both feet and lower slowly."],
     'paused-calf-raise': ["Rise up, pause briefly at the top, and lower under control."],
     'single-leg-assisted-calf-raise': ["Rise on one foot, use the wall only for balance, and lower slowly.","The prescribed work is completed separately on each side."],
@@ -1105,7 +1113,24 @@
       execution: 'Pause for two seconds at the top before lowering.',
       safety: 'The pause should be felt in glutes, not the lower back. ' + PAIN_NOTICE
     }),
-    exercise('single-leg-assisted-glute-bridge', 'Single-leg assisted glute bridge', 'posterior-chain', 3, { sets: 3, reps: 7, perSide: true }, {
+    exercise('long-lever-glute-bridge', 'Long-lever glute bridge', 'posterior-chain', 3, { sets: 3, reps: 8 }, {
+      equipment: ['floor'],
+      primaryAreas: ['hamstrings', 'glutes'],
+      loadedAreas: ['hip', 'lower-back', 'knee'],
+      purpose: 'Increases hamstring demand safely on the floor before moving to bridge walkouts.',
+      setup: 'Lie on your back with knees only slightly bent and place both heels farther from the hips than in a normal Glute bridge.',
+      movement: [
+        'Brace the ribs gently toward the pelvis.',
+        'Press both heels into the floor and lift the hips without arching the lower back.',
+        'Pause briefly with the hips level, then lower under control.'
+      ],
+      execution: 'Press through the farther-away heels, lift the hips to a controlled long-lever bridge, pause, and lower slowly.',
+      focus: ['Keep the ribs down.', 'Keep both hips level.', 'Feel the hamstrings and glutes share the work.'],
+      commonMistakes: ['Moving the heels so far away that the hips cannot lift.', 'Arching the lower back.', 'Pushing through the toes instead of the heels.'],
+      safety: 'Begin with a modest heel distance and move the feet closer if the hamstrings cramp or the lower back takes over. ' + PAIN_NOTICE,
+      visualGuidance: 'Show a side view comparing the longer heel-to-hip distance with a normal bridge and a level, rib-controlled top position.'
+    }),
+    exercise('single-leg-assisted-glute-bridge', 'Single-leg assisted glute bridge', 'posterior-chain', 4, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -1114,7 +1139,7 @@
       safety: 'Keep hips level and switch to two-leg bridges if the back takes over. ' + PAIN_NOTICE,
       unilateral: true
     }),
-    exercise('single-leg-glute-bridge', 'Single-leg glute bridge', 'posterior-chain', 4, { sets: 3, reps: 7, perSide: true }, {
+    exercise('single-leg-glute-bridge', 'Single-leg glute bridge', 'posterior-chain', 5, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -1123,7 +1148,7 @@
       safety: 'Keep the range small if hips shift. ' + PAIN_NOTICE,
       unilateral: true
     }),
-    exercise('hip-hinge-drill', 'Hip hinge drill', 'posterior-chain', 5, { sets: 3, reps: 9 }, {
+    exercise('hip-hinge-drill', 'Hip hinge drill', 'posterior-chain', 6, { sets: 3, reps: 9 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -1131,7 +1156,7 @@
       execution: 'Push hips back, keep spine neutral, then stand by squeezing glutes.',
       safety: 'Move in a range where the back stays calm. ' + PAIN_NOTICE
     }),
-    exercise('bodyweight-good-morning', 'Bodyweight good morning', 'posterior-chain', 6, { sets: 3, reps: 10 }, {
+    exercise('bodyweight-good-morning', 'Bodyweight good morning', 'posterior-chain', 7, { sets: 3, reps: 10 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back'],
@@ -1139,7 +1164,7 @@
       execution: 'Hinge hips back, keep a long spine, and return to tall.',
       safety: 'Do not round or force range. ' + PAIN_NOTICE
     }),
-    exercise('single-leg-romanian-deadlift', 'Single-leg Romanian deadlift', 'posterior-chain', 7, { sets: 3, reps: 7, perSide: true }, {
+    exercise('single-leg-romanian-deadlift', 'Single-leg Romanian deadlift', 'posterior-chain', 8, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
       loadedAreas: ['hip', 'lower-back', 'ankle'],
@@ -1147,6 +1172,23 @@
       execution: 'Hinge forward as the back leg reaches behind, then stand tall with control.',
       safety: 'Use support and a small range if balance affects form. ' + PAIN_NOTICE,
       unilateral: true
+    }),
+    exercise('glute-bridge-walkout', 'Glute-bridge walkout', 'posterior-chain', 9, { sets: 3, reps: 4 }, {
+      equipment: ['floor'],
+      primaryAreas: ['hamstrings', 'glutes'],
+      loadedAreas: ['hip', 'lower-back', 'knee'],
+      purpose: 'Builds stronger floor-based hamstring capacity without sliders, external anchors, furniture, or a partner.',
+      setup: 'Lie on your back, lift into a controlled two-leg bridge, and keep both feet flat with space to take short heel steps.',
+      movement: [
+        'Hold the hips level and take two small alternating heel steps away from the body.',
+        'Pause before the hips or ribs change position.',
+        'Take the same small steps back to the bridge starting position, then lower under control.'
+      ],
+      execution: 'From a lifted bridge, walk the heels away for two short steps and back for two short steps while keeping the hips level.',
+      focus: ['Use short heel steps.', 'Keep the pelvis level.', 'Stop the walkout before the hips drop.'],
+      commonMistakes: ['Taking steps too large to control.', 'Letting the hips twist or sag.', 'Arching the lower back to keep the hips high.'],
+      safety: 'Use a non-slip floor, keep every step short, and return to Long-lever Glute bridge if the hamstrings cramp or the pelvis cannot stay controlled. ' + PAIN_NOTICE,
+      visualGuidance: 'Show a side view of a lifted bridge with two short heel steps out and two back while the pelvis stays level.'
     }),
 
     exercise('two-leg-calf-raise', 'Two-leg calf raise', 'calves', 1, { sets: 3, reps: 15 }, {
@@ -1920,7 +1962,7 @@
     squat: ids(['supported-chair-squat', 'chair-squat', 'bodyweight-squat', 'tempo-squat', 'pause-squat', 'narrow-squat']),
     unilateral: ids(['assisted-split-squat', 'split-squat', 'bulgarian-split-squat', 'assisted-shrimp-squat', 'shrimp-squat']),
     pistolSquat: ids(['assisted-single-leg-sit-to-stand', 'elevated-pistol-squat', 'counterbalance-pistol-squat', 'assisted-pistol-squat', 'pistol-squat-negative', 'full-pistol-squat']),
-    posteriorChain: ids(['glute-bridge', 'paused-glute-bridge', 'single-leg-assisted-glute-bridge', 'single-leg-glute-bridge', 'hip-hinge-drill', 'bodyweight-good-morning', 'single-leg-romanian-deadlift']),
+    posteriorChain: ids(['glute-bridge', 'paused-glute-bridge', 'long-lever-glute-bridge', 'single-leg-assisted-glute-bridge', 'single-leg-glute-bridge', 'hip-hinge-drill', 'bodyweight-good-morning', 'single-leg-romanian-deadlift', 'glute-bridge-walkout']),
     calves: ids(['two-leg-calf-raise', 'paused-calf-raise', 'single-leg-assisted-calf-raise', 'single-leg-calf-raise', 'elevated-single-leg-calf-raise']),
     antiExtension: ids(['dead-bug', 'forearm-plank', 'hollow-tuck-hold', 'plank', 'hollow-hold', 'long-lever-plank']),
     compression: ids(['reverse-crunch', 'seated-compression-lift', 'bent-knee-support-hold', 'tuck-support-hold']),
@@ -2166,7 +2208,8 @@
     Push: Object.freeze([
       ...workoutCompositionPolicies.Push.primaryFocusTracks,
       ...workoutCompositionPolicies.Push.focusAccessoryTracks,
-      ...workoutCompositionPolicies.Push.generalSupportTracks
+      ...workoutCompositionPolicies.Push.generalSupportTracks,
+      'handstand'
     ]),
     Pull: Object.freeze([
       ...workoutCompositionPolicies.Pull.primaryFocusTracks,
@@ -2176,7 +2219,9 @@
     'Lower Body': Object.freeze([
       ...workoutCompositionPolicies['Lower Body'].primaryFocusTracks,
       ...workoutCompositionPolicies['Lower Body'].focusAccessoryTracks,
-      ...workoutCompositionPolicies['Lower Body'].generalSupportTracks
+      ...workoutCompositionPolicies['Lower Body'].generalSupportTracks,
+      'pistolSquat',
+      'lsit'
     ]),
     'Skill lab': Object.freeze([
       'pistolSquat', 'antiExtension', 'lateralCore',
@@ -2996,6 +3041,22 @@
     });
   }
 
+  function isHighlyTechnicalExercise(exercise) {
+    return Boolean(exercise?.highSkill || exercise?.explosive || Number(exercise?.skill || 0) >= 7);
+  }
+
+  function maximumHighlyTechnicalExercises(mode = 'normal') {
+    if (mode === 'exhausted') return 0;
+    if (mode === 'tired') return 1;
+    return 2;
+  }
+
+  function isExerciseAllowedForEnergy(exercise, config) {
+    if (!exercise) return false;
+    if (config?.mode === 'exhausted' && isHighlyTechnicalExercise(exercise)) return false;
+    return true;
+  }
+
   function unlockedTrackCandidates(trackKey, config, state = {}, profile = null, recovery = null) {
     const tracks = getTracks(profile, state);
     if (!isTrackAvailable(trackKey, tracks)) return [];
@@ -3017,7 +3078,8 @@
         index <= unlockedLevel &&
         availableIds.has(baseExercise.id) &&
         isExerciseEligibleForGeneration(baseExercise, profile, state, recovery) &&
-        isExerciseAllowedForRecovery(baseExercise, recovery)
+        isExerciseAllowedForRecovery(baseExercise, recovery) &&
+        isExerciseAllowedForEnergy(baseExercise, config)
       ))
       .sort((first, second) => second.index - first.index)
       .map(({ baseExercise, index }) => normalizeExercise({
@@ -3031,7 +3093,11 @@
         canonicalMilestoneIndex: index,
         progressionMilestoneId: canonicalTrack[canonicalLevel]?.id || null,
         originalLevel: Math.min(Math.max(canonicalLevel, 0), canonicalTrack.length - 1) + 1,
-        plateau: plateauCount > 0
+        plateau: plateauCount > 0,
+        maintenance: (
+          index === canonicalLevel &&
+          isTrackMastered(trackKey, trackState, canonicalTrack)
+        )
       }));
   }
 
@@ -3087,12 +3153,58 @@
     pistolSquat: Object.freeze(['pistolSquat', 'calves', 'unilateral'])
   });
 
+  function directSkillTrackKey(skill) {
+    return DIRECT_SKILL_TRACK_KEYS[skill] || null;
+  }
+
+  function isDirectSkillPracticeResult(result, skill) {
+    const trackKey = directSkillTrackKey(skill);
+    if (!trackKey || result?.progressionTrackKey !== trackKey) return false;
+    const recordedWork = Number(result.completedSets || 0) > 0 || ['completed', 'partial', 'failed'].includes(result.completionStatus);
+    if (!recordedWork) return false;
+    if (result.progressionMilestoneId) return result.exerciseId === result.progressionMilestoneId;
+    return Boolean(masteryRelationshipFor(result.exerciseId, skill)?.direct);
+  }
+
+  function directSkillExposureRecency(skill, state = {}) {
+    const completedWorkouts = (state.history || []).filter(item => (
+      item &&
+      item.type !== 'custom' &&
+      !item.customType &&
+      rotationIndexForWorkoutName(item.workout) >= 0
+    ));
+    for (let index = completedWorkouts.length - 1; index >= 0; index -= 1) {
+      if ((completedWorkouts[index].exercises || []).some(result => isDirectSkillPracticeResult(result, skill))) {
+        return completedWorkouts.length - index - 1;
+      }
+    }
+    return Number.POSITIVE_INFINITY;
+  }
+
+  function isDirectSkillPracticeDue(skill, state = {}, maximumWorkoutGap = 7) {
+    return directSkillExposureRecency(skill, state) >= maximumWorkoutGap;
+  }
+
   function secondaryFoundationalSkill(profile = null, state = {}) {
     const prioritySkill = resolveMasterySkill(profile?.goal) || (profile ? null : MASTERY_SKILLS.pullup);
     if (!prioritySkill) return null;
     const availableSkills = PRIORITY_SKILLS.filter(skill => skill !== prioritySkill);
     const completedSkillLabs = (state.history || []).filter(item => rotationIndexForWorkoutName(item?.workout) === 3).length;
-    return availableSkills[completedSkillLabs % availableSkills.length];
+    const rotationOffset = completedSkillLabs % availableSkills.length;
+    const tieOrder = [
+      ...availableSkills.slice(rotationOffset),
+      ...availableSkills.slice(0, rotationOffset)
+    ];
+    return tieOrder
+      .map((skill, tieIndex) => ({
+        skill,
+        tieIndex,
+        recency: directSkillExposureRecency(skill, state)
+      }))
+      .sort((first, second) => (
+        second.recency - first.recency ||
+        first.tieIndex - second.tieIndex
+      ))[0]?.skill || null;
   }
 
   function skillCompositionPolicy(profile = null, state = {}) {
@@ -3150,11 +3262,20 @@
     if (
       policy.policyType === 'directSkills' &&
       relationship?.direct &&
-      Boolean(policy.selectedMasterySkill)
+      Boolean(policy.selectedMasterySkill) &&
+      sourceTrack === directSkillTrackKey(policy.selectedMasterySkill)
     ) {
-      return getGoalTrackKey(profile?.goal || 'pullup', profile, state);
+      return directSkillTrackKey(policy.selectedMasterySkill);
     }
     return sourceTrack;
+  }
+
+  function isCurrentMilestoneExercise(exercise, trackKey) {
+    const currentMilestoneId = exercise?.progressionMilestoneId;
+    if (!trackKey || !currentMilestoneId) return false;
+    return exercise.id === currentMilestoneId || Boolean(
+      MILESTONE_EQUIVALENTS[trackKey]?.[currentMilestoneId]?.includes(exercise.id)
+    );
   }
 
   function collectCompositionCandidates(trackKeys, role, config, state, profile, recovery, diversity, context) {
@@ -3209,6 +3330,12 @@
           profile,
           state
         );
+        const directPractice = isCurrentMilestoneExercise(candidate.exercise, evidenceTarget);
+        const foundationalSkillDirectPractice = Boolean(
+          directPractice &&
+          evidenceTarget === directSkillTrackKey(policy.selectedMasterySkill) &&
+          candidate.sourceTrack === directSkillTrackKey(policy.selectedMasterySkill)
+        );
         return {
           ...candidate,
           reservedDirectProgression,
@@ -3233,7 +3360,9 @@
               masteryRelationship: relationship?.relationship || null,
               prioritisationReason,
               supportsSelectedSkill: masteryRelevant,
-              directPractice: policy.policyType === 'directSkills',
+              directPractice,
+              foundationalSkillDirectPractice,
+              maintenance: Boolean(candidate.exercise.maintenance && directPractice),
               appearedEarlierSameDay: candidate.appearedSameDay,
               appearedRecently: candidate.appearedRecently,
               fallbackReason: null,
@@ -3344,10 +3473,76 @@
       diversity,
       candidateContext
     );
+    const scheduledFoundationSkills = [];
+    if (workout.name === 'Push' && isDirectSkillPracticeDue(MASTERY_SKILLS.handstand, state)) {
+      scheduledFoundationSkills.push({
+        skill: MASTERY_SKILLS.handstand,
+        trackKey: directSkillTrackKey(MASTERY_SKILLS.handstand),
+        familySlot: 'verticalPush',
+        role: 'primaryFocus'
+      });
+    }
+    if (workout.name === 'Lower Body' && isDirectSkillPracticeDue(MASTERY_SKILLS.pistolSquat, state)) {
+      scheduledFoundationSkills.push({
+        skill: MASTERY_SKILLS.pistolSquat,
+        trackKey: directSkillTrackKey(MASTERY_SKILLS.pistolSquat),
+        familySlot: 'unilateral',
+        role: 'primaryFocus'
+      });
+    }
+    if (workout.name === 'Lower Body' && isDirectSkillPracticeDue(MASTERY_SKILLS.lsit, state)) {
+      scheduledFoundationSkills.push({
+        skill: MASTERY_SKILLS.lsit,
+        trackKey: directSkillTrackKey(MASTERY_SKILLS.lsit),
+        familySlot: 'skillSupport',
+        role: 'focusAccessory'
+      });
+    }
+    const scheduledFoundationCandidates = scheduledFoundationSkills.map(schedule => ({
+      ...schedule,
+      candidates: collectCompositionCandidates(
+        [schedule.trackKey],
+        schedule.role,
+        config,
+        state,
+        profile,
+        recovery,
+        diversity,
+        {
+          ...candidateContext,
+          policy: {
+            policyType: 'directSkills',
+            primaryFocusTracks: [schedule.trackKey],
+            focusAccessoryTracks: [],
+            secondaryFocusTracks: [],
+            generalSupportTracks: [],
+            selectedMasterySkill: schedule.skill,
+            secondaryMasterySkill: null,
+            rankingTrackOrder: [],
+            maximumPerTrack: 1
+          }
+        }
+      ).map(candidate => ({
+        ...candidate,
+        developmentDiagnostics: {
+          ...(candidate.developmentDiagnostics || {}),
+          scheduledFoundationSkill: schedule.skill,
+          foundationFamilySlot: schedule.familySlot,
+          prioritisationReason: 'overdue-direct-foundational-skill-practice'
+        }
+      }))
+    }));
     const targetCount = config.exerciseCount;
     const exercises = [];
     const usedIds = new Set();
     const trackCounts = {};
+    const budgetRejections = { fatigue: 0, technicalSkill: 0 };
+    const candidateFamily = candidate => (
+      candidate?.developmentDiagnostics?.foundationFamilySlot ||
+      candidate?.sourceTrack ||
+      candidate?.developmentDiagnostics?.sourceTrack ||
+      candidate?.progressionTrackKey
+    );
     const takeCandidates = (candidates, maximum) => {
       for (const candidate of candidates) {
         if (exercises.length >= targetCount || maximum <= 0) break;
@@ -3356,8 +3551,19 @@
         const maximumPerTrack = policy.maximumPerTrack || 2;
         if (Number(trackCounts[sourceTrack] || 0) >= maximumPerTrack) continue;
         const nextFatigue = exercises.reduce((sum, exercise) => sum + Number(exercise.fatigue || 0), 0) + Number(candidate.fatigue || 0);
-        const nextSkill = exercises.reduce((sum, exercise) => sum + Number(exercise.skill || 0), 0) + Number(candidate.skill || 0);
-        if (nextFatigue > config.fatigueBudget.max + config.fatigueBudget.tolerance || nextSkill > config.skillLimit) continue;
+        const remainingSlotsAfterCandidate = Math.max(0, targetCount - exercises.length - 1);
+        const reservedMinimumFatigue = remainingSlotsAfterCandidate;
+        if (nextFatigue + reservedMinimumFatigue > config.fatigueBudget.max + config.fatigueBudget.tolerance) {
+          budgetRejections.fatigue += 1;
+          continue;
+        }
+        if (isHighlyTechnicalExercise(candidate)) {
+          const technicalExerciseCount = exercises.filter(isHighlyTechnicalExercise).length;
+          if (technicalExerciseCount >= maximumHighlyTechnicalExercises(config.mode)) {
+            budgetRejections.technicalSkill += 1;
+            continue;
+          }
+        }
         exercises.push(candidate.developmentDiagnostics?.appearedEarlierSameDay
           ? annotateControlledOverlap(candidate)
           : candidate);
@@ -3368,20 +3574,28 @@
     };
     const takeTrack = (candidates, trackKey, maximum = 1) => {
       takeCandidates(candidates.filter(candidate => (
-        (candidate.sourceTrack || candidate.developmentDiagnostics?.sourceTrack || candidate.progressionTrackKey) === trackKey
+        candidateFamily(candidate) === trackKey
       )), maximum);
     };
 
     if (workout.name === 'Skill lab') {
-      takeCandidates(primaryCandidates, 2);
-      takeCandidates(secondaryCandidates, 1);
+      takeCandidates(primaryCandidates.filter(candidate => candidate.developmentDiagnostics?.foundationalSkillDirectPractice), 1);
+      if (!exercises.some(item => item.workoutRole === 'primaryFocus')) takeCandidates(primaryCandidates, 1);
+      takeCandidates(secondaryCandidates.filter(candidate => candidate.developmentDiagnostics?.foundationalSkillDirectPractice), 1);
+      if (!exercises.some(item => item.workoutRole === 'focusAccessory')) takeCandidates(secondaryCandidates, 1);
+      takeCandidates(primaryCandidates, 2 - exercises.filter(item => item.workoutRole === 'primaryFocus').length);
       if (targetCount === 4) takeCandidates(supportCandidates, 1);
       takeCandidates(primaryCandidates, targetCount - exercises.length);
       takeCandidates(secondaryCandidates, targetCount - exercises.length);
       takeCandidates(supportCandidates, targetCount - exercises.length);
     } else {
-      (policy.requiredMovementFamilies || []).forEach(trackKey => takeTrack(primaryCandidates, trackKey));
-      if (workout.name === 'Lower Body') takeTrack(primaryCandidates, 'calves');
+      scheduledFoundationCandidates.forEach(schedule => takeCandidates(schedule.candidates, 1));
+      (policy.requiredMovementFamilies || []).forEach(trackKey => {
+        if (!exercises.some(exercise => candidateFamily(exercise) === trackKey)) takeTrack(primaryCandidates, trackKey);
+      });
+      if (workout.name === 'Lower Body') {
+        if (exercises.length < targetCount) takeTrack(primaryCandidates, 'calves');
+      }
       takeCandidates(accessoryCandidates, targetCount - exercises.length);
       takeCandidates(primaryCandidates, targetCount - exercises.length);
       takeCandidates(supportCandidates, Math.min(1, targetCount - exercises.length));
@@ -3394,10 +3608,11 @@
     const focusCount = primaryFocusCount + focusAccessoryCount;
     const requiredCategoryCount = targetCount === 4 ? 3 : 2;
     const requiredFamiliesCovered = (policy.requiredMovementFamilies || []).filter(trackKey => (
-      exercises.some(exercise => exercise.sourceTrack === trackKey)
+      exercises.some(exercise => candidateFamily(exercise) === trackKey)
     ));
     const availableRequiredFamilies = (policy.requiredMovementFamilies || []).filter(trackKey => (
-      primaryCandidates.some(exercise => exercise.sourceTrack === trackKey)
+      primaryCandidates.some(exercise => candidateFamily(exercise) === trackKey) ||
+      scheduledFoundationCandidates.some(schedule => schedule.familySlot === trackKey && schedule.candidates.length)
     ));
     const foundationCompositionValid = workout.name === 'Skill lab' || (
       focusCount >= requiredCategoryCount &&
@@ -3434,12 +3649,19 @@
           focusAccessoryCount,
           generalSupportCount,
           availablePrimaryFocusIds: primaryCandidates.map(item => item.id),
+          availableScheduledFoundationIds: scheduledFoundationCandidates.flatMap(schedule => schedule.candidates.map(item => item.id)),
           availableFocusAccessoryIds: accessoryCandidates.map(item => item.id),
           availableSecondarySkillIds: secondaryCandidates.map(item => item.id),
           availableGeneralSupportIds: supportCandidates.map(item => item.id)
         };
     const repeatedExercises = exercises.filter(item => item.developmentDiagnostics?.reducedVariety);
-    const candidateCountsByProgrammeRole = [...primaryCandidates, ...accessoryCandidates, ...secondaryCandidates, ...supportCandidates]
+    const candidateCountsByProgrammeRole = [
+      ...primaryCandidates,
+      ...accessoryCandidates,
+      ...secondaryCandidates,
+      ...supportCandidates,
+      ...scheduledFoundationCandidates.flatMap(schedule => schedule.candidates)
+    ]
       .reduce((counts, candidate) => {
         const role = candidate.programmeRole || PROGRAMME_ROLES.foundationStrength;
         counts[role] = Number(counts[role] || 0) + 1;
@@ -3458,11 +3680,13 @@
       ));
     const totalFatigue = exercises.reduce((sum, item) => sum + (item.fatigue || 0), 0);
     const totalSkill = exercises.reduce((sum, item) => sum + (item.skill || 0), 0);
+    const highlyTechnicalExerciseCount = exercises.filter(isHighlyTechnicalExercise).length;
     const allowedTracks = new Set([
       ...policy.primaryFocusTracks,
       ...policy.focusAccessoryTracks,
       ...(policy.secondaryFocusTracks || []),
-      ...policy.generalSupportTracks
+      ...policy.generalSupportTracks,
+      ...scheduledFoundationSkills.map(schedule => schedule.trackKey)
     ]);
 
     return {
@@ -3478,6 +3702,8 @@
       skillLimit: config.skillLimit,
       totalFatigue,
       totalSkill,
+      highlyTechnicalExerciseCount,
+      maximumHighlyTechnicalExercises: maximumHighlyTechnicalExercises(config.mode),
       eligibleTrackKeys: [...allowedTracks],
       generationFailure,
       developmentDiagnostics: {
@@ -3492,6 +3718,23 @@
           rankingTrackOrder: [...(policy.rankingTrackOrder || [])]
         },
         candidateCountsByProgrammeRole,
+        scheduledFoundationSkills: scheduledFoundationSkills.map(schedule => ({
+          skill: schedule.skill,
+          trackKey: schedule.trackKey,
+          familySlot: schedule.familySlot
+        })),
+        budgetRejections,
+        reductionReason: generationFailure
+          ? (
+            recovery
+              ? 'active-recovery-restriction'
+              : workout.name === 'Pull' && !profileEquipment(profile).has('pullupBar') && !profileEquipment(profile).has('bands')
+                ? 'missing-essential-pull-equipment'
+                : budgetRejections.fatigue || budgetRejections.technicalSkill
+                  ? 'budget-limited'
+                  : 'catalogue-limited'
+          )
+          : null,
         excludedSameDayIds: [...sameDayIds].filter(id => !finalStableIds.includes(id)),
         deprioritisedSameDayIds: [...sameDayIds],
         recentHistoryIds: [...recentIds],
@@ -4020,6 +4263,7 @@
     PROGRAMME_ROLES,
     MASTERY_SKILLS,
     PRIORITY_SKILLS,
+    DIRECT_SKILL_TRACK_KEYS,
     ACHIEVEMENT_REQUIREMENTS,
     MILESTONE_EQUIVALENTS,
     disabledExerciseIds,
@@ -4042,6 +4286,9 @@
     nextRotationIndexFromHistory,
     getGoalTrackKey,
     resolveMasterySkill,
+    directSkillTrackKey,
+    directSkillExposureRecency,
+    isDirectSkillPracticeDue,
     secondaryFoundationalSkill,
     getMuscleUpGate,
     advancedSkillEligibility,
@@ -4075,6 +4322,8 @@
     distinctSuccessCriteria,
     validateEligibilityConfig,
     modeLabel,
+    isHighlyTechnicalExercise,
+    maximumHighlyTechnicalExercises,
     progressMascotByState,
     generalFitnessStages,
     getGeneralFitnessProgress,

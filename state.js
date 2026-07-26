@@ -84,9 +84,9 @@
         const savedMilestoneIndex = typeof source.milestoneId === 'string'
           ? canonicalTrack.findIndex(exercise => exercise.id === source.milestoneId)
           : -1;
-        const level = Number.isFinite(Number(source.level))
-          ? Number(source.level)
-          : savedMilestoneIndex >= 0 ? savedMilestoneIndex : defaults[key].level;
+        const level = savedMilestoneIndex >= 0
+          ? savedMilestoneIndex
+          : Number.isFinite(Number(source.level)) ? Number(source.level) : defaults[key].level;
         const canonicalLevel = Math.max(0, Math.min(Math.round(level), trackLength - 1));
         const points = Number.isFinite(Number(source.points)) ? Number(source.points) : defaults[key].points;
         defaults[key] = {
@@ -327,6 +327,7 @@
         remapLevel('scapularPull', level => level + 1);
         remapLevel('antiExtension', level => level >= 2 ? level + 1 : level);
         remapLevel('lateralCore', level => level + 1);
+        remapLevel('posteriorChain', level => level >= 2 ? level + 1 : level);
         migrated.levels = levels;
       }
       return { ...migrated, schemaVersion: STATE_SCHEMA_VERSION };

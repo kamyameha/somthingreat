@@ -1,5 +1,5 @@
 importScripts('./app-version.js');
-// Legacy workout visibility hotfix release.
+// Programme cadence, maintenance, and stronger-level composition release.
 
 const APP_VERSION = self.SOMTHINGREAT_VERSION || self.APP_VERSION || 'dev';
 const CACHE_NAME = `somthingreat-${APP_VERSION}`;
