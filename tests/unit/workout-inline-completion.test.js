@@ -88,7 +88,7 @@ assert.match(workout, /\.workout-accordion-card\.completed \.exercise-chip-toggl
 assert.match(workout, /\.workout-accordion-card\.workout-warmup-card:not\(\.completed\) \.exercise-chip-toggle\s*\{[^}]*background:\s*#ffffff/s);
 assert.doesNotMatch(workout, /\.workout-accordion-card\.workout-warmup-card \.exercise-chip-toggle\s*\{[^}]*background:\s*#ffffff/s);
 assert.match(workout, /#exerciseList > \.workout-accordion-card:first-child,[^}]*#exerciseList > \.workout-accordion-card:first-child \.exercise-chip-toggle,[^}]*#exerciseList > \.workout-accordion-card:first-child\.open \.exercise-card-body\s*\{[^}]*border-radius:\s*0 0 20px 20px/s);
-assert.match(workout, /body\.workout-active \.app\s*\{[^}]*padding:\s*0;[^}]*overflow-y:\s*auto;[^}]*overflow-x:\s*hidden/s);
+assert.match(workout, /body\.workout-active \.app\s*\{[^}]*padding:\s*0;[^}]*overflow:\s*hidden;[^}]*overflow-x:\s*hidden;[^}]*overscroll-behavior:\s*none/s);
 assert.match(workout, /body\.workout-active::before,[^}]*body\.workout-active::after\s*\{[^}]*position:\s*fixed;[^}]*height:\s*50dvh;[^}]*pointer-events:\s*none/s);
 assert.match(workout, /body\.workout-active\s*\{[^}]*--workout-top-overscroll:\s*#ffffff/s);
 assert.match(workout, /body\.workout-active\.workout-top-completed,[^}]*body\.workout-active\.workout-completion-active\s*\{[^}]*--workout-top-overscroll:\s*var\(--cream\)/s);
@@ -97,7 +97,7 @@ assert.match(workout, /body\.workout-active\s*\{[^}]*--workout-bottom-overscroll
 assert.match(workout, /body\.workout-active\.workout-completion-active\s*\{[^}]*--workout-bottom-overscroll:\s*var\(--cream\)/s);
 assert.match(workout, /body\.workout-active::after\s*\{[^}]*bottom:\s*0;[^}]*background:\s*var\(--workout-bottom-overscroll\)/s);
 assert.match(workout, /body\.workout-active \.app\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*1/s);
-assert.match(workout, /body\.workout-active #today\.active\s*\{[^}]*min-height:\s*100%;[^}]*flex:\s*0 0 auto;[^}]*overflow:\s*visible/s);
+assert.match(workout, /body\.workout-active #today\.active\s*\{[^}]*height:\s*100dvh;[^}]*min-height:\s*0;[^}]*flex:\s*0 0 100%;[^}]*overflow-y:\s*auto;[^}]*overscroll-behavior:\s*none/s);
 assert.match(workout, /#exerciseList\s*\{[^}]*flex:\s*1 0 auto;[^}]*overflow:\s*visible/s);
 assert.match(workout, /\.workout-accordion-card\.open\s*\{[^}]*min-height:\s*min-content;[^}]*flex:\s*1 0 auto;[^}]*overflow:\s*visible/s);
 assert.match(workout, /\.workout-accordion-card\.open \.exercise-card-body\s*\{[^}]*height:\s*auto;[^}]*min-height:\s*100%;[^}]*overflow:\s*visible/s);
@@ -128,8 +128,8 @@ assert.match(workout, /body\.workout-active #today\.active\s*\{[^}]*background:\
 assert.match(workout, /body\.workout-active \.app\s*\{[^}]*padding-inline:\s*0/s);
 assert.match(html, /<div class="workout-safe-area" aria-hidden="true"><\/div>\s*<section id="exerciseList">/s);
 assert.match(workout, /\.workout-safe-area\s*\{[^}]*display:\s*none/s);
-assert.match(workout, /body\.workout-active \.workout-safe-area\s*\{[^}]*display:\s*block;[^}]*flex:\s*0 0 env\(safe-area-inset-top\);[^}]*height:\s*env\(safe-area-inset-top\);[^}]*background:\s*#ffffff/s);
-assert.doesNotMatch(workout, /#exerciseList > \.workout-accordion-card:first-child[^}]*padding-top:\s*env\(safe-area-inset-top\)/s);
+assert.match(workout, /body\.workout-active \.workout-safe-area\s*\{[^}]*display:\s*none/s);
+assert.match(workout, /#exerciseList > \.workout-accordion-card:first-child\s*\{[^}]*padding-top:\s*env\(safe-area-inset-top\);[^}]*background:\s*#ffffff/s);
 assert.match(workout, /\.workout-accordion-card \.active-swap-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
 assert.match(workout, /\.exercise-help-btn\s*\{[^}]*flex:\s*0 0 24px;[^}]*width:\s*24px;[^}]*max-width:\s*24px;[^}]*height:\s*24px;[^}]*max-height:\s*24px/s);
 assert.match(workout, /\.preview-icon-btn\s*\{[^}]*width:\s*24px;[^}]*height:\s*24px/s);
@@ -162,7 +162,7 @@ routeScrollContext.resetRouteScrollOnEntry();
 assert.equal(routeScrollContext.app.scrollTop, 0);
 assert.equal(routeScrollContext.root.scrollTop, 0);
 assert.match(functionSource('renderToday'), /if \(todayIsActive\) resetRouteScrollOnEntry\(\)/);
-assert.match(appSource, /renderProgress\(\);\s*renderActivity\(\);\s*resetRouteScrollOnEntry\(\);/);
+assert.match(appSource, /renderProgress\(\);\s*renderActivity\(\);\s*syncActiveScreenScrollArchitecture\(\);\s*resetRouteScrollOnEntry\(\);/);
 
 const resetAfterWorkoutSource = functionSource('resetTodayAfterWorkout');
 assert.match(resetAfterWorkoutSource, /state\.selectedEnergy = null/);

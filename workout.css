@@ -641,8 +641,10 @@ body.workout-active {
 body.workout-active {
   --workout-top-overscroll: #ffffff;
   --workout-bottom-overscroll: var(--main);
-  position: relative;
+  position: fixed;
+  inset: 0;
   isolation: isolate;
+  overscroll-behavior: none;
 }
 
 body.workout-active.workout-top-completed,
@@ -686,10 +688,9 @@ body.workout-active .app {
   flex-direction: column;
   padding: 0;
   background: transparent;
-  overflow-y: auto;
+  overflow: hidden;
   overflow-x: hidden;
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
 }
 
 body.workout-active .topbar,
@@ -703,12 +704,16 @@ body.workout-active .bottom-nav {
 
 body.workout-active #today.active {
   width: 100%;
-  min-height: 100%;
+  height: 100dvh;
+  min-height: 0;
   display: flex;
-  flex: 0 0 auto;
+  flex: 0 0 100%;
   flex-direction: column;
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
   background: #000000;
+  -webkit-overflow-scrolling: touch;
 }
 
 #exerciseList {
@@ -727,10 +732,13 @@ body.workout-active #today.active {
 }
 
 body.workout-active .workout-safe-area {
-  display: block;
-  flex: 0 0 env(safe-area-inset-top);
-  width: 100%;
-  height: env(safe-area-inset-top);
+  display: none;
+}
+
+body.workout-active #exerciseList > .workout-accordion-card:first-child {
+  flex-basis: calc(var(--workout-collapsed-height) + env(safe-area-inset-top));
+  height: calc(var(--workout-collapsed-height) + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
   background: #ffffff;
 }
 
@@ -1052,7 +1060,8 @@ body.workout-active .workout-safe-area {
 .workout-completion-tile {
   width: 100%;
   flex: 0 0 var(--workout-collapsed-height);
-  min-height: var(--workout-collapsed-height);
+  min-height: calc(var(--workout-collapsed-height) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
   margin: 0;
   border-radius: 20px;
   background: var(--main);
@@ -1070,6 +1079,10 @@ body.workout-active .workout-safe-area {
   color: #ffffff;
   font-size: 16px;
   font-weight: 500;
+}
+
+.workout-completion-tile.open {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .workout-completion-tile.open {

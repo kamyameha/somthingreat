@@ -1509,10 +1509,10 @@ assert.ok(appSource.includes('class="preview-icon-btn preview-swap-btn swap-unav
 assert.ok(appSource.includes('class="preview-icon-btn preview-swap-btn active-swap-btn swap-unavailable-btn"'), 'active workout reserves disabled Swap position');
 assert.ok(indexSource.includes('id="swapAvailabilityMessage"'));
 assert.match(workoutCssSource, /html\.workout-active,\s*body\.workout-active\s*\{[\s\S]*?overflow:\s*hidden;/);
-assert.match(workoutCssSource, /body\.workout-active \.app\s*\{[\s\S]*?padding:\s*0;[\s\S]*?overflow-y:\s*auto;/);
-assert.match(workoutCssSource, /body\.workout-active #today\.active\s*\{[\s\S]*?flex:\s*0 0 auto;/);
+assert.match(workoutCssSource, /body\.workout-active \.app\s*\{[\s\S]*?padding:\s*0;[\s\S]*?overflow:\s*hidden;/);
+assert.match(workoutCssSource, /body\.workout-active #today\.active\s*\{[\s\S]*?flex:\s*0 0 100%;[\s\S]*?overflow-y:\s*auto;/);
 assert.match(workoutCssSource, /#exerciseList\s*\{[\s\S]*?flex:\s*1 0 auto;/);
-assert.ok(indexSource.includes('Mastering skills'));
+assert.ok(indexSource.includes('Foundational skills'));
 const masteringSkillsSource = appSource.match(/const skills = \{([\s\S]*?)\n  \};/)?.[1] || '';
 assert.ok(masteringSkillsSource.includes("verticalPull: 'Pull-up'"));
 assert.ok(masteringSkillsSource.includes("handstand: 'Handstand'"));

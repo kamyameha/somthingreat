@@ -1786,3 +1786,436 @@ body.account-active .app {
     font-size: 16px;
   }
 }
+
+/* Shared page-level tile architecture for Progress and Activity */
+html.tile-screen-active,
+body.tile-screen-active {
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #000000;
+}
+
+body.tile-screen-active .app {
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000000;
+}
+
+body.tile-screen-active .topbar {
+  display: none;
+}
+
+body.tile-screen-active .screen.active {
+  width: min(100%, var(--app-width));
+  height: 100dvh;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  background: #000000;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tile-screen-header {
+  flex: 0 0 200px;
+  width: 100%;
+  height: 200px;
+  display: grid;
+  grid-template-columns: minmax(0, 252fr) minmax(0, 142fr);
+  gap: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.tile-screen-header__mascot,
+.tile-screen-header__menu {
+  min-width: 0;
+  height: 200px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+}
+
+.tile-screen-header__mascot {
+  background: #ffffff;
+}
+
+.tile-screen-header__menu {
+  background: var(--main);
+}
+
+.tile-screen-mascot {
+  display: block;
+  width: min(76%, 168px);
+  height: min(76%, 152px);
+  object-fit: contain;
+}
+
+.tile-screen-menu-btn {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.tile-screen-menu-btn img {
+  display: block;
+  width: 34px;
+  height: 34px;
+  filter: brightness(0) invert(1);
+}
+
+.progress-screen .goal-hero,
+.progress-screen .progress-insight-card,
+.progress-screen .mastering-skills-card,
+.activity-screen .activity-summary-card,
+.activity-screen .activity-calendar-card,
+.activity-screen .activity-detail-tile {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius);
+  box-shadow: none;
+  overflow: visible;
+}
+
+.progress-screen .progress-priority-tile {
+  min-height: 168px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px;
+  align-items: center;
+  gap: 20px;
+  padding: 28px;
+  background: #ffffff;
+}
+
+.progress-priority-copy {
+  min-width: 0;
+}
+
+.progress-screen .goal-hero h2 {
+  margin: 0 0 12px;
+  color: var(--main);
+  font-size: 40px;
+  line-height: 1.05;
+  font-weight: 700;
+}
+
+.progress-screen .focus-next-milestone {
+  margin: 0;
+  color: var(--main);
+  font-size: 16px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.focus-circular-progress {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  display: grid;
+  place-items: center;
+}
+
+.focus-circular-progress svg {
+  width: 104px;
+  height: 104px;
+  transform: rotate(-90deg);
+}
+
+.focus-circular-progress circle {
+  fill: none;
+  stroke-width: 8;
+}
+
+.focus-circular-progress .focus-progress-track {
+  stroke: rgba(1, 45, 237, 0.15);
+}
+
+.focus-circular-progress .focus-progress-value {
+  stroke: var(--main);
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  transition: stroke-dashoffset 220ms ease;
+}
+
+.focus-circular-progress span {
+  position: absolute;
+  color: var(--main);
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.progress-screen .progress-insight-card {
+  min-height: 148px;
+  display: block;
+  padding: 28px;
+  background: var(--cream);
+  color: var(--main);
+}
+
+.progress-screen .progress-insight-copy h3 {
+  margin: 0 0 15px;
+  color: var(--main);
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.progress-screen .progress-insight-copy p {
+  margin: 0;
+  color: var(--main);
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 400;
+}
+
+.progress-screen .mastering-skills-card {
+  flex: 1 0 auto;
+  min-height: 260px;
+  padding: 44px 28px calc(90px + env(safe-area-inset-bottom));
+  background: var(--main);
+  color: #ffffff;
+}
+
+.progress-screen #levelsList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 34px;
+}
+
+.progress-screen .level-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.progress-screen .level-row strong {
+  margin: 0;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 500;
+}
+
+.progress-screen .skill-progress-dots {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.progress-screen .skill-progress-dots .progress-dot {
+  width: clamp(13px, 4.6vw, 18px);
+  height: clamp(13px, 4.6vw, 18px);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.progress-screen .skill-progress-dots .progress-dot.is-filled {
+  background: #ffffff;
+}
+
+.activity-screen .activity-summary-card {
+  flex: 0 0 168px;
+  min-height: 168px;
+  display: grid;
+  grid-template-columns: minmax(0, 126fr) minmax(0, 126fr) minmax(0, 141fr);
+  gap: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.activity-stat-tile {
+  min-width: 0;
+  height: 168px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 12px;
+  border-radius: var(--radius);
+  background: var(--cream);
+  color: var(--main);
+  text-align: center;
+}
+
+.activity-energy-tile {
+  background: #ffffff;
+}
+
+.activity-stat-tile strong {
+  max-width: 100%;
+  margin: 0 0 12px;
+  color: var(--main);
+  font-size: clamp(22px, 7.4vw, 30px);
+  line-height: 1;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.activity-stat-tile span {
+  max-width: 100%;
+  color: var(--main);
+  font-size: 13px;
+  line-height: 1.18;
+  font-weight: 400;
+}
+
+.activity-screen .activity-calendar-card {
+  flex: 1 0 auto;
+  min-height: 390px;
+  padding: 32px 24px calc(90px + env(safe-area-inset-bottom));
+  background: #ffffff;
+}
+
+.activity-screen.has-detail .activity-calendar-card {
+  flex: 0 0 auto;
+  min-height: 390px;
+  padding-bottom: 32px;
+}
+
+.activity-screen .history-header {
+  margin-bottom: 28px;
+}
+
+.activity-screen #historyYearTitle {
+  margin: 0 0 6px;
+  color: var(--main);
+  font-size: 18px;
+}
+
+.activity-screen .history-header h3 {
+  color: var(--main);
+  font-size: 40px;
+  line-height: 1;
+}
+
+.activity-screen .history-weekdays,
+.activity-screen .history-calendar {
+  width: 100%;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  justify-content: stretch;
+  gap: 5px;
+}
+
+.activity-screen .history-weekdays {
+  color: rgba(1, 45, 237, 0.35);
+  font-size: 14px;
+  text-align: center;
+}
+
+.activity-screen .history-weekdays .is-today-weekday {
+  color: var(--main);
+}
+
+.activity-screen .history-day {
+  width: min(100%, 44px);
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  justify-self: center;
+  border: 1px solid rgba(1, 45, 237, 0.15);
+  background: transparent;
+}
+
+.activity-screen .history-day.past-empty {
+  border-color: transparent;
+  background: rgba(1, 45, 237, 0.15);
+}
+
+.activity-screen .history-day.has-workout {
+  border-color: var(--main);
+  background: var(--main);
+}
+
+.activity-screen .history-day.is-today {
+  border: 2px solid var(--main);
+  background: #ffffff;
+}
+
+.activity-screen .history-day.has-workout.is-today {
+  border: 2px solid var(--main);
+  background: var(--main);
+  box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.activity-screen .history-day.is-selected:not(.is-today) {
+  border: 2px solid var(--main);
+  background: rgba(1, 45, 237, 0.15);
+}
+
+.activity-screen .history-day.has-workout.is-selected:not(.is-today) {
+  background: var(--main);
+  box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.activity-screen .activity-detail-tile {
+  flex: 1 0 auto;
+  min-height: 180px;
+  margin: 0;
+  padding: 28px 24px calc(90px + env(safe-area-inset-bottom));
+  background: var(--main);
+  color: #ffffff;
+}
+
+.activity-screen .activity-detail-tile:empty {
+  display: none;
+}
+
+.activity-screen .history-item {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.activity-screen .history-item + .history-item {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 350px) {
+  .progress-screen .progress-priority-tile {
+    grid-template-columns: minmax(0, 1fr) 88px;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .focus-circular-progress,
+  .focus-circular-progress svg {
+    width: 88px;
+    height: 88px;
+  }
+
+  .activity-stat-tile {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .activity-stat-tile span {
+    font-size: 12px;
+  }
+}

@@ -27,11 +27,11 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.26.171008" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.26.171008" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.26.171008" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.26.171008" />
-  <link rel="stylesheet" href="account.css?v=2026.07.26.171008" />
+  <link rel="stylesheet" href="style.css?v=2026.07.26.174827" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.26.174827" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.26.174827" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.26.174827" />
+  <link rel="stylesheet" href="account.css?v=2026.07.26.174827" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
@@ -416,10 +416,23 @@
     </section>
 
     <section id="progress" class="screen progress-screen">
-      <section class="hero-card goal-hero">
-        <h2 id="goalHeroTitle">Pull-up</h2>
-        <div id="focusProgressDots" class="progress-dots focus-progress-dots" aria-label="Priority skill progression"></div>
-        <p id="focusNextMilestone" class="activity-summary-line focus-next-milestone hidden"></p>
+      <header class="tile-screen-header" aria-label="Progress header">
+        <div class="tile-screen-header__mascot">
+          <img id="progressMascot" class="tile-screen-mascot" src="Assets/Progress/mascot-progress-regular.svg" alt="" />
+        </div>
+        <div class="tile-screen-header__menu">
+          <button class="tile-screen-menu-btn" type="button" data-open-menu aria-label="Open menu">
+            <img src="Assets/menu.svg" alt="" />
+          </button>
+        </div>
+      </header>
+
+      <section class="hero-card goal-hero progress-priority-tile">
+        <div class="progress-priority-copy">
+          <h2 id="goalHeroTitle">Pull-up</h2>
+          <p id="focusNextMilestone" class="activity-summary-line focus-next-milestone hidden"></p>
+        </div>
+        <div id="focusProgressDots" class="focus-circular-progress" role="progressbar" aria-label="Priority skill progression" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
       </section>
 
       <section id="dynamicProgressCard" class="progress-insight-card" aria-live="polite">
@@ -427,20 +440,39 @@
           <h3 id="progressCardHeadline">You're on track!</h3>
           <p id="progressCardDescription">Your plan is underway</p>
         </div>
-        <img id="progressMascot" class="progress-mascot" src="Assets/Progress/mascot-progress-regular.svg" alt="" />
       </section>
 
       <section class="card mastering-skills-card">
-        <h3>Mastering skills</h3>
+        <h3 class="sr-only">Foundational skills</h3>
         <div id="levelsList"></div>
       </section>
     </section>
 
     <section id="activity" class="screen activity-screen">
-      <section class="card activity-summary-card">
-        <h3 id="historyYearSummary" class="activity-summary-line">This year: 0 workouts</h3>
-        <h3 id="historyMonthSummary" class="activity-summary-line">This month: 0 workouts</h3>
-        <h3 id="historyEnergySummary" class="activity-summary-line hidden"></h3>
+      <header class="tile-screen-header" aria-label="Activity header">
+        <div class="tile-screen-header__mascot">
+          <img id="activityMascot" class="tile-screen-mascot" src="Assets/Progress/mascot-progress-regular.svg" alt="" />
+        </div>
+        <div class="tile-screen-header__menu">
+          <button class="tile-screen-menu-btn" type="button" data-open-menu aria-label="Open menu">
+            <img src="Assets/menu.svg" alt="" />
+          </button>
+        </div>
+      </header>
+
+      <section class="activity-summary-card" aria-label="Activity statistics">
+        <div class="activity-stat-tile">
+          <strong id="historyYearSummary">0</strong>
+          <span>Workouts this year</span>
+        </div>
+        <div class="activity-stat-tile">
+          <strong id="historyMonthSummary">0</strong>
+          <span>Workouts this month</span>
+        </div>
+        <div class="activity-stat-tile activity-energy-tile">
+          <strong id="historyEnergySummary">—</strong>
+          <span>Is your most selected energy</span>
+        </div>
       </section>
 
       <section class="card activity-calendar-card">
@@ -456,8 +488,8 @@
         </div>
         <div class="history-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
         <div id="historyCalendar" class="history-calendar"></div>
-        <div id="historyList" class="history-list"></div>
       </section>
+      <section id="historyList" class="history-list activity-detail-tile"></section>
     </section>
   </main>
 
@@ -557,12 +589,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.26.171008"></script>
-  <script src="workouts.js?v=2026.07.26.171008"></script>
-  <script src="state.js?v=2026.07.26.171008"></script>
-  <script src="account.js?v=2026.07.26.171008"></script>
-  <script src="render.js?v=2026.07.26.171008"></script>
-  <script src="app-version.js?v=2026.07.26.171008"></script>
-  <script src="app.js?v=2026.07.26.171008"></script>
+  <script src="auth.js?v=2026.07.26.174827"></script>
+  <script src="workouts.js?v=2026.07.26.174827"></script>
+  <script src="state.js?v=2026.07.26.174827"></script>
+  <script src="account.js?v=2026.07.26.174827"></script>
+  <script src="render.js?v=2026.07.26.174827"></script>
+  <script src="app-version.js?v=2026.07.26.174827"></script>
+  <script src="app.js?v=2026.07.26.174827"></script>
 </body>
 </html>

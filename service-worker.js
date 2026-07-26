@@ -37,6 +37,7 @@ const APP_SHELL = [
   'Assets/arrow-right.svg',
   'Assets/play.svg',
   'Assets/pause.svg',
+  'Assets/menu.svg',
   'Assets/apple-touch-icon.png',
   'Assets/192x192-PWA.png',
   'Assets/512x512-regular.png',
@@ -58,12 +59,12 @@ const APP_SHELL = [
   './Assets/EnergyCheck/tired-b.svg',
   './Assets/EnergyCheck/exhausted-a.svg',
   './Assets/EnergyCheck/exhausted-b.svg',
-  './Assets/Progress/mascot-progress-regular.png',
-  './Assets/Progress/mascot-progress-new-user.png',
-  './Assets/Progress/mascot-progress-unlocked.png',
-  './Assets/Progress/mascot-progress-strong-pattern.png',
-  './Assets/Progress/mascot-progress-focus-achieved.png',
-  './Assets/Progress/mascot-progress-returning.png'
+  './Assets/Progress/mascot-progress-regular.svg',
+  './Assets/Progress/mascot-progress-new-user.svg',
+  './Assets/Progress/mascot-progress-unlocked.svg',
+  './Assets/Progress/mascot-progress-strong-pattern.svg',
+  './Assets/Progress/mascot-progress-focus-achieved.svg',
+  './Assets/Progress/mascot-progress-returning.svg'
 ];
 
 self.addEventListener('install', event => {

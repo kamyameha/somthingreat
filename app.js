@@ -731,6 +731,7 @@ function captureAccountReturnState() {
   const activeScreen = document.querySelector('.screen.active');
   accountReturnState = {
     activeScreenId: activeScreen?.id || '',
+    screenScrollTop: activeScreen?.scrollTop || 0,
     appScrollTop: app?.scrollTop || 0,
     documentScrollTop: document.scrollingElement?.scrollTop || 0,
     rootTodayActive: root.classList.contains('today-active'),
@@ -782,12 +783,17 @@ function restoreAccountReturnState() {
   if (saved.activeScreenId === 'today' && saved.bodyTodayActive) syncTodayMascotSources();
 
   const restoreScroll = () => {
+    const savedScreen = saved.activeScreenId ? document.getElementById(saved.activeScreenId) : null;
+    if (savedScreen) savedScreen.scrollTop = saved.screenScrollTop || 0;
     if (app) app.scrollTop = saved.appScrollTop;
     if (document.scrollingElement) document.scrollingElement.scrollTop = saved.documentScrollTop;
   };
   restoreScroll();
   window.requestAnimationFrame(() => {
     restoreScroll();
+    if (typeof syncActiveScreenScrollArchitecture === 'function') {
+      syncActiveScreenScrollArchitecture();
+    }
     if (saved.focusedElement?.isConnected && typeof saved.focusedElement.focus === 'function') {
       saved.focusedElement.focus({ preventScroll: true });
     }
@@ -823,9 +829,35 @@ function syncBottomNavVisibility(profileDone = hasCompletedProfile()) {
 
 function resetMainRouteScroll() {
   const app = document.querySelector('.app');
+  const activeScreen = document.querySelector('.screen.active');
   const root = document.scrollingElement;
+  if (activeScreen) activeScreen.scrollTop = 0;
   if (app) app.scrollTop = 0;
   if (root) root.scrollTop = 0;
+}
+
+function syncActiveScreenScrollArchitecture() {
+  const root = document.documentElement;
+  const body = document.body;
+  const activeScreen = document.querySelector('.screen.active');
+  const usesTileScreen = activeScreen?.id === 'progress' || activeScreen?.id === 'activity';
+  const usesWorkoutScreen = activeScreen?.id === 'today' && Boolean(state.current);
+
+  root.classList.toggle('tile-screen-active', usesTileScreen);
+  body.classList.toggle('tile-screen-active', usesTileScreen);
+
+  if (root.classList.contains('account-active')) return;
+
+  if (usesTileScreen || usesWorkoutScreen) {
+    document.querySelector('.topbar')?.classList.add('hidden');
+    installAccountScrollBoundaryGuard(activeScreen);
+    setThemeColor(usesWorkoutScreen ? '#012ded' : '#1c1c1c');
+    return;
+  }
+
+  removeAccountScrollBoundaryGuard();
+  document.querySelector('.topbar')?.classList.remove('hidden');
+  syncScreenThemeColor();
 }
 
 function resetRouteScrollOnEntry() {
@@ -1287,6 +1319,9 @@ function renderToday() {
   const todayIsActive = document.getElementById('today')?.classList.contains('active');
   document.documentElement.classList.remove('workout-active');
   document.body.classList.remove('workout-active');
+  document.documentElement.classList.remove('tile-screen-active');
+  document.body.classList.remove('tile-screen-active');
+  removeAccountScrollBoundaryGuard(document.getElementById('today'));
   document.documentElement.classList.toggle('today-active', Boolean(todayIsActive));
   document.body.classList.toggle('today-active', Boolean(todayIsActive));
   if (todayIsActive) setThemeColor('#ffffff');
@@ -2028,6 +2063,8 @@ function renderExercises() {
   document.getElementById('exercisePreview').classList.add('hidden');
   document.documentElement.classList.remove('today-active');
   document.body.classList.remove('today-active');
+  document.documentElement.classList.remove('tile-screen-active');
+  document.body.classList.remove('tile-screen-active');
   document.documentElement.classList.add('workout-active');
   document.body.classList.add('workout-active');
   document.querySelector('.topbar')?.classList.add('hidden');
@@ -2120,6 +2157,9 @@ function renderExercises() {
   });
   renderWorkoutCompletionTile(list);
   restoreActiveWorkoutTimer();
+  if (!document.documentElement.classList.contains('account-active')) {
+    installAccountScrollBoundaryGuard(document.getElementById('today'));
+  }
   if (shouldResetWorkoutScroll) {
     window.requestAnimationFrame(() => resetMainRouteScroll());
   }
@@ -2829,11 +2869,16 @@ function renderProgressCard(data) {
   const cardState = workoutModule.getProgressCardState(data);
   const content = workoutModule.getProgressCardContent(cardState, data);
   const card = document.getElementById('dynamicProgressCard');
-  const mascot = document.getElementById('progressMascot');
+  const mascots = [
+    document.getElementById('progressMascot'),
+    document.getElementById('activityMascot')
+  ].filter(Boolean);
   const headline = document.getElementById('progressCardHeadline');
   const description = document.getElementById('progressCardDescription');
   if (card) card.dataset.state = content.state;
-  if (mascot) mascot.src = content.mascot;
+  mascots.forEach(mascot => {
+    mascot.src = content.mascot;
+  });
   if (headline) headline.textContent = content.headline;
   if (description) description.textContent = content.description;
   const visitingProgress = document.getElementById('progress')?.classList.contains('active');
@@ -2861,8 +2906,18 @@ function renderProgress() {
   if (goalHero) goalHero.classList.toggle('has-no-dots', !dotCount);
   if (focusDots) {
     focusDots.classList.toggle('hidden', !dotCount);
-    focusDots.innerHTML = progressDotsMarkup(dotCount, filledDots);
+    const percentage = dotCount ? Math.round((filledDots / dotCount) * 100) : 0;
+    focusDots.innerHTML = `
+      <svg viewBox="0 0 104 104" aria-hidden="true" focusable="false">
+        <circle class="focus-progress-track" cx="52" cy="52" r="44" pathLength="100"></circle>
+        <circle class="focus-progress-value" cx="52" cy="52" r="44" pathLength="100" style="stroke-dashoffset:${100 - percentage}"></circle>
+      </svg>
+      <span>${percentage}%</span>
+    `;
     focusDots.setAttribute('aria-label', dotCount ? `${filledDots} of ${dotCount} priority-skill levels reached` : 'No capability progression available');
+    focusDots.setAttribute('aria-valuemin', '0');
+    focusDots.setAttribute('aria-valuemax', '100');
+    focusDots.setAttribute('aria-valuenow', String(percentage));
   }
   const milestone = document.getElementById('focusNextMilestone');
   const focusAchieved = workoutModule.isTrackMastered(goalTrackKey, state.levels?.[goalTrackKey] || {}, track);
@@ -2883,6 +2938,7 @@ function renderProgress() {
     pistolSquat: 'Pistol squat'
   };
   Object.entries(skills).forEach(([key, label]) => {
+    if (key === goalTrackKey) return;
     const item = state.levels[key];
     const exerciseTrack = baseTracks[key] || tracks[key];
     if (!item || !Array.isArray(exerciseTrack) || !exerciseTrack.length) return;
@@ -2895,6 +2951,9 @@ function renderProgress() {
     row.innerHTML = `<strong>${escapeHTML(label)}</strong><div class="progress-dots skill-progress-dots" aria-label="${reached} of ${stageCount} capability stages completed">${progressDotsMarkup(stageCount, reached)}</div>`;
     levels.appendChild(row);
   });
+  if (document.getElementById('progress')?.classList.contains('active')) {
+    syncActiveScreenScrollArchitecture();
+  }
 }
 
 function monthWeekKey(date) {
@@ -3730,11 +3789,11 @@ function renderActivity() {
   const yearCount = yearItems.length;
   const monthItems = workoutItemsForMonth(accountHistoryMonth).sort((a, b) => a.parsedDate - b.parsedDate);
   const monthCount = monthItems.length;
-  yearSummary.textContent = `This year: ${yearCount} workout${yearCount === 1 ? '' : 's'}`;
-  monthSummary.textContent = `This month: ${monthCount} workout${monthCount === 1 ? '' : 's'}`;
+  yearSummary.textContent = String(yearCount);
+  monthSummary.textContent = String(monthCount);
   const commonEnergy = activityEnergySummary();
-  energySummary.textContent = commonEnergy ? `Most common energy: ${commonEnergy}` : '';
-  energySummary.classList.toggle('hidden', !commonEnergy);
+  energySummary.textContent = commonEnergy || '—';
+  energySummary.closest('.activity-energy-tile')?.classList.toggle('is-empty', !commonEnergy);
   yearTitle.textContent = String(year);
   title.textContent = accountHistoryMonth.toLocaleDateString('en-US', { month: 'long' });
 
@@ -3817,6 +3876,10 @@ function renderActivity() {
       `;
     }).join('')
     : '';
+  document.getElementById('activity')?.classList.toggle('has-detail', selectedItems.length > 0);
+  if (document.getElementById('activity')?.classList.contains('active')) {
+    syncActiveScreenScrollArchitecture();
+  }
 }
 
 async function initCloudSync() {
@@ -4253,7 +4316,7 @@ document.addEventListener('click', event => {
     return;
   }
 
-	  if (event.target.id === 'accountBtn' && currentUser) openAccountModal();
+	  if ((event.target.id === 'accountBtn' || event.target.closest('[data-open-menu]')) && currentUser) openAccountModal();
 	  if (event.target.id === 'closeAccountModalBtn') closeAccountModal();
 	  if (event.target.id === 'closeAccountSubmenuBtn') closeAccountModal();
 	  if (event.target.id === 'accountPanel' && event.target.classList.contains('account-modal')) closeAccountModal();
@@ -4339,6 +4402,7 @@ document.addEventListener('click', event => {
     if (title) title.textContent = event.target.textContent;
     renderProgress();
     renderActivity();
+    syncActiveScreenScrollArchitecture();
     resetRouteScrollOnEntry();
   }
 });
