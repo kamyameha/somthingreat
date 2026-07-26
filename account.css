@@ -693,8 +693,14 @@ body.account-active .app {
   color: var(--main);
 }
 
-.account-submenu-panel #accountRecoveryView:has(+ .active-recovery-card:not(.hidden)) {
-  padding-bottom: 44px !important;
+.account-submenu-panel .account-submenu-panel__content.has-active-recovery #accountRecoveryView {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding-bottom: 52px !important;
+}
+
+.account-submenu-panel .account-submenu-panel__content.has-active-recovery .active-recovery-card {
+  flex: 1 0 auto;
 }
 
 .account-submenu-panel .account-full-btn {

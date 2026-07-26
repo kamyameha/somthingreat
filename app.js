@@ -3498,6 +3498,7 @@ function openAccountMain() {
 function hideAllAccountViews() {
   document.querySelectorAll('#loggedInAccount .account-view, #accountSubmenuContent .account-view').forEach(item => item.classList.add('hidden'));
   document.getElementById('activeRecoveryCard')?.classList.add('hidden');
+  document.getElementById('accountSubmenuContent')?.classList.remove('has-active-recovery');
 }
 
 function hideAccountMainPanel() {
@@ -3643,6 +3644,7 @@ function populateAccountRecovery() {
   const durationInput = document.getElementById('recoveryDurationInput');
   const saveBtn = document.getElementById('saveAccountRecoveryBtn');
   const card = document.getElementById('activeRecoveryCard');
+  const submenuContent = document.getElementById('accountSubmenuContent');
   const cardArea = document.getElementById('activeRecoveryArea');
   const cardUntil = document.getElementById('activeRecoveryUntil');
   const additionalEntries = document.getElementById('additionalRecoveryEntries');
@@ -3655,6 +3657,7 @@ function populateAccountRecovery() {
   if (saveBtn) saveBtn.textContent = recoveryFormEditing && recovery ? 'Update recovery' : 'Add recovery';
 
   if (card) card.classList.toggle('hidden', !recovery);
+  if (submenuContent) submenuContent.classList.toggle('has-active-recovery', Boolean(recovery));
   if (cardArea) cardArea.textContent = recovery ? recoveryAreaLabels[recovery.area] || '' : '';
   if (cardUntil) cardUntil.textContent = recoveryStatusText(recovery);
   if (additionalEntries) {

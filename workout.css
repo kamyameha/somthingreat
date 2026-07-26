@@ -1949,7 +1949,23 @@ body.today-active .brand-block {
 body.today-active #accountBtn {
   grid-column: 2;
   place-self: center;
+  position: relative;
+  z-index: 1;
   pointer-events: auto;
+}
+
+body.today-active #accountBtn img {
+  display: none;
+}
+
+body.today-active #accountBtn::before {
+  content: "";
+  display: block;
+  width: 34px;
+  height: 34px;
+  background: var(--main);
+  -webkit-mask: url("Assets/menu.svg") center / 34px 34px no-repeat;
+  mask: url("Assets/menu.svg") center / 34px 34px no-repeat;
 }
 
 body.today-active .bottom-nav {
@@ -1985,6 +2001,10 @@ body.today-active #today {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-inline: contain;
   touch-action: pan-x;
+}
+
+body.today-active .energy-grid {
+  margin-top: 20px;
 }
 
 .energy-grid::-webkit-scrollbar {
