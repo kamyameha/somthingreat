@@ -610,26 +610,28 @@ body.account-active .app {
 }
 
 .account-submenu-panel .active-recovery-card {
+  flex: 0 0 auto;
   width: 100%;
   display: grid;
-  gap: 15px;
-  margin-top: 0;
-  padding: 24px;
-  border-radius: 20px;
-  border: 1px solid #ffffff;
-  background: transparent;
-  color: #ffffff;
+  gap: 18px;
+  margin: 0;
+  padding: 36px 28px calc(36px + env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--main);
+  overflow: visible;
 }
 
 .account-submenu-panel .active-recovery-card.hidden {
-  display: none;
+  display: none !important;
 }
 
 .account-submenu-panel .active-recovery-card h3,
 .account-submenu-panel .active-recovery-card strong,
 .account-submenu-panel .active-recovery-card p {
   margin: 0;
-  color: #ffffff;
+  color: var(--main);
 }
 
 .account-submenu-panel .active-recovery-card h3 {
@@ -645,11 +647,31 @@ body.account-active .app {
   line-height: 1.2;
 }
 
+.account-submenu-panel .active-recovery-entries,
+.account-submenu-panel #additionalRecoveryEntries {
+  display: grid;
+  gap: 18px;
+}
+
+.account-submenu-panel .active-recovery-entry {
+  display: grid;
+  gap: 6px;
+}
+
+.account-submenu-panel #additionalRecoveryEntries:empty {
+  display: none;
+}
+
+.account-submenu-panel #additionalRecoveryEntries .active-recovery-entry {
+  padding-top: 18px;
+  border-top: 1px solid rgba(1, 45, 237, 0.18);
+}
+
 .account-submenu-panel .active-recovery-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
-  margin-top: 29px;
+  margin-top: 18px;
 }
 
 .account-submenu-panel .active-recovery-actions button {
@@ -660,15 +682,19 @@ body.account-active .app {
 }
 
 .account-submenu-panel .active-recovery-actions .secondary-btn {
-  border-color: #ffffff;
-  background: #ffffff;
-  color: var(--main);
+  border-color: var(--main);
+  background: var(--main);
+  color: #ffffff;
 }
 
 .account-submenu-panel .active-recovery-actions .ghost-btn {
-  border: 1px solid #ffffff;
+  border: 1px solid var(--main);
   background: transparent;
-  color: #ffffff;
+  color: var(--main);
+}
+
+.account-submenu-panel #accountRecoveryView:has(+ .active-recovery-card:not(.hidden)) {
+  padding-bottom: 44px !important;
 }
 
 .account-submenu-panel .account-full-btn {
@@ -1788,6 +1814,12 @@ body.account-active .app {
 }
 
 /* Shared page-level tile architecture for Progress and Activity */
+:root {
+  --tile-header-height: 200px;
+  --tile-header-main-width: 252fr;
+  --tile-header-menu-width: 142fr;
+}
+
 html.tile-screen-active,
 body.tile-screen-active {
   width: 100%;
@@ -1830,11 +1862,11 @@ body.tile-screen-active .screen.active {
 }
 
 .tile-screen-header {
-  flex: 0 0 200px;
+  flex: 0 0 var(--tile-header-height);
   width: 100%;
-  height: 200px;
+  height: var(--tile-header-height);
   display: grid;
-  grid-template-columns: minmax(0, 252fr) minmax(0, 142fr);
+  grid-template-columns: minmax(0, var(--tile-header-main-width)) minmax(0, var(--tile-header-menu-width));
   gap: 0;
   margin: 0;
   padding: 0;
@@ -1843,7 +1875,7 @@ body.tile-screen-active .screen.active {
 .tile-screen-header__mascot,
 .tile-screen-header__menu {
   min-width: 0;
-  height: 200px;
+  height: var(--tile-header-height);
   display: grid;
   place-items: center;
   border-radius: var(--radius);
@@ -1974,7 +2006,8 @@ body.tile-screen-active .screen.active {
 
 .progress-screen .progress-insight-card {
   min-height: 148px;
-  display: block;
+  display: flex;
+  align-items: center;
   padding: 28px;
   background: var(--cream);
   color: var(--main);
@@ -2092,6 +2125,15 @@ body.tile-screen-active .screen.active {
   font-size: 13px;
   line-height: 1.18;
   font-weight: 400;
+}
+
+.activity-stat-label,
+.activity-stat-label > span {
+  display: block;
+}
+
+.activity-stat-period {
+  white-space: nowrap;
 }
 
 .activity-screen .activity-calendar-card {
@@ -2231,5 +2273,9 @@ body.tile-screen-active .screen.active {
 
   .activity-stat-tile span {
     font-size: 12px;
+  }
+
+  .activity-stat-period {
+    white-space: normal;
   }
 }

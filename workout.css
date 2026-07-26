@@ -1928,13 +1928,28 @@ body.today-active .app {
 }
 
 body.today-active .topbar {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 50%;
   z-index: 3;
-  justify-content: flex-end;
+  width: min(100%, var(--app-width));
+  height: var(--tile-header-height);
+  display: grid;
+  grid-template-columns: minmax(0, var(--tile-header-main-width)) minmax(0, var(--tile-header-menu-width));
+  align-items: stretch;
+  margin: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 body.today-active .brand-block {
   display: none;
+}
+
+body.today-active #accountBtn {
+  grid-column: 2;
+  place-self: center;
+  pointer-events: auto;
 }
 
 body.today-active .bottom-nav {
@@ -2101,6 +2116,8 @@ body.workout-active .today-mascot-stage {
 }
 
 .workout-recovery-message {
+  width: 100%;
+  max-width: 253px;
   margin: 20px 0 0;
   color: var(--main);
   font-size: 16px;

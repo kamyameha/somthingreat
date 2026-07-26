@@ -3453,7 +3453,6 @@ function renderAccount() {
     syncBottomNavVisibility(profileDone);
     if (accountBtn) {
       accountBtn.classList.remove('hidden');
-      accountBtn.textContent = 'Account';
     }
     if (email) email.textContent = getAccountDisplayName();
     renderAccountMainSummary();
@@ -3498,6 +3497,7 @@ function openAccountMain() {
 
 function hideAllAccountViews() {
   document.querySelectorAll('#loggedInAccount .account-view, #accountSubmenuContent .account-view').forEach(item => item.classList.add('hidden'));
+  document.getElementById('activeRecoveryCard')?.classList.add('hidden');
 }
 
 function hideAccountMainPanel() {
@@ -3636,7 +3636,8 @@ function recoveryStatusText(recovery) {
 }
 
 function populateAccountRecovery() {
-  const recovery = getPrimaryRecovery();
+  const recoveries = workoutModule.activeRecoveryRestrictions(state);
+  const recovery = recoveries[0] || null;
   const formRecovery = recoveryFormEditing ? recovery : null;
   const areaInput = document.getElementById('recoveryAreaInput');
   const durationInput = document.getElementById('recoveryDurationInput');
@@ -3644,6 +3645,7 @@ function populateAccountRecovery() {
   const card = document.getElementById('activeRecoveryCard');
   const cardArea = document.getElementById('activeRecoveryArea');
   const cardUntil = document.getElementById('activeRecoveryUntil');
+  const additionalEntries = document.getElementById('additionalRecoveryEntries');
 
   if (areaInput) areaInput.value = formRecovery?.area || '';
   if (durationInput) durationInput.value = formRecovery?.duration || '';
@@ -3655,6 +3657,19 @@ function populateAccountRecovery() {
   if (card) card.classList.toggle('hidden', !recovery);
   if (cardArea) cardArea.textContent = recovery ? recoveryAreaLabels[recovery.area] || '' : '';
   if (cardUntil) cardUntil.textContent = recoveryStatusText(recovery);
+  if (additionalEntries) {
+    additionalEntries.replaceChildren();
+    recoveries.slice(1).forEach(item => {
+      const entry = document.createElement('div');
+      const area = document.createElement('strong');
+      const status = document.createElement('p');
+      entry.className = 'active-recovery-entry';
+      area.textContent = recoveryAreaLabels[item.area] || '';
+      status.textContent = recoveryStatusText(item);
+      entry.append(area, status);
+      additionalEntries.append(entry);
+    });
+  }
 }
 
 async function saveAccountRecovery() {

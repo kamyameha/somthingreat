@@ -27,11 +27,11 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026.07.26.192540" />
-  <link rel="stylesheet" href="welcome.css?v=2026.07.26.192540" />
-  <link rel="stylesheet" href="auth.css?v=2026.07.26.192540" />
-  <link rel="stylesheet" href="workout.css?v=2026.07.26.192540" />
-  <link rel="stylesheet" href="account.css?v=2026.07.26.192540" />
+  <link rel="stylesheet" href="style.css?v=2026.07.26.194625" />
+  <link rel="stylesheet" href="welcome.css?v=2026.07.26.194625" />
+  <link rel="stylesheet" href="auth.css?v=2026.07.26.194625" />
+  <link rel="stylesheet" href="workout.css?v=2026.07.26.194625" />
+  <link rel="stylesheet" href="account.css?v=2026.07.26.194625" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <link rel="apple-touch-icon" href="Assets/apple-touch-icon.png">
@@ -73,7 +73,9 @@
       <div class="brand-block">
         <img src="Assets/somthingreat.svg" alt="Somthingreat" class="brand-logo" />
       </div>
-      <button id="accountBtn" class="ghost-btn compact" type="button">Account</button>
+      <button id="accountBtn" class="ghost-btn compact shared-menu-btn" type="button" aria-label="Open menu">
+        <img src="Assets/menu.svg" alt="" />
+      </button>
     </header>
 
     <section id="accountPanel" class="card account-panel">
@@ -247,16 +249,22 @@
           </select>
           <button id="saveAccountRecoveryBtn" class="primary-btn account-full-btn" type="button">Add recovery</button>
           <p id="accountRecoveryMessage" class="auth-message" aria-live="polite"></p>
-          <div id="activeRecoveryCard" class="active-recovery-card hidden">
-            <h3>Active recovery</h3>
-            <strong id="activeRecoveryArea"></strong>
-            <p id="activeRecoveryUntil"></p>
-            <div class="active-recovery-actions">
-              <button id="editAccountRecoveryBtn" class="secondary-btn" type="button">Edit</button>
-              <button id="removeAccountRecoveryBtn" class="ghost-btn" type="button">Remove</button>
-            </div>
-          </div>
         </div>
+
+        <section id="activeRecoveryCard" class="active-recovery-card hidden" aria-label="Active recovery">
+          <h3>Active recovery</h3>
+          <div class="active-recovery-entries">
+            <div class="active-recovery-entry">
+              <strong id="activeRecoveryArea"></strong>
+              <p id="activeRecoveryUntil"></p>
+            </div>
+            <div id="additionalRecoveryEntries"></div>
+          </div>
+          <div class="active-recovery-actions">
+            <button id="editAccountRecoveryBtn" class="secondary-btn" type="button">Edit</button>
+            <button id="removeAccountRecoveryBtn" class="ghost-btn" type="button">Remove</button>
+          </div>
+        </section>
 
         <div id="accountPasswordView" class="account-view hidden">
           <h2 class="account-view-title account-heading-focus-target" tabindex="-1">Password</h2>
@@ -463,11 +471,11 @@
       <section class="activity-summary-card" aria-label="Activity statistics">
         <div class="activity-stat-tile">
           <strong id="historyYearSummary">0</strong>
-          <span>Workouts this year</span>
+          <span class="activity-stat-label"><span>Workouts</span><span class="activity-stat-period">This year</span></span>
         </div>
         <div class="activity-stat-tile">
           <strong id="historyMonthSummary">0</strong>
-          <span>Workouts this month</span>
+          <span class="activity-stat-label"><span>Workouts</span><span class="activity-stat-period">This month</span></span>
         </div>
         <div class="activity-stat-tile activity-energy-tile">
           <strong id="historyEnergySummary">—</strong>
@@ -590,12 +598,12 @@
     </div>
   </div>
 
-  <script src="auth.js?v=2026.07.26.192540"></script>
-  <script src="workouts.js?v=2026.07.26.192540"></script>
-  <script src="state.js?v=2026.07.26.192540"></script>
-  <script src="account.js?v=2026.07.26.192540"></script>
-  <script src="render.js?v=2026.07.26.192540"></script>
-  <script src="app-version.js?v=2026.07.26.192540"></script>
-  <script src="app.js?v=2026.07.26.192540"></script>
+  <script src="auth.js?v=2026.07.26.194625"></script>
+  <script src="workouts.js?v=2026.07.26.194625"></script>
+  <script src="state.js?v=2026.07.26.194625"></script>
+  <script src="account.js?v=2026.07.26.194625"></script>
+  <script src="render.js?v=2026.07.26.194625"></script>
+  <script src="app-version.js?v=2026.07.26.194625"></script>
+  <script src="app.js?v=2026.07.26.194625"></script>
 </body>
 </html>
