@@ -685,7 +685,7 @@ body.workout-active .app {
   display: flex;
   flex-direction: column;
   padding: 0;
-  background: #000000;
+  background: transparent;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior-y: contain;
@@ -708,6 +708,7 @@ body.workout-active #today.active {
   flex: 0 0 auto;
   flex-direction: column;
   overflow: visible;
+  background: #000000;
 }
 
 #exerciseList {
@@ -2018,8 +2019,7 @@ html.auth-loading .today-mascot-stage {
 }
 
 html.workout-active,
-body.workout-active,
-body.workout-active .app {
+body.workout-active {
   background: #000000 !important;
 }
 
@@ -2027,7 +2027,7 @@ body.workout-active .app {
   width: 100%;
   max-width: none;
   padding-inline: 0;
-  background: #000000 !important;
+  background: transparent !important;
 }
 
 html.workout-active .today-mascot-stage,

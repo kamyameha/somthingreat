@@ -321,7 +321,7 @@ assert.ok(prioritySkillWorkout.exercises
   .every(item => workouts.prioritySpecificityForExercise(item, 'pistolSquat')));
 assert.deepStrictEqual(
   Array.from(prioritySkillWorkout.exercises, item => item.workoutRoleLabel),
-  ['Priority skill', 'Secondary skill · Pull-up', 'Priority skill', 'Support']
+  ['Priority skill', 'Priority skill', 'Secondary skill · Pull-up', 'Support']
 );
 assert.ok(prioritySkillWorkout.exercises.some(item => item.id === 'assisted-split-squat'));
 assert.ok(!prioritySkillWorkout.exercises.some(item => (

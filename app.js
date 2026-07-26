@@ -2397,11 +2397,9 @@ function findCurrentExercise(trackKey) {
 
 function isWorkoutFullyComplete() {
   if (!state.current) return false;
-  const rateableExercises = (state.current.exercises || []).filter(exercise => !exercise.isAddOn);
-  if (!rateableExercises.length) return false;
-  const allSetsDone = rateableExercises.every(exercise => areExerciseSetsComplete(exercise));
-  const allRated = rateableExercises.every(exercise => state.current.ratings?.[exerciseSessionKey(exercise)]);
-  return allSetsDone && allRated;
+  const exercises = state.current.exercises || [];
+  if (!exercises.some(exercise => !exercise.isAddOn)) return false;
+  return exercises.every(exercise => isExerciseComplete(exercise));
 }
 
 function completeWorkout(skipMissingRatingConfirm = false) {

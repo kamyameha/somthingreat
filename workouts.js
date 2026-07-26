@@ -491,7 +491,13 @@
       throw new Error(`Missing authored success criteria: ${id}`);
     }
     const primaryAreas = options.primaryAreas || [];
-    const loadedAreas = options.loadedAreas || primaryAreas;
+    const authoredLoadedAreas = options.loadedAreas || primaryAreas;
+    const gripDependentPull = ['horizontal-pull', 'vertical-pull', 'scapular-pull'].includes(movementFamily);
+    const barDependentSkill = movementFamily === 'muscle-up' && (options.equipment || []).includes('pullupBar');
+    const loadedAreas = [...new Set([
+      ...authoredLoadedAreas,
+      ...((gripDependentPull || barDependentSkill || primaryAreas.includes('grip')) ? ['wrist'] : [])
+    ])];
     const setup = options.setup || `Set up for ${name.toLowerCase()} with a stable position.`;
     const execution = options.execution || 'Move with control and stop the set before your form breaks.';
     const safety = options.safety || PAIN_NOTICE;
@@ -2543,6 +2549,16 @@
       ...(catalogMatch || {}),
       ...rawExercise
     };
+    if (catalogMatch) {
+      normalized.loadedAreas = [...new Set([
+        ...(catalogMatch.loadedAreas || []),
+        ...(rawExercise.loadedAreas || [])
+      ])];
+      normalized.contraindicationTags = [...new Set([
+        ...(catalogMatch.contraindicationTags || []),
+        ...(rawExercise.contraindicationTags || [])
+      ])];
+    }
     Object.assign(normalized, withScoreDefaults(normalized));
     normalized.id = normalized.id || `legacy-${normalized.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     normalized.trackKey = normalized.trackKey || `exercise-${normalized.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
@@ -2880,11 +2896,37 @@
     return next;
   }
 
+  function canonicalWorkoutExerciseOrder(workoutName, exercises = []) {
+    if (workoutName !== 'Skill lab') return [...exercises];
+    const roleOrder = exercise => {
+      if (exercise?.isAddOn && exercise?.addOnType === 'warmup') return 0;
+      if (exercise?.workoutRole === 'primaryFocus') return 1;
+      if (
+        exercise?.workoutRole === 'focusAccessory' &&
+        exercise?.developmentDiagnostics?.foundationalSkillDirectPractice
+      ) return 2;
+      if (exercise?.workoutRole === 'focusAccessory') return 3;
+      if (exercise?.workoutRole === 'generalSupport') return 4;
+      if (exercise?.isAddOn) return 5;
+      return 4;
+    };
+    return exercises
+      .map((exercise, originalIndex) => ({ exercise, originalIndex }))
+      .sort((left, right) => (
+        roleOrder(left.exercise) - roleOrder(right.exercise) ||
+        left.originalIndex - right.originalIndex
+      ))
+      .map(item => item.exercise);
+  }
+
   function sanitizeWorkout(workout) {
     if (!workout || typeof workout !== 'object') return null;
     if (!Array.isArray(workout.exercises)) return null;
 
-    const exercises = workout.exercises.map(normalizeExercise).filter(Boolean);
+    const exercises = canonicalWorkoutExerciseOrder(
+      workout.workoutName,
+      workout.exercises.map(normalizeExercise).filter(Boolean)
+    );
     if (!exercises.length) return null;
 
     return {
@@ -3239,9 +3281,17 @@
     return directSkillExposureRecency(skill, state) >= maximumWorkoutGap;
   }
 
-  function secondaryFoundationalSkill(profile = null, state = {}, options = {}) {
+  function secondaryFoundationalSkillResolution(profile = null, state = {}, options = {}) {
     const prioritySkill = resolveMasterySkill(profile?.goal) || (profile ? null : MASTERY_SKILLS.pullup);
-    if (!prioritySkill) return null;
+    if (!prioritySkill) {
+      return {
+        scheduledSkill: null,
+        selectedSkill: null,
+        replacementSkill: null,
+        recoveryRestriction: null,
+        noSafeReplacement: false
+      };
+    }
     const availableSkills = PRIORITY_SKILLS.filter(skill => skill !== prioritySkill);
     const completedSkillLabs = (state.history || []).filter(item => rotationIndexForWorkoutName(item?.workout) === 3).length;
     const rotationOffset = completedSkillLabs % availableSkills.length;
@@ -3261,21 +3311,48 @@
       ));
     const config = getEnergyConfig(options.mode || 'normal');
     const recovery = getActiveRecovery(state);
-    const safelyAvailable = rankedSkills.find(({ skill }) => (
-      unlockedTrackCandidates(
-        directSkillTrackKey(skill),
-        config,
-        state,
-        profile,
-        recovery
-      ).some(exercise => isCurrentMilestoneExercise(exercise, directSkillTrackKey(skill)))
-    ));
-    return safelyAvailable?.skill || rankedSkills[0]?.skill || null;
+    const scheduledSkill = rankedSkills[0]?.skill || null;
+    const safeDirectCandidates = skill => unlockedTrackCandidates(
+      directSkillTrackKey(skill),
+      config,
+      state,
+      profile,
+      recovery
+    ).filter(exercise => isCurrentMilestoneExercise(exercise, directSkillTrackKey(skill)));
+    const safePreparationCandidates = skill => (foundationalSkillTracks[skill] || [])
+      .flatMap(trackKey => unlockedTrackCandidates(trackKey, config, state, profile, recovery))
+      .filter(exercise => (
+        prioritySpecificityForExercise(exercise, skill) ||
+        masteryRelationshipFor(exercise.id, skill)?.relationship
+      ));
+    const directMatch = rankedSkills.find(({ skill }) => safeDirectCandidates(skill).length);
+    const preparationMatch = directMatch
+      ? null
+      : rankedSkills.find(({ skill }) => safePreparationCandidates(skill).length);
+    const selectedSkill = directMatch?.skill || preparationMatch?.skill || null;
+    const skippedScheduledSkill = Boolean(recovery && scheduledSkill && selectedSkill !== scheduledSkill);
+    return {
+      scheduledSkill,
+      selectedSkill,
+      replacementSkill: skippedScheduledSkill ? selectedSkill : null,
+      recoveryRestriction: skippedScheduledSkill
+        ? {
+            area: recovery.area || null,
+            mode: recovery.mode || null
+          }
+        : null,
+      noSafeReplacement: Boolean(recovery && scheduledSkill && !selectedSkill)
+    };
+  }
+
+  function secondaryFoundationalSkill(profile = null, state = {}, options = {}) {
+    return secondaryFoundationalSkillResolution(profile, state, options).selectedSkill;
   }
 
   function skillCompositionPolicy(profile = null, state = {}, config = energyOptions.normal) {
     const selectedMasterySkill = resolveMasterySkill(profile?.goal) || (profile ? null : MASTERY_SKILLS.pullup);
-    const secondaryMasterySkill = secondaryFoundationalSkill(profile, state, { mode: config.mode });
+    const secondaryResolution = secondaryFoundationalSkillResolution(profile, state, { mode: config.mode });
+    const secondaryMasterySkill = secondaryResolution.selectedSkill;
     return {
       primaryFocusTracks: [...(foundationalSkillTracks[selectedMasterySkill] || [])],
       secondaryFocusTracks: [...(foundationalSkillTracks[secondaryMasterySkill] || [])],
@@ -3283,6 +3360,7 @@
       generalSupportTracks: ['antiExtension', 'lateralCore'],
       selectedMasterySkill,
       secondaryMasterySkill,
+      secondarySkillRecoveryDiagnostic: secondaryResolution,
       maximumPerTrack: 2
     };
   }
@@ -3801,6 +3879,10 @@
       takeCandidates(supportCandidates, Math.min(1, targetCount - exercises.length));
     }
 
+    if (workout.name === 'Skill lab') {
+      exercises.splice(0, exercises.length, ...canonicalWorkoutExerciseOrder(workout.name, exercises));
+    }
+
     const duplicateIds = exercises.length - usedIds.size;
     const primaryFocusCount = exercises.filter(item => item.workoutRole === 'primaryFocus').length;
     const focusAccessoryCount = exercises.filter(item => item.workoutRole === 'focusAccessory').length;
@@ -3940,6 +4022,7 @@
       developmentDiagnostics: {
         selectedMasterySkill: policy.selectedMasterySkill,
         workoutType: workout.name,
+        secondarySkillRecovery: policy.secondarySkillRecoveryDiagnostic || null,
         resolvedCompositionPolicy: {
           policyType: policy.policyType,
           primaryFocusTracks: [...policy.primaryFocusTracks],
