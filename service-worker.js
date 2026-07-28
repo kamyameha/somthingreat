@@ -1,5 +1,5 @@
 importScripts('./app-version.js');
-// Focused exercise instruction modal release.
+// Shared viewport layout release.
 
 const APP_VERSION = self.SOMTHINGREAT_VERSION || self.APP_VERSION || 'dev';
 const CACHE_NAME = `somthingreat-${APP_VERSION}`;

@@ -44,6 +44,19 @@
   --auth-control-width: min(354px, calc(100vw - 48px));
   --auth-secondary: rgba(1, 45, 237, 0.15);
   --auth-field: rgba(1, 45, 237, 0.35);
+  --app-viewport-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+  }
+}
+
+@supports (height: max(100dvh, 100vh)) {
+  :root {
+    --app-viewport-height: max(100dvh, 100vh);
+  }
 }
 
 * {
@@ -152,12 +165,12 @@ h3 {
 }
 
 body:not(.logged-out):not(.welcome-active):not(.onboarding-active):not(.confirmation-active):not(.account-active):not(.workout-active):not(.today-active) {
-  height: 100dvh;
+  height: var(--app-viewport-height);
   overflow: hidden;
 }
 
 body:not(.logged-out):not(.welcome-active):not(.onboarding-active):not(.confirmation-active):not(.account-active):not(.workout-active):not(.today-active) .app {
-  height: 100dvh;
+  height: var(--app-viewport-height);
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
@@ -633,16 +646,16 @@ body.onboarding-active #accountBtn {
 
 body.onboarding-active .app {
   max-width: 560px;
-  height: 100dvh;
-  min-height: 100dvh;
+  height: var(--app-viewport-height);
+  min-height: var(--app-viewport-height);
   padding: 0;
   background: var(--main);
 }
 
 .onboarding-panel {
   width: 100%;
-  height: 100dvh;
-  min-height: 100dvh;
+  height: var(--app-viewport-height);
+  min-height: var(--app-viewport-height);
   margin: 0;
   padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(20px + env(safe-area-inset-bottom));
   background: var(--main);
@@ -810,7 +823,7 @@ body.onboarding-active .app {
 }
 
 .onboarding-confirmation {
-  min-height: calc(100dvh - var(--space-5) - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: calc(var(--app-viewport-height) - var(--space-5) - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   justify-content: center;

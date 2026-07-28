@@ -876,14 +876,13 @@ function resetMainRouteScroll() {
 function syncActiveScreenScrollArchitecture() {
   const root = document.documentElement;
   const body = document.body;
+  if (root.classList.contains('account-active')) return;
   const activeScreen = document.querySelector('.screen.active');
   const usesTileScreen = activeScreen?.id === 'progress' || activeScreen?.id === 'activity';
   const usesWorkoutScreen = activeScreen?.id === 'today' && Boolean(state.current);
 
   root.classList.toggle('tile-screen-active', usesTileScreen);
   body.classList.toggle('tile-screen-active', usesTileScreen);
-
-  if (root.classList.contains('account-active')) return;
 
   if (usesTileScreen || usesWorkoutScreen) {
     document.querySelector('.topbar')?.classList.add('hidden');
@@ -3459,6 +3458,7 @@ function renderAll() {
     renderToday();
     renderProgress();
     renderActivity();
+    syncActiveScreenScrollArchitecture();
   }
   enforceScreenSeparation();
   updateWelcomeGate();

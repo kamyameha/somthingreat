@@ -124,7 +124,7 @@
   inset: 0;
   z-index: 80;
   width: 100vw;
-  height: 100dvh;
+  height: var(--app-viewport-height);
   padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--screen-x) calc(var(--space-5) + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
@@ -659,7 +659,7 @@
 html.workout-active,
 body.workout-active {
   width: 100%;
-  height: 100dvh;
+  height: var(--app-viewport-height);
   background: #1e1e1e;
   overflow: hidden;
 }
@@ -708,7 +708,7 @@ body.workout-active .app {
   z-index: 1;
   width: 100%;
   max-width: none;
-  height: 100dvh;
+  height: var(--app-viewport-height);
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -730,7 +730,7 @@ body.workout-active .bottom-nav {
 
 body.workout-active #today.active {
   width: 100%;
-  height: 100dvh;
+  height: var(--app-viewport-height);
   min-height: 0;
   display: flex;
   flex: 0 0 100%;
@@ -1938,16 +1938,17 @@ body.workout-active #exerciseList > .workout-accordion-card:first-child {
 html.today-active,
 body.today-active {
   width: 100%;
-  height: 100dvh;
+  height: var(--app-viewport-height);
   background: #ffffff;
   overflow: hidden;
   overscroll-behavior: none;
 }
 
 body.today-active .app {
-  height: 100dvh;
+  height: var(--app-viewport-height);
   min-height: 0;
   padding-top: calc(var(--space-5) + env(safe-area-inset-top));
+  padding-bottom: 0;
   background: transparent;
   overflow-x: hidden;
   overflow-y: hidden;
@@ -2000,7 +2001,7 @@ body.today-active .bottom-nav {
 
 body.today-active #today {
   position: relative;
-  min-height: calc(100dvh - 84px - env(safe-area-inset-bottom));
+  min-height: calc(var(--app-viewport-height) - var(--space-5) - env(safe-area-inset-top));
 }
 
 .energy-check-screen {
@@ -2078,7 +2079,7 @@ body.today-active .energy-grid {
   position: fixed;
   inset: 0;
   width: 100vw;
-  height: 100dvh;
+  height: var(--app-viewport-height);
   z-index: 0;
   overflow: visible;
   pointer-events: none;

@@ -97,7 +97,7 @@ assert.match(workout, /body\.workout-active\s*\{[^}]*--workout-bottom-overscroll
 assert.match(workout, /body\.workout-active\.workout-completion-active\s*\{[^}]*--workout-bottom-overscroll:\s*var\(--cream\)/s);
 assert.match(workout, /body\.workout-active::after\s*\{[^}]*bottom:\s*0;[^}]*background:\s*var\(--workout-bottom-overscroll\)/s);
 assert.match(workout, /body\.workout-active \.app\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*1/s);
-assert.match(workout, /body\.workout-active #today\.active\s*\{[^}]*height:\s*100dvh;[^}]*min-height:\s*0;[^}]*flex:\s*0 0 100%;[^}]*overflow-y:\s*auto;[^}]*overscroll-behavior:\s*none/s);
+assert.match(workout, /body\.workout-active #today\.active\s*\{[^}]*height:\s*var\(--app-viewport-height\);[^}]*min-height:\s*0;[^}]*flex:\s*0 0 100%;[^}]*overflow-y:\s*auto;[^}]*overscroll-behavior:\s*none/s);
 assert.match(workout, /#exerciseList\s*\{[^}]*flex:\s*1 0 auto;[^}]*overflow:\s*visible/s);
 assert.match(workout, /\.workout-accordion-card\.open\s*\{[^}]*min-height:\s*min-content;[^}]*flex:\s*1 0 auto;[^}]*overflow:\s*visible/s);
 assert.match(workout, /\.workout-accordion-card\.open \.exercise-card-body\s*\{[^}]*height:\s*auto;[^}]*min-height:\s*100%;[^}]*overflow:\s*visible/s);
@@ -141,8 +141,8 @@ assert.match(workout, /\.set-list\s*\{[^}]*width:\s*100%/s);
 assert.match(workout, /\.workout-accordion-card \.set-row\s*\{[^}]*width:\s*100%/s);
 assert.doesNotMatch(workout, /\.workout-accordion-card \.set-row\s*\{[^}]*width:\s*min\(309px,\s*100%\)/s);
 assert.match(workout, /\.workout-accordion-card \.rating-row\s*\{[^}]*width:\s*100%/s);
-assert.match(workout, /html\.today-active,[^}]*body\.today-active\s*\{[^}]*height:\s*100dvh;[^}]*overflow:\s*hidden/s);
-assert.match(workout, /body\.today-active \.app\s*\{[^}]*height:\s*100dvh;[^}]*overflow-y:\s*hidden/s);
+assert.match(workout, /html\.today-active,[^}]*body\.today-active\s*\{[^}]*height:\s*var\(--app-viewport-height\);[^}]*overflow:\s*hidden/s);
+assert.match(workout, /body\.today-active \.app\s*\{[^}]*height:\s*var\(--app-viewport-height\);[^}]*overflow-y:\s*hidden/s);
 
 const routeScrollContext = {
   app: { scrollTop: 42 },
