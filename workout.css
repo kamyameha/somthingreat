@@ -9,14 +9,14 @@
 
 .exercise-help-content {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   max-height: min(68vh, 560px);
   overflow-y: auto;
   color: var(--main);
 }
 
 .exercise-help-section h3 {
-  margin: 0 0 6px;
+  margin: 0 0 5px;
   color: rgba(1, 45, 237, 0.35);
   font-size: .82rem;
   letter-spacing: .02em;
@@ -30,11 +30,11 @@
 }
 
 .exercise-help-section ul { padding-left: 18px; }
-.exercise-help-section li + li { margin-top: 5px; }
+.exercise-help-section li + li { margin-top: 4px; }
 
 .exercise-help-steps {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   margin: 0;
   padding: 0;
   list-style: none;

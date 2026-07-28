@@ -2389,15 +2389,11 @@ function showExerciseHelp(exerciseName) {
   document.getElementById('exerciseHelpTitle').textContent = displayName;
   const content = document.getElementById('exerciseHelpContent');
   if (content) {
-    const distinctSuccess = workoutModule.distinctSuccessCriteria(help.movement, help.successCriteria);
     const sections = [
       ['How to perform it', help.howTo || []],
       ['Focus on', help.focus],
       ['Avoid', help.commonMistakes],
-      ['Success looks like', distinctSuccess],
-      ['Safety', [help.safety]],
-      ['More guidance', [help.purpose]],
-      ['Sources', (help.sources || []).map(source => `${source.organisation || source.title}: ${source.title || source.url}${source.reviewStatus ? ` (${source.reviewStatus})` : ''}`)]
+      ['Safety', [help.safety]]
     ].filter(([, values]) => Array.isArray(values) && values.some(Boolean));
     content.innerHTML = sections.map(([heading, values]) => {
       const cleanValues = values.filter(Boolean);

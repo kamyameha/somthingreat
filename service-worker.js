@@ -1,5 +1,5 @@
 importScripts('./app-version.js');
-// Exercise instruction schema and workout-specific add-on release.
+// Focused exercise instruction modal release.
 
 const APP_VERSION = self.SOMTHINGREAT_VERSION || self.APP_VERSION || 'dev';
 const CACHE_NAME = `somthingreat-${APP_VERSION}`;
