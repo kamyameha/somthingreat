@@ -88,6 +88,72 @@
     stimulus: 'Exactly one primary training stimulus used by budget and balance decisions.',
     jointStress: '0 means negligible; higher values mean the reduce/rest recovery filters should prefer easier alternatives.'
   };
+  const CATALOG_REVIEW_DATE = '2026-07-28';
+  const instructionSourceLibrary = Object.freeze({
+    aceExerciseLibrary: Object.freeze({
+      title: 'ACE Fitness Exercise Library',
+      organisation: 'American Council on Exercise',
+      url: 'https://www.acefitness.org/resources/everyone/exercise-library/',
+      reviewedAt: CATALOG_REVIEW_DATE,
+      note: 'Used for beginner strength-exercise setup, control, target-area and mistake checks.'
+    }),
+    nhsFlexibility: Object.freeze({
+      title: 'Flexibility exercises',
+      organisation: 'NHS',
+      url: 'https://www.nhs.uk/live-well/exercise/flexibility-exercises/',
+      reviewedAt: CATALOG_REVIEW_DATE,
+      note: 'Used for gentle stretch wording, side-to-side cues and non-aggressive range guidance.'
+    }),
+    nhsInformBalance: Object.freeze({
+      title: 'Strength and balance exercises',
+      organisation: 'NHS inform',
+      url: 'https://www.nhsinform.scot/healthy-living/preventing-falls/keeping-well/strength-and-balance-exercises/',
+      reviewedAt: CATALOG_REVIEW_DATE,
+      note: 'Used for beginner balance, marching and supported lower-body preparation cues.'
+    }),
+    gmbPistol: Object.freeze({
+      title: 'The Unorthodox Pistol Squat Progression that Actually Works',
+      organisation: 'GMB Fitness',
+      url: 'https://gmb.io/pistol/',
+      reviewedAt: CATALOG_REVIEW_DATE,
+      note: 'Used for pistol-squat progression, ankle/hip preparation and supported bottom-position control.'
+    }),
+    gmbProgressions: Object.freeze({
+      title: 'Standard Bodyweight Progressions Got You Stuck?',
+      organisation: 'GMB Fitness',
+      url: 'https://gmb.io/progressions/',
+      reviewedAt: CATALOG_REVIEW_DATE,
+      note: 'Used for L-sit and bodyweight skill progression context.'
+    }),
+    gmbTutorials: Object.freeze({
+      title: 'Additional Exercise Tutorials and Help',
+      organisation: 'GMB Fitness Help',
+      url: 'https://help.gmb.io/article/553-additional-exercise-tutorials-help',
+      reviewedAt: CATALOG_REVIEW_DATE,
+      note: 'Used for calisthenics tutorial scope, pull-up, push-up, squat, wrist and ankle preparation references.'
+    }),
+    calisthenicsHandstand: Object.freeze({
+      title: 'Handstand Training: Complete Progression Guide',
+      organisation: 'Calisthenics Association',
+      url: 'https://calisthenicsassociation.org/blog/handstand-training-complete-guide',
+      reviewedAt: CATALOG_REVIEW_DATE,
+      note: 'Used for handstand preparation, wrist conditioning, wall progression and safe entry/exit emphasis.'
+    }),
+    nhsWarmUp: Object.freeze({
+      title: 'Warm Up',
+      organisation: 'NHS Inside Guide',
+      url: 'https://insideguide.nhs.uk/hospitals/helping-yourself/healthy-body/exercise/warm-up/',
+      reviewedAt: CATALOG_REVIEW_DATE,
+      note: 'Used for simple warm-up movement structure and light-intensity preparation.'
+    }),
+    nhsCoolDown: Object.freeze({
+      title: 'Cool-down video',
+      organisation: 'NHS',
+      url: 'https://www.nhs.uk/live-well/exercise/strength-and-resistance/body-blast-cool-down/',
+      reviewedAt: CATALOG_REVIEW_DATE,
+      note: 'Used for calm cooldown pacing and general exercise safety framing.'
+    })
+  });
 
   const stimuli = new Set(scoreSchema.stimulus);
   const jointKeys = scoreSchema.jointStress;
@@ -464,20 +530,108 @@
     return ['Every prescribed repetition uses a consistent controlled range and returns to the defined finish position without losing the listed focus points.'];
   }
 
+  function sentence(value = '') {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    return /[.!?]$/.test(text) ? text : `${text}.`;
+  }
+
+  function firstSentence(value = '') {
+    const match = sentence(value).match(/^.*?[.!?](?:\s|$)/);
+    return match ? match[0].trim() : sentence(value);
+  }
+
+  function instructionStep(label, text) {
+    return { label, text: sentence(text) };
+  }
+
+  function authoredHowToSteps(name, movementFamily, options = {}) {
+    const setup = sentence(options.setup);
+    const execution = firstSentence(options.execution || options.movement?.[0] || '');
+    const hold = options.prescription?.seconds || options.prescription?.minutes || options.prescription?.attempts;
+    const steps = [
+      instructionStep('Set up', setup),
+      instructionStep(hold ? 'Hold or move' : 'Move', execution),
+      instructionStep(
+        options.prescription?.perSide || options.unilateral ? 'Switch sides' : 'Reset',
+        options.prescription?.perSide || options.unilateral
+          ? 'Return to the start with control, then complete the same reps or hold on the other side.'
+          : 'Return to the start position with control before the next rep.'
+      )
+    ];
+    if (['handstand', 'crow', 'muscle-up'].includes(movementFamily)) {
+      steps.push(instructionStep('Exit safely', 'Come down before the movement gets rushed or your position changes.'));
+    }
+    return steps.filter(step => step.label && step.text).slice(0, 5);
+  }
+
+  function instructionSourcesFor(movementFamily, options = {}) {
+    const refs = new Set(['aceExerciseLibrary']);
+    if (['squat', 'unilateral', 'calves', 'posterior-chain'].includes(movementFamily)) refs.add('nhsInformBalance');
+    if (movementFamily === 'pistolSquat' || options.exerciseId?.includes('pistol')) refs.add('gmbPistol');
+    if (['lsit', 'compression'].includes(movementFamily)) refs.add('gmbProgressions');
+    if (['vertical-pull', 'horizontal-pull', 'scapular-pull', 'horizontal-push'].includes(movementFamily)) refs.add('gmbTutorials');
+    if (movementFamily === 'handstand') refs.add('calisthenicsHandstand');
+    if (['calves', 'posterior-chain'].includes(movementFamily)) refs.add('nhsFlexibility');
+    return [...refs].map(key => ({ key, ...instructionSourceLibrary[key], reviewStatus: 'needsCoachReview' }));
+  }
+
+  function preparationNeedsFor(movementFamily, options = {}) {
+    const needs = new Set(options.preparationNeeds || ['general-warmup']);
+    const areas = new Set([...(options.primaryAreas || []), ...(options.loadedAreas || [])]);
+    if (['horizontal-push', 'dip-strength'].includes(movementFamily)) needs.add('light-horizontal-pushing');
+    if (['vertical-push', 'handstand'].includes(movementFamily)) needs.add('light-vertical-pushing');
+    if (['horizontal-pull', 'vertical-pull', 'scapular-pull', 'pull-accessory', 'muscle-up'].includes(movementFamily)) needs.add('light-pulling');
+    if (['squat', 'unilateral'].includes(movementFamily)) needs.add('squat-pattern-rehearsal');
+    if (movementFamily === 'posterior-chain') needs.add('hip-hinge-rehearsal');
+    if (movementFamily === 'calves') needs.add('calf-preparation');
+    if (['anti-extension', 'compression', 'lateral-core', 'lsit'].includes(movementFamily)) needs.add('core-bracing');
+    if (['compression', 'lsit'].includes(movementFamily)) needs.add('compression-preparation');
+    if (movementFamily === 'handstand') needs.add('safe-skill-entry-exit-rehearsal');
+    if (movementFamily === 'unilateral') needs.add('balance-preparation');
+    if (areas.has('wrist')) needs.add('wrist-preparation');
+    if (areas.has('elbow')) needs.add('elbow-preparation');
+    if (areas.has('shoulder')) needs.add('shoulder-mobility');
+    if (areas.has('upper-back') || ['scapular-pull', 'pull-accessory'].includes(movementFamily)) needs.add('scapular-control');
+    if (areas.has('hip')) needs.add('hip-mobility');
+    if (areas.has('knee')) needs.add('knee-control-preparation');
+    if (areas.has('ankle')) needs.add('ankle-dorsiflexion');
+    return [...needs];
+  }
+
+  function cooldownNeedsFor(movementFamily, options = {}) {
+    const needs = new Set(options.cooldownNeeds || []);
+    const areas = new Set([...(options.primaryAreas || []), ...(options.loadedAreas || [])]);
+    if (['horizontal-push', 'dip-strength'].includes(movementFamily)) needs.add('chest-shoulder-cooldown');
+    if (['vertical-pull', 'horizontal-pull', 'scapular-pull', 'pull-accessory', 'muscle-up'].includes(movementFamily)) needs.add('upper-back-shoulder-cooldown');
+    if (['squat', 'unilateral'].includes(movementFamily)) needs.add('quad-hip-cooldown');
+    if (movementFamily === 'posterior-chain') needs.add('hamstring-hip-cooldown');
+    if (movementFamily === 'calves' || areas.has('ankle')) needs.add('calf-ankle-cooldown');
+    if (['anti-extension', 'compression', 'lateral-core', 'lsit'].includes(movementFamily)) needs.add('trunk-hip-cooldown');
+    if (areas.has('shoulder')) needs.add('shoulder-cooldown');
+    if (areas.has('hip')) needs.add('hip-cooldown');
+    return [...needs];
+  }
+
   function structuredInstructions(name, movementFamily, instructions, options = {}) {
     const guidance = instructionGuidance[movementFamily] || { focus: ['Move slowly and stay in control.'], mistakes: ['Rushing the movement.'] };
     const movement = Array.isArray(options.movement) && options.movement.length ? options.movement.slice(0, 6) : [instructions.execution];
     const authoredSuccess = successCriteriaById[options.exerciseId] || [];
     const successCriteria = distinctSuccessCriteria(movement, authoredSuccess);
     const removedDuplicate = successCriteria.length !== authoredSuccess.length;
+    const sources = options.sources || instructionSourcesFor(movementFamily, options);
     return {
       purpose: instructions.purpose,
       startingPosition: instructions.setup,
+      howTo: options.howTo || authoredHowToSteps(name, movementFamily, options),
       movement,
       successCriteria: removedDuplicate || !successCriteria.length ? generatedSuccessCriteria(name, options.prescription, options) : successCriteria,
       focus: (options.focus || guidance.focus).slice(0, 3),
       commonMistakes: (options.commonMistakes || guidance.mistakes).slice(0, 3),
       safety: instructions.safety,
+      sources,
+      reviewedAt: CATALOG_REVIEW_DATE,
+      reviewStatus: options.reviewStatus || 'needsCoachReview',
       visualRequired: options.visualRequired !== false,
       visualGuidance: options.visualGuidance || `Show the starting position and controlled movement for ${name}.`,
       // Kept while the existing help panel migrates to the structured fields.
@@ -622,6 +776,9 @@
     const safeDifficulty = clampScore(difficulty);
     const stimulus = defaultStimulus(movementFamily, options);
     const jointStress = defaultJointStress(loadedAreas, safeDifficulty, options);
+    const preparationNeeds = preparationNeedsFor(movementFamily, { ...options, loadedAreas, primaryAreas });
+    const cooldownNeeds = cooldownNeedsFor(movementFamily, { ...options, loadedAreas, primaryAreas });
+    const sourceRefs = instructionSourcesFor(movementFamily, { ...options, exerciseId: id });
     return {
       id,
       name,
@@ -635,6 +792,11 @@
       equipment: options.equipment || [],
       primaryAreas,
       loadedAreas,
+      preparationNeeds,
+      cooldownNeeds,
+      sourceRefs,
+      reviewedAt: CATALOG_REVIEW_DATE,
+      reviewStatus: options.reviewStatus || 'needsCoachReview',
       contraindicationTags: options.contraindicationTags || loadedAreas.map(area => `${area}-load`),
       type: options.type || 'strength',
       ...prescriptionFields(prescription),
@@ -643,7 +805,7 @@
         setup,
         execution,
         safety
-      }, { ...options, exerciseId: id, prescription }),
+      }, { ...options, exerciseId: id, prescription, preparationNeeds, cooldownNeeds, sources: sourceRefs }),
       progressionNote: options.progressionNote || '',
       phase: options.phase || null,
       highSkill: Boolean(options.highSkill),
@@ -1884,6 +2046,59 @@
     })
   ];
 
+  function addOnMovement(id, name, addOnType, movementFamily, demandTags, options = {}) {
+    const loadedAreas = options.loadedAreas || [];
+    const difficulty = clampScore(options.difficulty || 1);
+    const jointStress = defaultJointStress(loadedAreas, difficulty, options);
+    const sourceKeys = options.sourceKeys || (addOnType === 'warmup'
+      ? ['nhsWarmUp', 'nhsInformBalance']
+      : ['nhsFlexibility', 'nhsCoolDown']);
+    const sourceRefs = sourceKeys.map(key => ({ key, ...instructionSourceLibrary[key], reviewStatus: 'needsCoachReview' }));
+    return {
+      id,
+      name,
+      addOnType,
+      movementFamily,
+      demandTags,
+      order: options.order || 50,
+      equipment: options.equipment || [],
+      primaryAreas: options.primaryAreas || loadedAreas,
+      loadedAreas,
+      jointStress,
+      difficulty,
+      fatigue: 1,
+      skill: clampScore(options.skill || 1),
+      stability: clampScore(options.stability || 1),
+      stimulus: addOnType === 'warmup' ? 'mobility' : 'recovery',
+      sourceRefs,
+      reviewedAt: CATALOG_REVIEW_DATE,
+      reviewStatus: options.reviewStatus || 'needsCoachReview'
+    };
+  }
+
+  const addOnMovementCatalog = Object.freeze([
+    addOnMovement('warmup-march-in-place', 'March in place', 'warmup', 'conditioning', ['general-warmup'], { order: 1, loadedAreas: ['hip', 'knee', 'ankle'] }),
+    addOnMovement('warmup-arm-circles', 'Arm circles', 'warmup', 'mobility', ['shoulder-mobility', 'light-horizontal-pushing', 'light-vertical-pushing'], { order: 2, loadedAreas: ['shoulder'], sourceKeys: ['nhsWarmUp', 'aceExerciseLibrary'] }),
+    addOnMovement('warmup-shoulder-rolls', 'Shoulder rolls', 'warmup', 'mobility', ['shoulder-mobility', 'scapular-control'], { order: 3, loadedAreas: ['shoulder', 'upper-back'], sourceKeys: ['nhsWarmUp', 'aceExerciseLibrary'] }),
+    addOnMovement('warmup-wrist-rocks', 'Wrist rocks', 'warmup', 'mobility', ['wrist-preparation', 'safe-skill-entry-exit-rehearsal'], { order: 4, loadedAreas: ['wrist'], sourceKeys: ['gmbTutorials', 'calisthenicsHandstand'] }),
+    addOnMovement('warmup-scapular-reaches', 'Scapular reaches', 'warmup', 'mobility', ['scapular-control', 'light-pulling', 'light-vertical-pushing'], { order: 5, loadedAreas: ['shoulder', 'upper-back'], sourceKeys: ['aceExerciseLibrary', 'gmbTutorials'] }),
+    addOnMovement('warmup-hip-circles', 'Hip circles', 'warmup', 'mobility', ['hip-mobility', 'squat-pattern-rehearsal', 'hip-hinge-rehearsal'], { order: 6, loadedAreas: ['hip'] }),
+    addOnMovement('warmup-good-mornings', 'Good mornings', 'warmup', 'posterior-chain', ['hip-hinge-rehearsal', 'hamstring-preparation'], { order: 7, loadedAreas: ['hip', 'lower-back'] }),
+    addOnMovement('warmup-bodyweight-squats', 'Bodyweight squats', 'warmup', 'squat', ['squat-pattern-rehearsal', 'knee-control-preparation', 'ankle-dorsiflexion'], { order: 8, loadedAreas: ['hip', 'knee', 'ankle'] }),
+    addOnMovement('warmup-step-touch', 'Step touch', 'warmup', 'conditioning', ['general-warmup', 'balance-preparation'], { order: 9, loadedAreas: ['hip', 'knee', 'ankle'] }),
+    addOnMovement('warmup-ankle-bounces', 'Ankle bounces', 'warmup', 'calves', ['ankle-dorsiflexion', 'calf-preparation'], { order: 10, loadedAreas: ['ankle', 'knee'] }),
+    addOnMovement('warmup-compression-sit-tall', 'Tall compression reach', 'warmup', 'compression', ['compression-preparation', 'core-bracing'], { order: 11, loadedAreas: ['hip'] }),
+    addOnMovement('warmup-supported-balance-shift', 'Supported balance shift', 'warmup', 'unilateral', ['balance-preparation', 'knee-control-preparation'], { order: 12, loadedAreas: ['hip', 'knee', 'ankle'] }),
+    addOnMovement('stretch-hamstring', 'Hamstring stretch', 'stretch', 'mobility', ['hamstring-hip-cooldown', 'calf-ankle-cooldown'], { order: 1, loadedAreas: ['hip'], sourceKeys: ['nhsFlexibility'] }),
+    addOnMovement('stretch-quad', 'Quad stretch', 'stretch', 'mobility', ['quad-hip-cooldown'], { order: 2, loadedAreas: ['knee', 'hip'], sourceKeys: ['nhsFlexibility'] }),
+    addOnMovement('stretch-chest-opener', 'Chest opener', 'stretch', 'mobility', ['chest-shoulder-cooldown', 'shoulder-cooldown'], { order: 3, loadedAreas: ['shoulder'], sourceKeys: ['nhsCoolDown', 'aceExerciseLibrary'] }),
+    addOnMovement('stretch-childs-pose', "Child's pose", 'stretch', 'mobility', ['trunk-hip-cooldown', 'upper-back-shoulder-cooldown'], { order: 4, loadedAreas: ['hip', 'knee', 'shoulder'], sourceKeys: ['aceExerciseLibrary', 'nhsFlexibility'] }),
+    addOnMovement('stretch-calf', 'Calf stretch', 'stretch', 'mobility', ['calf-ankle-cooldown'], { order: 5, loadedAreas: ['ankle', 'knee'], sourceKeys: ['nhsFlexibility'] }),
+    addOnMovement('stretch-hip-flexor', 'Hip flexor stretch', 'stretch', 'mobility', ['quad-hip-cooldown', 'hip-cooldown'], { order: 6, loadedAreas: ['hip', 'knee'], sourceKeys: ['nhsFlexibility'] }),
+    addOnMovement('stretch-shoulder', 'Shoulder stretch', 'stretch', 'mobility', ['shoulder-cooldown', 'upper-back-shoulder-cooldown'], { order: 7, loadedAreas: ['shoulder'], sourceKeys: ['nhsCoolDown', 'aceExerciseLibrary'] }),
+    addOnMovement('stretch-forward-fold', 'Forward fold', 'stretch', 'mobility', ['hamstring-hip-cooldown', 'trunk-hip-cooldown'], { order: 8, loadedAreas: ['hip', 'lower-back'], sourceKeys: ['nhsFlexibility'] })
+  ]);
+
   function stableIdSet(values) {
     return new Set(values);
   }
@@ -2063,7 +2278,7 @@
     );
   });
 
-  const byId = Object.fromEntries(exerciseCatalog.map(item => [item.id, item]));
+  const byId = Object.fromEntries([...exerciseCatalog, ...addOnMovementCatalog].map(item => [item.id, item]));
   // These movements remain documented for migration/history lookup, but are
   // intentionally excluded from the current programme. The household-anchor
   // movements cannot be verified by the app; Jump rope is retained only for
@@ -2242,7 +2457,7 @@
         isAddOn: true,
         addOnType: 'warmup',
         setLabels: ['March in place', 'Arm circles', 'Hip circles', 'Bodyweight squats'],
-        movementExerciseIds: ['warmup-march-in-place', 'warmup-arm-circles', 'warmup-hip-circles', 'bodyweight-squat']
+        movementExerciseIds: ['warmup-march-in-place', 'warmup-arm-circles', 'warmup-hip-circles', 'warmup-bodyweight-squats']
       },
       {
         id: 'warmup-general-b',
@@ -2254,7 +2469,7 @@
         isAddOn: true,
         addOnType: 'warmup',
         setLabels: ['Step touch', 'Shoulder rolls', 'Good mornings', 'Ankle bounces'],
-        movementExerciseIds: ['warmup-step-touch', 'warmup-shoulder-rolls', 'bodyweight-good-morning', 'warmup-ankle-bounces']
+        movementExerciseIds: ['warmup-step-touch', 'warmup-shoulder-rolls', 'warmup-good-mornings', 'warmup-ankle-bounces']
       }
     ],
     stretches: [
@@ -2427,6 +2642,38 @@
         setup: 'Stand tall with feet under hips and knees soft.',
         execution: 'Lightly bounce through the ankles, keeping the movement small.',
         safety: 'Stay gentle and keep both feet landing softly.'
+      }
+    },
+    'Wrist rocks': {
+      instructions: {
+        purpose: 'Prepares the wrists for hand support and inverted work.',
+        setup: 'Place hands on the floor or a firm surface with fingers spread.',
+        execution: 'Shift your shoulders slightly forward and back through a small range.',
+        safety: 'Keep pressure light and stop if the wrists feel sharp or irritated.'
+      }
+    },
+    'Scapular reaches': {
+      instructions: {
+        purpose: 'Wakes up shoulder-blade control before pushing, pulling, or handstand work.',
+        setup: 'Stand tall with arms reaching forward at shoulder height.',
+        execution: 'Reach hands forward by spreading the shoulder blades, then gently draw them back.',
+        safety: 'Keep the neck relaxed and avoid forcing the shoulders up.'
+      }
+    },
+    'Tall compression reach': {
+      instructions: {
+        purpose: 'Prepares the hips and trunk for L-sit and compression work.',
+        setup: 'Sit tall with legs forward and hands beside your thighs.',
+        execution: 'Reach the chest tall and lightly lift one heel or both heels for a brief moment.',
+        safety: 'Keep the effort small and avoid leaning far backward.'
+      }
+    },
+    'Supported balance shift': {
+      instructions: {
+        purpose: 'Prepares balance and knee control for single-leg lower-body work.',
+        setup: 'Stand beside a wall or stable support with feet under your hips.',
+        execution: 'Shift weight to one foot, lightly tap the other foot out, then switch sides.',
+        safety: 'Use support and keep the movement slow enough to stay steady.'
       }
     },
     'Hamstring stretch': {
@@ -4669,6 +4916,65 @@
     return selected ? clone(selected) : null;
   }
 
+  function demandCountsForWorkout(workout, kind) {
+    return (workout?.exercises || [])
+      .filter(exercise => exercise && !exercise.isAddOn)
+      .flatMap(exercise => kind === 'warmup' ? exercise.preparationNeeds || [] : exercise.cooldownNeeds || [])
+      .reduce((counts, tag) => {
+        counts[tag] = Number(counts[tag] || 0) + 1;
+        return counts;
+      }, {});
+  }
+
+  function equipmentAllowedForAddOn(movement, profile = null) {
+    const required = movement?.equipment || [];
+    if (!required.length) return true;
+    const available = profileEquipment(profile);
+    return required.every(item => available.has(item));
+  }
+
+  function buildGeneratedAddOn(kind, workout, context = {}) {
+    const recovery = getActiveRecovery(context.state || {});
+    const demandCounts = demandCountsForWorkout(workout, kind);
+    const pool = addOnMovementCatalog
+      .filter(movement => movement.addOnType === kind)
+      .filter(movement => equipmentAllowedForAddOn(movement, context.profile || null))
+      .filter(movement => isExerciseAllowedForRecovery(movement, recovery));
+    const scored = pool
+      .map(movement => {
+        const relevance = (movement.demandTags || []).reduce((sum, tag) => sum + Number(demandCounts[tag] || 0), 0);
+        const general = movement.demandTags?.includes(kind === 'warmup' ? 'general-warmup' : 'trunk-hip-cooldown') ? 0.25 : 0;
+        return { movement, score: relevance + general };
+      })
+      .filter(item => item.score > 0 || kind === 'stretch')
+      .sort((left, right) => right.score - left.score || left.movement.order - right.movement.order);
+    const selected = [];
+    scored.forEach(({ movement }) => {
+      if (selected.length >= 4 || selected.some(item => item.id === movement.id)) return;
+      selected.push(movement);
+    });
+    if (kind === 'warmup' && !selected.some(item => item.demandTags?.includes('general-warmup'))) {
+      const general = pool.find(item => item.demandTags?.includes('general-warmup'));
+      if (general) selected.unshift(general);
+    }
+    const finalMovements = selected.slice(0, 4);
+    if (!finalMovements.length) return null;
+    return {
+      id: `${kind}-generated-${finalMovements.map(item => item.id.replace(/^(?:warmup|stretch)-/, '')).join('-')}`,
+      trackKey: kind,
+      name: kind === 'warmup' ? 'Warm-up' : 'Stretch',
+      prescriptionData: { sets: finalMovements.length, seconds: 30 },
+      prescription: `${finalMovements.length} × 30s`,
+      setCount: finalMovements.length,
+      isAddOn: true,
+      addOnType: kind,
+      setLabels: finalMovements.map(item => item.name),
+      movementExerciseIds: finalMovements.map(item => item.id),
+      generatedFromWorkout: workout?.workoutName || 'Workout',
+      demandTags: unique(finalMovements.flatMap(item => item.demandTags || []))
+    };
+  }
+
   function revalidateWorkoutForRecovery(workout, recovery) {
     if (!workout || !activeRecoveryRestrictions(recovery).length) return workout;
     const originalWorkoutName = workout.originalScheduledWorkout || workout.workoutName || 'Workout';
@@ -4707,8 +5013,12 @@
   function applyWorkoutAddOns(workout, addOns = {}, context = {}) {
     const variantIndex = Math.floor(Date.now() / 86400000) % 2;
     const recovery = getActiveRecovery(context.state || {});
-    const warmup = selectRecoveryCompatibleAddOn(workoutAddOns.warmups, addOns.warmup, recovery, variantIndex);
-    const stretch = selectRecoveryCompatibleAddOn(workoutAddOns.stretches, addOns.stretch, recovery, variantIndex);
+    const warmup = addOns.warmup
+      ? buildGeneratedAddOn('warmup', workout, context) || selectRecoveryCompatibleAddOn(workoutAddOns.warmups, true, recovery, variantIndex)
+      : null;
+    const stretch = addOns.stretch
+      ? buildGeneratedAddOn('stretch', workout, context) || selectRecoveryCompatibleAddOn(workoutAddOns.stretches, true, recovery, variantIndex)
+      : null;
     const addOnExercises = [warmup, stretch].filter(Boolean);
     const mainExercises = validateWorkoutSections(workout, addOnExercises, context);
     const expectedCount = getEnergyConfig(workout.mode || 'normal').exerciseCount;
@@ -4958,22 +5268,54 @@
     const movement = item.instructions.movement || [item.instructions.execution].filter(Boolean);
     const authoredSuccess = item.instructions.successCriteria || [];
     const successCriteria = distinctSuccessCriteria(movement, authoredSuccess);
+    const howTo = Array.isArray(item.instructions.howTo) && item.instructions.howTo.length
+      ? item.instructions.howTo
+      : authoredHowToSteps(item.name || 'Movement', item.movementFamily || 'mobility', {
+        setup: item.instructions.startingPosition || item.instructions.setup,
+        execution: movement[0],
+        prescription: item.prescriptionData || {}
+      });
     return {
       purpose: item.instructions.purpose,
       startingPosition: item.instructions.startingPosition || item.instructions.setup,
+      howTo,
       movement,
-      successCriteria: successCriteria.length || authoredSuccess.length ? successCriteria : ['Complete the movement for the prescribed time or repetitions with a steady range and a controlled finish.'],
-      focus: item.instructions.focus || ['Move slowly through a comfortable, repeatable range.'],
-      commonMistakes: item.instructions.commonMistakes || ['Rushing or forcing the movement beyond a comfortable range.'],
+      successCriteria: successCriteria.length || authoredSuccess.length ? successCriteria : [],
+      focus: item.instructions.focus || [],
+      commonMistakes: item.instructions.commonMistakes || [],
       safety: item.instructions.safety,
+      sources: item.instructions.sources || item.sourceRefs || [],
+      reviewedAt: item.instructions.reviewedAt || item.reviewedAt || null,
+      reviewStatus: item.instructions.reviewStatus || item.reviewStatus || 'needsCoachReview',
       cues: [item.instructions.setup, item.instructions.execution]
     };
   }
 
   function findAddOnMovementHelp(nameOrId = '') {
     const normalised = normaliseHelpName(nameOrId);
+    const catalogItem = addOnMovementCatalog.find(item => item.id === nameOrId || normaliseHelpName(item.name) === normalised);
     const key = Object.keys(addOnMovementHelp).find(item => normaliseHelpName(item) === normalised);
-    return key ? addOnMovementHelp[key] : null;
+    if (!key) return catalogItem || null;
+    return {
+      ...(catalogItem || {}),
+      name: catalogItem?.name || key,
+      instructions: {
+        ...addOnMovementHelp[key].instructions,
+        howTo: authoredHowToSteps(catalogItem?.name || key, catalogItem?.movementFamily || 'mobility', {
+          setup: addOnMovementHelp[key].instructions.setup,
+          execution: addOnMovementHelp[key].instructions.execution,
+          prescription: { seconds: 30 }
+        }),
+        successCriteria: [
+          `Complete the movement for the prescribed time with a calm pace, a controlled range, and an easy exit.`
+        ],
+        focus: ['Keep the range easy.', 'Move smoothly.', 'Breathe normally.'],
+        commonMistakes: ['Forcing a bigger range.', 'Rushing the movement.', 'Holding your breath.'],
+        sources: catalogItem?.sourceRefs || [],
+        reviewedAt: CATALOG_REVIEW_DATE,
+        reviewStatus: 'needsCoachReview'
+      }
+    };
   }
 
   function getExerciseHelp(nameOrId = '') {
@@ -5058,6 +5400,27 @@
   function validateWorkoutSystem() {
     const errors = [];
     const ids = new Set();
+    const validateInstructionObject = (owner, instruction, { requiresProgressionSuccess = true } = {}) => {
+      if (!instruction?.purpose || !Array.isArray(instruction?.howTo) || instruction.howTo.length < 3 || instruction.howTo.length > 5 ||
+          !Array.isArray(instruction?.focus) || !instruction.focus.length || instruction.focus.length > 3 ||
+          !Array.isArray(instruction?.commonMistakes) || !instruction.commonMistakes.length || instruction.commonMistakes.length > 3 ||
+          !instruction?.safety || !Array.isArray(instruction?.sources) || !instruction.sources.length ||
+          !instruction.reviewedAt || !instruction.reviewStatus) errors.push(`Missing concise researched instructions: ${owner}`);
+      const labels = (instruction?.howTo || []).map(step => normalizeInstructionText(step?.label)).filter(Boolean);
+      const texts = (instruction?.howTo || []).map(step => normalizeInstructionText(step?.text)).filter(Boolean);
+      if (labels.length !== new Set(labels).size) errors.push(`Duplicated how-to labels: ${owner}`);
+      if (texts.length !== new Set(texts).size) errors.push(`Duplicated how-to step text: ${owner}`);
+      if (requiresProgressionSuccess && (!Array.isArray(instruction?.successCriteria) || !instruction.successCriteria.length)) {
+        errors.push(`Missing success criteria: ${owner}`);
+      }
+      const instructionText = JSON.stringify(instruction || {});
+      if (/\b(?:placeholder|provisional|to be confirmed|being finalized|tbd|good form|proper technique|move correctly)\b/i.test(instructionText)) {
+        errors.push(`Placeholder or generic instruction language: ${owner}`);
+      }
+      if (/\b(?:guarantee|prevent injury|treat|rehabilitate|cure)\b/i.test(instructionText)) {
+        errors.push(`Unsupported medical claim: ${owner}`);
+      }
+    };
     exerciseCatalog.forEach(item => {
       if (ids.has(item.id)) errors.push(`Duplicate exercise id: ${item.id}`);
       ids.add(item.id);
@@ -5069,6 +5432,7 @@
       if (item.prescriptionType === 'time' && !item.secondsPerSet) errors.push(`Timed exercise missing seconds: ${item.id}`);
       if (item.prescriptionType === 'reps' && !item.repsPerSet) errors.push(`Rep exercise missing target: ${item.id}`);
       const instruction = item.instructions;
+      validateInstructionObject(item.id, instruction);
       if (!instruction?.purpose || !instruction?.startingPosition || !Array.isArray(instruction?.movement) || !instruction.movement.length ||
           !Array.isArray(instruction?.focus) || !instruction.focus.length || !Array.isArray(instruction?.commonMistakes) || !instruction.commonMistakes.length ||
           !instruction?.safety || !Array.isArray(instruction?.successCriteria) || !instruction.successCriteria.length ||
@@ -5080,6 +5444,9 @@
       if (normalizedSuccess.length && normalizedSuccess.every(value => value === normalizedMovement)) errors.push(`Movement duplicates every success criterion: ${item.id}`);
       const instructionText = JSON.stringify(instruction || {});
       if (/\b(?:placeholder|provisional|to be confirmed|being finalized|tbd)\b/i.test(instructionText)) errors.push(`Placeholder or provisional instructions: ${item.id}`);
+      if (!Array.isArray(item.preparationNeeds) || !item.preparationNeeds.length) errors.push(`Missing preparation needs: ${item.id}`);
+      if (!Array.isArray(item.cooldownNeeds)) errors.push(`Missing cooldown needs: ${item.id}`);
+      if (!Array.isArray(item.sourceRefs) || !item.sourceRefs.length || !item.reviewedAt || !item.reviewStatus) errors.push(`Missing source metadata: ${item.id}`);
       if (/recommended/i.test(item.name) || /recommended/i.test(item.prescription)) errors.push(`Informational exercise: ${item.id}`);
       ['difficulty', 'fatigue', 'skill', 'stability'].forEach(field => {
         if (!Number.isInteger(item[field]) || item[field] < 1 || item[field] > 10) {
@@ -5107,8 +5474,21 @@
       });
     });
     errors.push(...validateEligibilityConfig());
+    addOnMovementCatalog.forEach(item => {
+      if (ids.has(item.id)) errors.push(`Duplicate movement id: ${item.id}`);
+      ids.add(item.id);
+      if (!item.name || !item.addOnType || !Array.isArray(item.demandTags) || !item.demandTags.length) errors.push(`Missing add-on movement metadata: ${item.id}`);
+      if (!Array.isArray(item.sourceRefs) || !item.sourceRefs.length || !item.reviewedAt || !item.reviewStatus) errors.push(`Missing add-on source metadata: ${item.id}`);
+      jointKeys.forEach(key => {
+        if (!Number.isInteger(item.jointStress?.[key]) || item.jointStress[key] < 0 || item.jointStress[key] > 10) {
+          errors.push(`Invalid add-on joint stress ${key}: ${item.id}`);
+        }
+      });
+      const help = helpFromInstructions(findAddOnMovementHelp(item.name));
+      validateInstructionObject(`add-on ${item.id}`, help, { requiresProgressionSuccess: false });
+    });
     Object.entries(addOnMovementHelp).forEach(([name, item]) => {
-      const help = helpFromInstructions(item);
+      const help = helpFromInstructions(findAddOnMovementHelp(name) || item);
       if (!help?.purpose || !help?.startingPosition || !help?.movement?.length || !help?.successCriteria?.length || !help?.focus?.length || !help?.commonMistakes?.length || !help?.safety) errors.push(`Missing add-on instructions: ${name}`);
       if (help?.successCriteria?.length && help.successCriteria.every(value => normalizeInstructionText(value) === normalizeInstructionText(help.movement.join(' ')))) errors.push(`Movement duplicates every success criterion: add-on ${name}`);
     });
@@ -5152,6 +5532,8 @@
     recoveryRules,
     energyOptions,
     workoutAddOns,
+    addOnMovementCatalog,
+    instructionSourceLibrary,
     workoutCompositionPolicies,
     workoutEligibleTracks,
     createDefaultLevels,

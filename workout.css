@@ -32,6 +32,32 @@
 .exercise-help-section ul { padding-left: 18px; }
 .exercise-help-section li + li { margin-top: 5px; }
 
+.exercise-help-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exercise-help-steps li {
+  display: grid;
+  grid-template-columns: minmax(82px, max-content) minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.exercise-help-steps strong {
+  font-size: .82rem;
+  line-height: 1.35;
+  color: rgba(1, 45, 237, 0.58);
+}
+
+.exercise-help-steps span {
+  min-width: 0;
+  line-height: 1.35;
+}
+
 .today-empty-state {
   position: relative;
   padding: 24px;

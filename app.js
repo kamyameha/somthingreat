@@ -1871,6 +1871,7 @@ function swapPreviewExercise(index) {
     typeof getActiveRecovery === 'function' ? getActiveRecovery() : null,
     { profile: getProfile(), state }
   );
+  updateGeneratedWorkoutAddOns();
   saveState();
   renderGeneratedWorkout();
 }
@@ -2390,15 +2391,24 @@ function showExerciseHelp(exerciseName) {
   if (content) {
     const distinctSuccess = workoutModule.distinctSuccessCriteria(help.movement, help.successCriteria);
     const sections = [
-      ['Purpose', [help.purpose]],
-      ['Starting position', [help.startingPosition]],
-      ['Movement', help.movement],
+      ['How to perform it', help.howTo || []],
+      ['Focus on', help.focus],
+      ['Avoid', help.commonMistakes],
       ['Success looks like', distinctSuccess],
-      ['Focus', help.focus],
-      ['Common mistakes', help.commonMistakes],
-      ['Safety', [help.safety]]
+      ['Safety', [help.safety]],
+      ['More guidance', [help.purpose]],
+      ['Sources', (help.sources || []).map(source => `${source.organisation || source.title}: ${source.title || source.url}${source.reviewStatus ? ` (${source.reviewStatus})` : ''}`)]
     ].filter(([, values]) => Array.isArray(values) && values.some(Boolean));
-    content.innerHTML = sections.map(([heading, values]) => `<section class="exercise-help-section"><h3>${escapeHTML(heading)}</h3>${values.length > 1 ? `<ul>${values.filter(Boolean).map(value => `<li>${escapeHTML(value)}</li>`).join('')}</ul>` : `<p>${escapeHTML(values.find(Boolean) || '')}</p>`}</section>`).join('');
+    content.innerHTML = sections.map(([heading, values]) => {
+      const cleanValues = values.filter(Boolean);
+      const isHowTo = heading === 'How to perform it';
+      const list = isHowTo
+        ? `<ol class="exercise-help-steps">${cleanValues.map(step => `<li><strong>${escapeHTML(step.label || 'Step')}</strong><span>${escapeHTML(step.text || step)}</span></li>`).join('')}</ol>`
+        : cleanValues.length > 1
+          ? `<ul>${cleanValues.map(value => `<li>${escapeHTML(value)}</li>`).join('')}</ul>`
+          : `<p>${escapeHTML(cleanValues[0] || '')}</p>`;
+      return `<section class="exercise-help-section"><h3>${escapeHTML(heading)}</h3>${list}</section>`;
+    }).join('');
   }
   panel.classList.remove('hidden');
   renderModule.focusFirstInteractive(panel);

@@ -1,5 +1,5 @@
 importScripts('./app-version.js');
-// Menu boundary scrolling and responsive equipment-chip release.
+// Exercise instruction schema and workout-specific add-on release.
 
 const APP_VERSION = self.SOMTHINGREAT_VERSION || self.APP_VERSION || 'dev';
 const CACHE_NAME = `somthingreat-${APP_VERSION}`;

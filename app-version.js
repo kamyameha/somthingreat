@@ -1,5 +1,5 @@
 (function (scope) {
-  const APP_VERSION = '2026.07.28.091132';
+  const APP_VERSION = '2026.07.28.092527';
 
   scope.APP_VERSION = APP_VERSION;
   scope.SOMTHINGREAT_VERSION = APP_VERSION;

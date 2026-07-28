@@ -70,6 +70,8 @@ workouts.exerciseCatalog.forEach(item => {
   assert.ok(item.prescriptionData, `structured prescription: ${item.id}`);
   assert.strictEqual(item.prescription, workouts.prescriptionToString(item.prescriptionData), `label: ${item.id}`);
   assert.ok(item.instructions.purpose, `purpose: ${item.id}`);
+  assert.ok(Array.isArray(item.instructions.howTo) && item.instructions.howTo.length >= 3 && item.instructions.howTo.length <= 5, `how-to steps: ${item.id}`);
+  assert.strictEqual(new Set(item.instructions.howTo.map(step => step.label)).size, item.instructions.howTo.length, `distinct how-to labels: ${item.id}`);
   assert.ok(item.instructions.startingPosition, `starting position: ${item.id}`);
   assert.ok(Array.isArray(item.instructions.movement) && item.instructions.movement.length, `movement: ${item.id}`);
   assert.ok(item.instructions.focus.length <= 3, `focus: ${item.id}`);
@@ -80,12 +82,25 @@ workouts.exerciseCatalog.forEach(item => {
   assert.ok(item.instructions.successCriteria.every(value => value && !/good form|proper technique/i.test(value)), `observable criteria: ${item.id}`);
   assert.strictEqual(item.instructions.visualRequired, true, `visual required: ${item.id}`);
   assert.ok(item.instructions.visualGuidance, `visual guidance: ${item.id}`);
+  assert.ok(Array.isArray(item.sourceRefs) && item.sourceRefs.length, `source refs: ${item.id}`);
+  assert.ok(item.reviewedAt && item.reviewStatus, `review metadata: ${item.id}`);
+  assert.ok(Array.isArray(item.preparationNeeds) && item.preparationNeeds.length, `preparation needs: ${item.id}`);
+  assert.ok(Array.isArray(item.cooldownNeeds), `cooldown needs: ${item.id}`);
   if (item.perSide) assert.ok(item.instructions.successCriteria.some(value => /each side|separately on each side/i.test(value)), `side semantics: ${item.id}`);
   if (item.prescriptionType === 'time') assert.ok(item.secondsPerSet > 0, `seconds: ${item.id}`);
   if (item.prescriptionType === 'reps') assert.ok(item.repsPerSet, `reps: ${item.id}`);
   assert.ok(!/\\d\\s*[-–]\\s*\\d/.test(item.prescription), `fixed target: ${item.id}`);
   assert.ok(Array.isArray(item.programmeRoles) && item.programmeRoles.length, `programme roles: ${item.id}`);
   assert.ok(item.programmeRoles.every(role => Object.values(workouts.PROGRAMME_ROLES).includes(role)), `stable programme role: ${item.id}`);
+});
+
+assert.ok(workouts.addOnMovementCatalog.length >= 16, 'canonical add-on movement catalogue is present');
+workouts.addOnMovementCatalog.forEach(item => {
+  assert.ok(item.id && item.name, `add-on identity: ${item.id}`);
+  assert.ok(['warmup', 'stretch'].includes(item.addOnType), `add-on type: ${item.id}`);
+  assert.ok(Array.isArray(item.demandTags) && item.demandTags.length, `add-on demand tags: ${item.id}`);
+  assert.ok(Array.isArray(item.sourceRefs) && item.sourceRefs.length, `add-on sources: ${item.id}`);
+  assert.ok(workouts.getExerciseHelp(item.name)?.howTo?.length >= 3, `add-on how-to help: ${item.id}`);
 });
 
 assert.deepStrictEqual(Array.from(workouts.movementTracks.pistolSquat, item => item.id), [
