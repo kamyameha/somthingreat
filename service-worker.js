@@ -1,5 +1,5 @@
 importScripts('./app-version.js');
-// Shared viewport layout release.
+// Recovery complete-rest safety release.
 
 const APP_VERSION = self.SOMTHINGREAT_VERSION || self.APP_VERSION || 'dev';
 const CACHE_NAME = `somthingreat-${APP_VERSION}`;

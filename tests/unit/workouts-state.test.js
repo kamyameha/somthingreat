@@ -1787,6 +1787,160 @@ const compatibleRecoveryState = stateStore.sanitizeState({
 });
 assert.ok(compatibleRecoveryState.current, 'workout generated for current recovery is resumable');
 
+const completeKneeRestrictedIds = [
+  'paused-calf-raise',
+  'two-leg-calf-raise',
+  'single-leg-assisted-glute-bridge',
+  'single-leg-glute-bridge'
+];
+['leftKnee', 'rightKnee'].forEach(area => {
+  completeKneeRestrictedIds.forEach(id => {
+    assert.strictEqual(
+      workouts.isExerciseAllowedForRecovery(catalog(id), { area, mode: 'rest' }),
+      false,
+      `${area} complete rest rejects ${id}`
+    );
+  });
+});
+
+const recoveryTestProfile = {
+  goal: 'general',
+  equipment: ['floor', 'wall', 'chair', 'stable-elevated-surface', 'pullupBar', 'bands', 'dipBars']
+};
+function recoveryWorkoutFor(rotationIndex, mode = 'normal', recovery = leftKneeRecovery) {
+  return workouts.getTodayWorkout({
+    mode,
+    state: {
+      ...stateStore.defaultState(),
+      rotationIndex,
+      recovery,
+      levels: workouts.createDefaultLevels()
+    },
+    profile: recoveryTestProfile
+  });
+}
+function mainExerciseIds(workout) {
+  return Array.from(workout.exercises.filter(item => !item.isAddOn).map(item => item.id));
+}
+function assertRecoverySafeWorkout(workout, recovery, label) {
+  assert.ok(
+    workout.exercises.filter(item => !item.isAddOn).every(item => workouts.isExerciseAllowedForRecovery(item, recovery)),
+    `${label} never reintroduces recovery-rejected main work`
+  );
+}
+
+const pushKneeRest = recoveryWorkoutFor(0, 'normal');
+assert.strictEqual(pushKneeRest.originalScheduledWorkout, 'Push');
+assert.deepStrictEqual(mainExerciseIds(pushKneeRest), [
+  'wall-push-up',
+  'close-grip-wall-push-up',
+  'seated-resistance-band-row',
+  'reverse-crunch'
+]);
+assert.ok(pushKneeRest.exercises.filter(item => item.sourceTrack === 'horizontalPush' || item.sourceTrack === 'dipStrength').length >= 2);
+assertRecoverySafeWorkout(pushKneeRest, leftKneeRecovery, 'Push knee-rest fallback');
+
+const greatPushKneeRest = recoveryWorkoutFor(0, 'great');
+assert.ok(!mainExerciseIds(greatPushKneeRest).some(id => completeKneeRestrictedIds.includes(id)), 'Great energy does not weaken complete-rest filtering');
+assert.strictEqual(new Set(greatPushKneeRest.exercises.map(item => item.sourceTrack || item.progressionTrackKey)).size, greatPushKneeRest.exercises.length, 'Recovery workout preserves movement-family diversity');
+
+const pullKneeRest = recoveryWorkoutFor(2, 'normal');
+assert.strictEqual(pullKneeRest.workoutName, 'Pull');
+assert.deepStrictEqual(mainExerciseIds(pullKneeRest), [
+  'active-hang-preparation',
+  'prone-w-raise',
+  'seated-resistance-band-row',
+  'prone-pull-down'
+]);
+assertRecoverySafeWorkout(pullKneeRest, leftKneeRecovery, 'Pull knee-rest workout');
+
+const lowerKneeRest = recoveryWorkoutFor(1, 'normal');
+assert.strictEqual(lowerKneeRest.originalScheduledWorkout, 'Lower Body');
+assert.strictEqual(lowerKneeRest.generationFailure.code, 'recovery-workout-shortened');
+assert.deepStrictEqual(mainExerciseIds(lowerKneeRest), [
+  'reverse-crunch',
+  'wall-push-up',
+  'seated-resistance-band-row'
+]);
+assertRecoverySafeWorkout(lowerKneeRest, leftKneeRecovery, 'Lower Body knee-rest fallback');
+
+const skillLabKneeRest = recoveryWorkoutFor(3, 'normal');
+assert.strictEqual(skillLabKneeRest.originalScheduledWorkout, 'Skill lab');
+assert.strictEqual(skillLabKneeRest.generationFailure.code, 'recovery-workout-shortened');
+assert.deepStrictEqual(mainExerciseIds(skillLabKneeRest), [
+  'wall-push-up',
+  'seated-resistance-band-row',
+  'reverse-crunch'
+]);
+assertRecoverySafeWorkout(skillLabKneeRest, leftKneeRecovery, 'Skill Lab knee-rest fallback');
+
+const kneeRestWithAddOns = workouts.applyWorkoutAddOns(pushKneeRest, { warmup: true, stretch: true }, {
+  state: { recovery: leftKneeRecovery },
+  profile: recoveryTestProfile
+});
+const addOnMovementById = new Map(workouts.addOnMovementCatalog.map(item => [item.id, item]));
+kneeRestWithAddOns.exercises.filter(item => item.isAddOn).forEach(addOn => {
+  addOn.movementExerciseIds.forEach(id => {
+    assert.ok(workouts.isExerciseAllowedForRecovery(addOnMovementById.get(id), leftKneeRecovery), `add-on ${id} respects knee complete rest`);
+  });
+});
+assert.ok(!kneeRestWithAddOns.exercises.some(item => item.movementExerciseIds?.some(id => (
+  ['warmup-march-in-place', 'warmup-step-touch', 'warmup-bodyweight-squats', 'warmup-ankle-bounces', 'stretch-calf', 'stretch-quad', 'stretch-hip-flexor', 'stretch-hamstring', 'stretch-forward-fold'].includes(id)
+))), 'warm-up and stretch do not use lower-body knee-rest movements');
+
+const calfSwapAudit = workouts.getSwapCandidateAudit({
+  ...catalog('two-leg-calf-raise'),
+  trackKey: 'calves',
+  progressionTrackKey: 'calves'
+}, {
+  recovery: leftKneeRecovery,
+  profile: recoveryTestProfile,
+  state: { recovery: leftKneeRecovery },
+  unlockedLevel: 4
+});
+assert.strictEqual(calfSwapAudit.candidateCountAfterRecovery, 0, 'Swap cannot reintroduce calf work during knee complete rest');
+
+const multiRecovery = { restrictions: [leftKneeRecovery, rightWristRecovery] };
+assert.strictEqual(workouts.isExerciseAllowedForRecovery(catalog('two-leg-calf-raise'), multiRecovery), false);
+assert.strictEqual(workouts.isExerciseAllowedForRecovery(catalog('wall-push-up'), multiRecovery), false);
+
+[
+  'headNeck',
+  'leftShoulder',
+  'rightShoulder',
+  'leftElbow',
+  'rightElbow',
+  'leftWrist',
+  'rightWrist',
+  'leftKnee',
+  'rightKnee',
+  'leftAnkle',
+  'rightAnkle'
+].forEach(area => {
+  ['reduce', 'rest'].forEach(mode => {
+    const recovery = { area, mode };
+    const generated = workouts.getTodayWorkout({
+      mode: 'normal',
+      state: { ...stateStore.defaultState(), recovery, levels: workouts.createDefaultLevels() },
+      profile: recoveryTestProfile
+    });
+    assert.ok(generated.exercises.every(item => workouts.isExerciseAllowedForRecovery(item, recovery)), `generated workout respects ${area} ${mode}`);
+  });
+});
+
+const replacedRecoveryState = stateStore.sanitizeState({
+  ...recoveryState,
+  recovery: rightWristRecovery,
+  generated: recoveryWorkout
+});
+assert.strictEqual(replacedRecoveryState.generated, null, 'replacing recovery invalidates generated workout from the previous restriction');
+const removedRecoveryState = stateStore.sanitizeState({
+  ...recoveryState,
+  recovery: null,
+  generated: recoveryWorkout
+});
+assert.strictEqual(removedRecoveryState.generated, null, 'removing recovery invalidates recovery-adjusted generated workout');
+
 function resumableWorkout(sessionId, updatedAt, completedFlags = [true, false, false]) {
   const workout = workouts.getTodayWorkout({
     mode: 'normal',

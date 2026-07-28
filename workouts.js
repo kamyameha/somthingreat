@@ -643,6 +643,7 @@
   const RECOVERY_SEVERITIES = Object.freeze(['none', 'low', 'moderate', 'high']);
   const HAND_WEIGHT_BEARING_FAMILIES = new Set(['horizontal-push', 'dip-strength', 'lsit', 'handstand', 'crow']);
   const FOOT_WEIGHT_BEARING_FAMILIES = new Set(['squat', 'unilateral', 'calves', 'rope']);
+  const LOWER_BODY_SUPPORT_FAMILIES = new Set(['squat', 'unilateral', 'calves', 'posterior-chain', 'rope']);
   const GRIP_FAMILIES = new Set(['horizontal-pull', 'vertical-pull', 'scapular-pull', 'muscle-up']);
   const HANGING_FAMILIES = new Set(['vertical-pull', 'scapular-pull', 'muscle-up']);
   const OVERHEAD_FAMILIES = new Set(['handstand', 'muscle-up']);
@@ -702,6 +703,10 @@
     options = {}
   }) {
     const perSide = Boolean(options.unilateral || prescription?.perSide);
+    const lowerBodySupport = Boolean(
+      options.lowerBodySupport ??
+      LOWER_BODY_SUPPORT_FAMILIES.has(movementFamily)
+    );
     const balanceDemand = options.balanceDemand || (
       movementFamily === 'handstand' || movementFamily === 'crow'
         ? 'high'
@@ -752,6 +757,9 @@
         (['squat', 'unilateral', 'dip-strength'].includes(movementFamily) && difficulty >= 5)
       ),
       perSide,
+      lowerBodySupport,
+      lowerBodySupportSide: lowerBodySupport ? (perSide ? 'per-side' : 'bilateral') : 'none',
+      plantedLegSupport: Boolean(options.plantedLegSupport ?? lowerBodySupport),
       healthySideOnlyAllowed: Boolean(options.healthySideOnlyAllowed),
       authoredReducedLoad: authoredRecoveryAdaptations(movementFamily, difficulty, prescription, options),
       recoveryCompatibleEquivalentId: options.recoveryCompatibleEquivalentId || null
@@ -1396,7 +1404,7 @@
     exercise('glute-bridge', 'Glute bridge', 'posterior-chain', 1, { sets: 3, reps: 13 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
-      loadedAreas: ['hip', 'lower-back'],
+      loadedAreas: ['hip', 'lower-back', 'knee'],
       setup: 'Lie on your back with knees bent and feet flat.',
       execution: 'Press through heels, lift hips by squeezing glutes, then lower slowly.',
       safety: 'Keep the lower back quiet and use a smaller lift if needed. ' + PAIN_NOTICE
@@ -1404,7 +1412,7 @@
     exercise('paused-glute-bridge', 'Paused glute bridge', 'posterior-chain', 2, { sets: 3, reps: 10 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
-      loadedAreas: ['hip', 'lower-back'],
+      loadedAreas: ['hip', 'lower-back', 'knee'],
       setup: 'Set up like a glute bridge.',
       execution: 'Pause for two seconds at the top before lowering.',
       safety: 'The pause should be felt in glutes, not the lower back. ' + PAIN_NOTICE
@@ -1429,7 +1437,7 @@
     exercise('single-leg-assisted-glute-bridge', 'Single-leg assisted glute bridge', 'posterior-chain', 4, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
-      loadedAreas: ['hip', 'lower-back'],
+      loadedAreas: ['hip', 'lower-back', 'knee'],
       setup: 'Lie on your back with one foot doing most of the work and the other foot lightly assisting.',
       execution: 'Lift hips evenly, pause briefly, and lower with control.',
       safety: 'Keep hips level and switch to two-leg bridges if the back takes over. ' + PAIN_NOTICE,
@@ -1438,7 +1446,7 @@
     exercise('single-leg-glute-bridge', 'Single-leg glute bridge', 'posterior-chain', 5, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
-      loadedAreas: ['hip', 'lower-back'],
+      loadedAreas: ['hip', 'lower-back', 'knee'],
       setup: 'Lie on your back with one foot planted and the other leg lifted.',
       execution: 'Drive through the planted foot and lift hips without twisting.',
       safety: 'Keep the range small if hips shift. ' + PAIN_NOTICE,
@@ -1447,7 +1455,7 @@
     exercise('hip-hinge-drill', 'Hip hinge drill', 'posterior-chain', 6, { sets: 3, reps: 9 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
-      loadedAreas: ['hip', 'lower-back'],
+      loadedAreas: ['hip', 'lower-back', 'knee'],
       setup: 'Stand tall with soft knees and hands on hips.',
       execution: 'Push hips back, keep spine neutral, then stand by squeezing glutes.',
       safety: 'Move in a range where the back stays calm. ' + PAIN_NOTICE
@@ -1455,7 +1463,7 @@
     exercise('bodyweight-good-morning', 'Bodyweight good morning', 'posterior-chain', 7, { sets: 3, reps: 10 }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
-      loadedAreas: ['hip', 'lower-back'],
+      loadedAreas: ['hip', 'lower-back', 'knee'],
       setup: 'Stand tall with hands across chest or behind head.',
       execution: 'Hinge hips back, keep a long spine, and return to tall.',
       safety: 'Do not round or force range. ' + PAIN_NOTICE
@@ -1463,7 +1471,7 @@
     exercise('single-leg-romanian-deadlift', 'Single-leg Romanian deadlift', 'posterior-chain', 8, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['glutes', 'hamstrings'],
-      loadedAreas: ['hip', 'lower-back', 'ankle'],
+      loadedAreas: ['hip', 'lower-back', 'knee', 'ankle'],
       setup: 'Stand on one leg near a wall for optional balance support.',
       execution: 'Hinge forward as the back leg reaches behind, then stand tall with control.',
       safety: 'Use support and a small range if balance affects form. ' + PAIN_NOTICE,
@@ -1490,7 +1498,7 @@
     exercise('two-leg-calf-raise', 'Two-leg calf raise', 'calves', 1, { sets: 3, reps: 15 }, {
       equipment: ['floor'],
       primaryAreas: ['calves'],
-      loadedAreas: ['ankle'],
+      loadedAreas: ['ankle', 'knee'],
       setup: 'Stand tall near a wall for balance.',
       execution: 'Rise onto the balls of both feet and lower slowly.',
       safety: 'Use support if balance is unsteady. ' + PAIN_NOTICE
@@ -1498,7 +1506,7 @@
     exercise('paused-calf-raise', 'Paused calf raise', 'calves', 2, { sets: 3, reps: 13 }, {
       equipment: ['floor'],
       primaryAreas: ['calves'],
-      loadedAreas: ['ankle'],
+      loadedAreas: ['ankle', 'knee'],
       setup: 'Stand tall near support.',
       execution: 'Rise up, pause briefly at the top, and lower under control.',
       safety: 'Keep ankles tracking straight. ' + PAIN_NOTICE
@@ -1506,7 +1514,7 @@
     exercise('single-leg-assisted-calf-raise', 'Single-leg assisted calf raise', 'calves', 3, { sets: 3, reps: 10, perSide: true }, {
       equipment: ['wall'],
       primaryAreas: ['calves'],
-      loadedAreas: ['ankle'],
+      loadedAreas: ['ankle', 'knee'],
       setup: 'Stand on one foot and hold a wall lightly.',
       execution: 'Rise on one foot, use the wall only for balance, and lower slowly.',
       safety: 'Switch to two-leg raises if the ankle wobbles. ' + PAIN_NOTICE,
@@ -1515,7 +1523,7 @@
     exercise('single-leg-calf-raise', 'Single-leg calf raise', 'calves', 4, { sets: 3, reps: 8, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['calves'],
-      loadedAreas: ['ankle'],
+      loadedAreas: ['ankle', 'knee'],
       setup: 'Stand on one foot near optional support.',
       execution: 'Rise tall on the ball of the foot and lower slowly.',
       safety: 'Use support without bouncing. ' + PAIN_NOTICE,
@@ -1524,7 +1532,7 @@
     exercise('elevated-single-leg-calf-raise', 'Elevated single-leg calf raise', 'calves', 5, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['stable-elevated-surface'],
       primaryAreas: ['calves'],
-      loadedAreas: ['ankle'],
+      loadedAreas: ['ankle', 'knee'],
       setup: 'Use a low stable step and hold support.',
       execution: 'Lower heel slightly below the step, rise tall, and control the range.',
       safety: 'Use a small range and a stable step. ' + PAIN_NOTICE,
@@ -1542,7 +1550,7 @@
     exercise('hollow-tuck-hold', 'Hollow tuck hold', 'anti-extension', 2, { sets: 3, seconds: 15 }, {
       equipment: ['floor'],
       primaryAreas: ['core'],
-      loadedAreas: ['hip', 'lower-back'],
+      loadedAreas: ['hip', 'lower-back', 'knee'],
       setup: 'Lie on your back with hips and knees bent, arms reaching forward, and the lower back gently pressed into the floor.',
       execution: 'Lift the shoulders and tucked legs, breathe behind the brace, and hold only while the lower back stays connected.',
       safety: 'Rest the head or feet if the lower back arches or the neck strains. ' + PAIN_NOTICE
@@ -1574,7 +1582,7 @@
     exercise('dead-bug', 'Dead bug', 'anti-extension', 1, { sets: 3, reps: 7, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['core'],
-      loadedAreas: ['hip'],
+      loadedAreas: ['hip', 'knee'],
       setup: 'Lie on your back with arms up and knees bent.',
       execution: 'Slowly reach opposite arm and leg away, then return without arching.',
       safety: 'Keep the range small enough to control the lower back. ' + PAIN_NOTICE
@@ -1582,7 +1590,7 @@
     exercise('bent-knee-side-plank', 'Bent-knee side plank', 'lateral-core', 1, { sets: 3, seconds: 15, perSide: true }, {
       equipment: ['floor'],
       primaryAreas: ['core'],
-      loadedAreas: ['shoulder', 'hip'],
+      loadedAreas: ['shoulder', 'hip', 'knee'],
       setup: 'Lie on one side with knees bent and the supporting elbow directly beneath the shoulder.',
       execution: 'Lift the hips until the shoulder, hip and knee form one line, then hold while breathing.',
       safety: 'Keep pressure comfortable at the shoulder and use padding under the elbow. ' + PAIN_NOTICE
@@ -2082,21 +2090,21 @@
     addOnMovement('warmup-shoulder-rolls', 'Shoulder rolls', 'warmup', 'mobility', ['shoulder-mobility', 'scapular-control'], { order: 3, loadedAreas: ['shoulder', 'upper-back'], sourceKeys: ['nhsWarmUp', 'aceExerciseLibrary'] }),
     addOnMovement('warmup-wrist-rocks', 'Wrist rocks', 'warmup', 'mobility', ['wrist-preparation', 'safe-skill-entry-exit-rehearsal'], { order: 4, loadedAreas: ['wrist'], sourceKeys: ['gmbTutorials', 'calisthenicsHandstand'] }),
     addOnMovement('warmup-scapular-reaches', 'Scapular reaches', 'warmup', 'mobility', ['scapular-control', 'light-pulling', 'light-vertical-pushing'], { order: 5, loadedAreas: ['shoulder', 'upper-back'], sourceKeys: ['aceExerciseLibrary', 'gmbTutorials'] }),
-    addOnMovement('warmup-hip-circles', 'Hip circles', 'warmup', 'mobility', ['hip-mobility', 'squat-pattern-rehearsal', 'hip-hinge-rehearsal'], { order: 6, loadedAreas: ['hip'] }),
-    addOnMovement('warmup-good-mornings', 'Good mornings', 'warmup', 'posterior-chain', ['hip-hinge-rehearsal', 'hamstring-preparation'], { order: 7, loadedAreas: ['hip', 'lower-back'] }),
+    addOnMovement('warmup-hip-circles', 'Hip circles', 'warmup', 'mobility', ['hip-mobility', 'squat-pattern-rehearsal', 'hip-hinge-rehearsal'], { order: 6, loadedAreas: ['hip', 'knee'] }),
+    addOnMovement('warmup-good-mornings', 'Good mornings', 'warmup', 'posterior-chain', ['hip-hinge-rehearsal', 'hamstring-preparation'], { order: 7, loadedAreas: ['hip', 'lower-back', 'knee'] }),
     addOnMovement('warmup-bodyweight-squats', 'Bodyweight squats', 'warmup', 'squat', ['squat-pattern-rehearsal', 'knee-control-preparation', 'ankle-dorsiflexion'], { order: 8, loadedAreas: ['hip', 'knee', 'ankle'] }),
     addOnMovement('warmup-step-touch', 'Step touch', 'warmup', 'conditioning', ['general-warmup', 'balance-preparation'], { order: 9, loadedAreas: ['hip', 'knee', 'ankle'] }),
     addOnMovement('warmup-ankle-bounces', 'Ankle bounces', 'warmup', 'calves', ['ankle-dorsiflexion', 'calf-preparation'], { order: 10, loadedAreas: ['ankle', 'knee'] }),
     addOnMovement('warmup-compression-sit-tall', 'Tall compression reach', 'warmup', 'compression', ['compression-preparation', 'core-bracing'], { order: 11, loadedAreas: ['hip'] }),
     addOnMovement('warmup-supported-balance-shift', 'Supported balance shift', 'warmup', 'unilateral', ['balance-preparation', 'knee-control-preparation'], { order: 12, loadedAreas: ['hip', 'knee', 'ankle'] }),
-    addOnMovement('stretch-hamstring', 'Hamstring stretch', 'stretch', 'mobility', ['hamstring-hip-cooldown', 'calf-ankle-cooldown'], { order: 1, loadedAreas: ['hip'], sourceKeys: ['nhsFlexibility'] }),
+    addOnMovement('stretch-hamstring', 'Hamstring stretch', 'stretch', 'mobility', ['hamstring-hip-cooldown', 'calf-ankle-cooldown'], { order: 1, loadedAreas: ['hip', 'knee'], sourceKeys: ['nhsFlexibility'] }),
     addOnMovement('stretch-quad', 'Quad stretch', 'stretch', 'mobility', ['quad-hip-cooldown'], { order: 2, loadedAreas: ['knee', 'hip'], sourceKeys: ['nhsFlexibility'] }),
     addOnMovement('stretch-chest-opener', 'Chest opener', 'stretch', 'mobility', ['chest-shoulder-cooldown', 'shoulder-cooldown'], { order: 3, loadedAreas: ['shoulder'], sourceKeys: ['nhsCoolDown', 'aceExerciseLibrary'] }),
     addOnMovement('stretch-childs-pose', "Child's pose", 'stretch', 'mobility', ['trunk-hip-cooldown', 'upper-back-shoulder-cooldown'], { order: 4, loadedAreas: ['hip', 'knee', 'shoulder'], sourceKeys: ['aceExerciseLibrary', 'nhsFlexibility'] }),
     addOnMovement('stretch-calf', 'Calf stretch', 'stretch', 'mobility', ['calf-ankle-cooldown'], { order: 5, loadedAreas: ['ankle', 'knee'], sourceKeys: ['nhsFlexibility'] }),
     addOnMovement('stretch-hip-flexor', 'Hip flexor stretch', 'stretch', 'mobility', ['quad-hip-cooldown', 'hip-cooldown'], { order: 6, loadedAreas: ['hip', 'knee'], sourceKeys: ['nhsFlexibility'] }),
     addOnMovement('stretch-shoulder', 'Shoulder stretch', 'stretch', 'mobility', ['shoulder-cooldown', 'upper-back-shoulder-cooldown'], { order: 7, loadedAreas: ['shoulder'], sourceKeys: ['nhsCoolDown', 'aceExerciseLibrary'] }),
-    addOnMovement('stretch-forward-fold', 'Forward fold', 'stretch', 'mobility', ['hamstring-hip-cooldown', 'trunk-hip-cooldown'], { order: 8, loadedAreas: ['hip', 'lower-back'], sourceKeys: ['nhsFlexibility'] })
+    addOnMovement('stretch-forward-fold', 'Forward fold', 'stretch', 'mobility', ['hamstring-hip-cooldown', 'trunk-hip-cooldown'], { order: 8, loadedAreas: ['hip', 'lower-back', 'knee'], sourceKeys: ['nhsFlexibility'] })
   ]);
 
   function stableIdSet(values) {
@@ -3401,8 +3409,8 @@
     shoulder: { fallbackTracks: ['squat', 'posteriorChain', 'calves', 'compression'] },
     elbow: { fallbackTracks: ['squat', 'posteriorChain', 'calves', 'compression'] },
     wrist: { fallbackTracks: ['squat', 'posteriorChain', 'calves', 'compression', 'antiExtension'] },
-    knee: { fallbackTracks: ['horizontalPush', 'horizontalPull', 'antiExtension', 'compression', 'posteriorChain'] },
-    ankle: { fallbackTracks: ['horizontalPush', 'horizontalPull', 'antiExtension', 'compression', 'posteriorChain'] },
+    knee: { fallbackTracks: ['horizontalPush', 'horizontalPull', 'antiExtension', 'compression', 'lateralCore'] },
+    ankle: { fallbackTracks: ['horizontalPush', 'horizontalPull', 'antiExtension', 'compression', 'lateralCore'] },
     other: { fallbackTracks: ['antiExtension', 'horizontalPush', 'posteriorChain'] }
   };
 
@@ -3440,6 +3448,9 @@
     }
     if (areaType === 'knee') {
       return [
+        ['lower-body-support', profile.lowerBodySupport],
+        ['planted-leg-support', profile.plantedLegSupport],
+        ['per-side-prescription', profile.perSide && profile.lowerBodySupport],
         ['impact', profile.impact],
         ['kneeling', profile.kneeling],
         ['balance', profile.balanceDemand === 'high'],
@@ -3448,6 +3459,9 @@
     }
     if (areaType === 'ankle') {
       return [
+        ['lower-body-support', profile.lowerBodySupport],
+        ['planted-leg-support', profile.plantedLegSupport],
+        ['per-side-prescription', profile.perSide && profile.lowerBodySupport],
         ['weight-bearing', profile.weightBearingFeet],
         ['impact', profile.impact],
         ['balance', profile.balanceDemand !== 'low'],
@@ -4273,25 +4287,39 @@
     scheduledResult
   }) {
     const emphasis = selectRecoveryWorkoutEmphasis(state, originalWorkout.name);
+    const originalPolicy = compositionPolicyForWorkout(originalWorkout, profile, state, config);
     const diversityHistory = workoutDiversityHistory(state);
     const sameDayIds = sameDayWorkoutExerciseIds(diversityHistory);
     const recentIds = recentWorkoutExerciseIds(diversityHistory);
+    const originalFamilyTracks = unique([
+      ...(originalPolicy.primaryFocusTracks || []),
+      ...(originalPolicy.focusAccessoryTracks || []),
+      ...(originalPolicy.secondaryFocusTracks || []),
+      ...(originalPolicy.generalSupportTracks || [])
+    ]);
+    const safeFallbackTracks = unique(activeRecoveryRestrictions(recovery).flatMap(item => (
+      recoveryRules[recoveryAreaType(item)] || recoveryRules.other
+    ).fallbackTracks));
     const candidateTracks = unique([
-      ...emphasis.tracks,
-      ...activeRecoveryRestrictions(recovery).flatMap(item => (
-        recoveryRules[recoveryAreaType(item)] || recoveryRules.other
-      ).fallbackTracks)
+      ...originalFamilyTracks,
+      ...safeFallbackTracks,
+      ...emphasis.tracks
     ]);
     const candidates = candidateTracks
       .flatMap((trackKey, trackOrder) => unlockedTrackCandidates(trackKey, config, state, profile, recovery)
         .map(candidate => ({
           ...candidate,
-          workoutRole: 'generalSupport',
+          workoutRole: originalFamilyTracks.includes(trackKey) ? 'primaryFocus' : 'generalSupport',
           sourceTrack: trackKey,
-          recoveryWorkoutRole: emphasis.key,
+          recoveryWorkoutRole: originalFamilyTracks.includes(trackKey) ? originalWorkout.name : emphasis.key,
           developmentDiagnostics: {
             ...(candidate.developmentDiagnostics || {}),
             recoveryWorkoutFamily: emphasis.key,
+            recoveryFallbackTier: originalFamilyTracks.includes(trackKey)
+              ? 'original-workout-family'
+              : safeFallbackTracks.includes(trackKey)
+                ? 'safe-support-family'
+                : 'last-resort-rotation-family',
             recoveryTrackOrder: trackOrder,
             recoveryCompatibility: evaluateExerciseRecovery(candidate, recovery)
           }
@@ -4309,7 +4337,7 @@
     for (const candidate of candidates) {
       if (selected.length >= config.exerciseCount) break;
       const trackKey = candidate.sourceTrack || candidate.progressionTrackKey;
-      if (Number(trackCounts[trackKey] || 0) >= 2) continue;
+      if (Number(trackCounts[trackKey] || 0) >= 1) continue;
       const nextFatigue = selected.reduce((sum, item) => sum + Number(item.fatigue || 0), 0) + Number(candidate.fatigue || 0);
       if (nextFatigue > config.fatigueBudget.max + config.fatigueBudget.tolerance) continue;
       if (
@@ -4346,6 +4374,8 @@
           originalWorkout: originalWorkout.name,
           replacementWorkout: 'Recovery workout',
           family: emphasis.key,
+          originalFamilyTracks,
+          safeFallbackTracks,
           restrictions: recoveryRestrictionSummary(recovery)
         },
         removedByRecovery: exerciseCatalog
@@ -4356,6 +4386,10 @@
             conflicts: item.decision.conflicts
           })),
         missingSafeCandidates: shortened,
+        safeFamiliesAvailable: unique(candidates.map(item => item.sourceTrack || item.progressionTrackKey)),
+        reducedCountReason: shortened
+          ? 'Distinct recovery-safe movement families were exhausted before the target exercise count.'
+          : null,
         finalStableIds: selected.map(item => item.id)
       },
       exercises: selected
