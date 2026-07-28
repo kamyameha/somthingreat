@@ -58,7 +58,7 @@ assert.match(trackerView, /<select id="activityQuickSelect" class="recovery-sele
 assert.match(trackerView, /<option value="">Select an activity<\/option>/);
 assert.deepEqual(
   [...trackerView.matchAll(/<option value="([^"]+)">\1<\/option>/g)].map(match => match[1]),
-  ['Stairs', 'Walking', 'Mobility', 'Cycling']
+  ['Stairs', 'Walking', 'Mobility', 'Cycling', 'Jump rope']
 );
 assert.doesNotMatch(trackerView, /id="customChecklistNameInput"/);
 assert.match(trackerView, /placeholder="Enter the target"/);

@@ -62,6 +62,8 @@ let energyPointerStart = null;
 let energyScrollGesture = false;
 let cloudSavePromise = null;
 let cloudSaveRequested = false;
+let cloudLoadSequence = 0;
+let localStateRevision = 0;
 let workoutCompletionSaveInProgress = false;
 let renderedWorkoutSessionId = null;
 let swapAvailabilityMessageTimer = null;
@@ -539,6 +541,40 @@ function getTodayWorkout(mode = 'normal') {
   return workoutModule.getTodayWorkout({ mode, state, profile: getProfile() });
 }
 
+function recoveryFingerprintFor(value = state) {
+  return typeof workoutModule.recoveryFingerprint === 'function'
+    ? workoutModule.recoveryFingerprint(value)
+    : '';
+}
+
+function workoutMatchesCurrentRecovery(workout) {
+  if (!workout) return true;
+  return (workout.recoveryFingerprint || '') === recoveryFingerprintFor(state);
+}
+
+function rememberWorkoutEnergy(workout) {
+  if (!state.selectedEnergy && energyOptions[workout?.mode]) {
+    state.selectedEnergy = workout.mode;
+  }
+}
+
+function invalidateRecoveryStaleWorkouts() {
+  let changed = false;
+  if (state.generated && !workoutMatchesCurrentRecovery(state.generated)) {
+    rememberWorkoutEnergy(state.generated);
+    state.generated = null;
+    changed = true;
+  }
+  if (state.current && !workoutMatchesCurrentRecovery(state.current)) {
+    rememberWorkoutEnergy(state.current);
+    state.current = null;
+    workoutCompletionState = null;
+    renderedWorkoutSessionId = null;
+    changed = true;
+  }
+  return changed;
+}
+
 function applyRating(trackKey, rating) {
   workoutModule.applyRating(state.levels, trackKey, rating, getProfile());
 }
@@ -554,6 +590,7 @@ function defaultState() {
 }
 
 function saveState() {
+  localStateRevision += 1;
   const updatedAt = new Date().toISOString();
   state.lastUpdatedAt = updatedAt;
   if (state.current) {
@@ -987,8 +1024,10 @@ function saveCloudState() {
   cloudSavePromise = (async () => {
     while (cloudSaveRequested) {
       cloudSaveRequested = false;
+      const revisionAtStart = localStateRevision;
       const saved = await writeCloudStateSnapshot(publicState());
       if (!saved) break;
+      if (localStateRevision !== revisionAtStart) cloudSaveRequested = true;
     }
   })().finally(() => {
     cloudSavePromise = null;
@@ -1012,6 +1051,9 @@ async function loadLegacyCloudState() {
 
 async function loadCloudState() {
   if (!supabaseClient || !currentUser) return;
+  const loadSequence = cloudLoadSequence + 1;
+  cloudLoadSequence = loadSequence;
+  const revisionAtStart = localStateRevision;
   setSyncStatus('Loading progress...');
 
   const profileId = await ensureWorkoutProfile();
@@ -1032,6 +1074,11 @@ async function loadCloudState() {
   const cloudState = data?.state
     ? { ...data.state, lastUpdatedAt: data.state.lastUpdatedAt || data.updated_at || null }
     : legacyState;
+
+  if (loadSequence !== cloudLoadSequence || revisionAtStart !== localStateRevision) {
+    setSyncStatus('Progress changed locally. Keeping the newest recovery settings.');
+    return;
+  }
 
   if (cloudState) {
     const localPending = Array.isArray(state.pendingSessionRecords) ? state.pendingSessionRecords : [];
@@ -1311,6 +1358,7 @@ function togglePasswordVisibility(button) {
 }
 
 function renderToday() {
+  if (invalidateRecoveryStaleWorkouts()) saveState();
   if (state.current) {
     renderExercises();
     return;
@@ -1661,7 +1709,10 @@ function selectEnergy(feel) {
 
 function updateAddOnSummary() {
   const total = document.getElementById('sessionTotalPreview');
-  const extra = getExtraSessionMinutes();
+  const includedAddOns = state.generated
+    ? { warmup: Boolean(state.generated.includeWarmup), stretch: Boolean(state.generated.includeStretch) }
+    : getSelectedAddOns();
+  const extra = getExtraSessionMinutes(includedAddOns);
   if (!total) return;
   const extras = [];
   if (extra) extras.push(`${extra} min`);
@@ -1683,6 +1734,7 @@ function workoutToolSummary(workout) {
 function generateWorkout({ render = true } = {}) {
   const option = energyOptions[state.selectedEnergy];
   if (!option) return;
+  if (invalidateRecoveryStaleWorkouts()) saveState();
   const baseWorkout = getTodayWorkout(option.mode);
   if (baseWorkout.generationFailure) {
     console.warn('Workout composition diagnostic:', baseWorkout.generationFailure);
@@ -1694,8 +1746,6 @@ function generateWorkout({ render = true } = {}) {
     console.warn('Recovery workout diagnostic:', baseWorkout.developmentDiagnostics);
   }
   state.generated = applyWorkoutAddOns(baseWorkout);
-  state.includeWarmup = Boolean(state.generated.includeWarmup);
-  state.includeStretch = Boolean(state.generated.includeStretch);
   state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
   state.generated.includeRestTimer = Boolean(state.includeRestTimer);
   state.generated.restTimerSeconds = 60;
@@ -1719,13 +1769,17 @@ function generateWorkout({ render = true } = {}) {
 
 function updateGeneratedWorkoutAddOns() {
   if (!state.generated) return;
+  if (!workoutMatchesCurrentRecovery(state.generated)) {
+    rememberWorkoutEnergy(state.generated);
+    state.generated = null;
+    if (state.selectedEnergy) generateWorkout({ render: false });
+    return;
+  }
   const baseWorkout = {
     ...state.generated,
     exercises: (state.generated.exercises || []).filter(exercise => !exercise?.isAddOn)
   };
   state.generated = applyWorkoutAddOns(baseWorkout);
-  state.includeWarmup = Boolean(state.generated.includeWarmup);
-  state.includeStretch = Boolean(state.generated.includeStretch);
   state.generated.includeExerciseTimer = Boolean(state.includeExerciseTimer);
   state.generated.includeRestTimer = Boolean(state.includeRestTimer);
   state.generated.restTimerSeconds = 60;
@@ -1822,6 +1876,13 @@ function swapPreviewExercise(index) {
 }
 
 function renderGeneratedWorkout() {
+  if (state.generated && !workoutMatchesCurrentRecovery(state.generated)) {
+    rememberWorkoutEnergy(state.generated);
+    state.generated = null;
+    saveState();
+    renderToday();
+    return;
+  }
   const generated = state.generated;
   if (!generated) return;
   hideCustomChecklistViews();
@@ -1841,8 +1902,8 @@ function renderGeneratedWorkout() {
   const stretchInput = document.getElementById('includeStretch');
   const exerciseTimerInput = document.getElementById('includeExerciseTimer');
   const restTimerInput = document.getElementById('includeRestTimer');
-  if (warmupInput) warmupInput.checked = Boolean(generated.includeWarmup);
-  if (stretchInput) stretchInput.checked = Boolean(generated.includeStretch);
+  if (warmupInput) warmupInput.checked = Boolean(state.includeWarmup);
+  if (stretchInput) stretchInput.checked = Boolean(state.includeStretch);
   if (exerciseTimerInput) exerciseTimerInput.checked = Boolean(state.includeExerciseTimer);
   if (restTimerInput) restTimerInput.checked = Boolean(state.includeRestTimer);
   updateAddOnSummary();
@@ -1914,6 +1975,7 @@ document.addEventListener('click', event => {
 });
 
 function startWorkout() {
+  if (invalidateRecoveryStaleWorkouts()) saveState();
   if (!state.generated && state.selectedEnergy) generateWorkout({ render: false });
   state.generated = sanitizeWorkout(state.generated);
   if (!state.generated) {
@@ -2091,6 +2153,13 @@ function renderExercises() {
 
   state.current = sanitizeWorkout(state.current);
   if (!state.current) { renderToday(); return; }
+  if (!workoutMatchesCurrentRecovery(state.current)) {
+    rememberWorkoutEnergy(state.current);
+    state.current = null;
+    saveState();
+    renderToday();
+    return;
+  }
   const activeRecovery = typeof getActiveRecovery === 'function' ? getActiveRecovery() : null;
   state.current = workoutModule.revalidateWorkoutForRecovery(state.current, activeRecovery);
   if (!(state.current?.exercises || []).some(exercise => !exercise.isAddOn)) {
@@ -3690,9 +3759,7 @@ async function saveAccountRecovery() {
     createdAt: new Date().toISOString()
   };
   state.recoveries = [];
-  state.current = null;
-  state.generated = null;
-  state.selectedEnergy = null;
+  invalidateRecoveryStaleWorkouts();
   saveState();
   recoveryFormEditing = false;
   populateAccountRecovery();
@@ -3710,9 +3777,7 @@ function removeAccountRecovery() {
   recoveryFormEditing = false;
   state.recovery = null;
   state.recoveries = [];
-  state.current = null;
-  state.generated = null;
-  state.selectedEnergy = null;
+  invalidateRecoveryStaleWorkouts();
   saveState();
   populateAccountRecovery();
   renderAccountMainSummary();

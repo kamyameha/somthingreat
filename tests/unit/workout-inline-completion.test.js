@@ -117,6 +117,8 @@ assert.match(renderTodaySource, /document\.getElementById\('completeBtn'\)\?\.cl
 let activeWorkoutRenders = 0;
 const activeWorkoutContext = {
   state: { current: { sessionId: 'active-workout' } },
+  invalidateRecoveryStaleWorkouts: () => false,
+  saveState: () => {},
   renderExercises: () => { activeWorkoutRenders += 1; }
 };
 vm.createContext(activeWorkoutContext);

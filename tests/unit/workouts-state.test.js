@@ -1711,6 +1711,61 @@ assert.strictEqual(persistedTodayState.includeExerciseTimer, false);
 assert.strictEqual(persistedTodayState.includeRestTimer, false);
 assert.strictEqual(stateStore.loadState().selectedEnergy, null);
 
+const rightWristRecovery = {
+  area: 'rightWrist',
+  mode: 'rest',
+  duration: 'untilRemoved',
+  createdAt: '2026-07-24T07:00:00.000Z',
+  until: null
+};
+const leftKneeRecovery = {
+  area: 'leftKnee',
+  mode: 'rest',
+  duration: 'untilRemoved',
+  createdAt: '2026-07-24T07:05:00.000Z',
+  until: null
+};
+assert.strictEqual(
+  workouts.recoveryFingerprint({ recoveries: [rightWristRecovery, leftKneeRecovery] }),
+  workouts.recoveryFingerprint({ recoveries: [leftKneeRecovery, rightWristRecovery] }),
+  'recovery fingerprint is deterministic regardless of recovery order'
+);
+
+const recoveryState = {
+  ...stateStore.defaultState(),
+  recovery: leftKneeRecovery
+};
+const recoveryWorkout = workouts.getTodayWorkout({ mode: 'normal', state: recoveryState, profile: null });
+assert.strictEqual(recoveryWorkout.recoveryFingerprint, workouts.recoveryFingerprint(recoveryState));
+const staleRecoveryState = stateStore.sanitizeState({
+  ...recoveryState,
+  selectedEnergy: null,
+  current: {
+    ...workouts.getTodayWorkout({ mode: 'normal', state: stateStore.defaultState(), profile: null }),
+    sessionId: 'stale-recovery-session',
+    startedAt: '2026-07-24T08:00:00.000Z',
+    updatedAt: '2026-07-24T08:10:00.000Z',
+    lifecycleStatus: 'active',
+    ratings: {},
+    sets: {}
+  }
+});
+assert.strictEqual(staleRecoveryState.current, null, 'workout generated before recovery change is discarded');
+assert.strictEqual(staleRecoveryState.selectedEnergy, 'normal', 'discarding stale workout keeps the selected energy for regeneration');
+const compatibleRecoveryState = stateStore.sanitizeState({
+  ...recoveryState,
+  current: {
+    ...recoveryWorkout,
+    sessionId: 'compatible-recovery-session',
+    startedAt: '2026-07-24T08:00:00.000Z',
+    updatedAt: '2026-07-24T08:10:00.000Z',
+    lifecycleStatus: 'active',
+    ratings: {},
+    sets: {}
+  }
+});
+assert.ok(compatibleRecoveryState.current, 'workout generated for current recovery is resumable');
+
 function resumableWorkout(sessionId, updatedAt, completedFlags = [true, false, false]) {
   const workout = workouts.getTodayWorkout({
     mode: 'normal',

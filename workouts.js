@@ -3113,6 +3113,29 @@
     return restrictions.length === 1 ? restrictions[0] : { restrictions };
   }
 
+  function recoveryFingerprint(value = {}) {
+    const restrictions = activeRecoveryRestrictions(value).map(restriction => ({
+      id: typeof restriction.id === 'string' ? restriction.id : '',
+      area: restriction.area || '',
+      mode: restriction.mode === 'rest' ? 'rest' : 'reduce',
+      duration: restriction.duration || '',
+      createdAt: restriction.createdAt && !Number.isNaN(new Date(restriction.createdAt).getTime())
+        ? new Date(restriction.createdAt).toISOString()
+        : '',
+      until: restriction.until && !Number.isNaN(new Date(restriction.until).getTime())
+        ? new Date(restriction.until).toISOString()
+        : ''
+    })).sort((left, right) => (
+      left.area.localeCompare(right.area) ||
+      left.mode.localeCompare(right.mode) ||
+      left.duration.localeCompare(right.duration) ||
+      left.until.localeCompare(right.until) ||
+      left.createdAt.localeCompare(right.createdAt) ||
+      left.id.localeCompare(right.id)
+    ));
+    return restrictions.length ? JSON.stringify(restrictions) : '';
+  }
+
   function recoveryAreaType(recovery) {
     const area = `${recovery?.area || ''}`.toLowerCase();
     if (area.includes('shoulder')) return 'shoulder';
@@ -4098,6 +4121,7 @@
     const workout = rotation[rotationIndex % rotation.length];
     const config = getEnergyConfig(mode);
     const recovery = getActiveRecovery(state);
+    const recoveryKey = recoveryFingerprint(state);
     const policy = compositionPolicyForWorkout(workout, profile, state, config);
     const diversityHistory = workoutDiversityHistory(state);
     const sameDayIds = sameDayWorkoutExerciseIds(diversityHistory);
@@ -4445,6 +4469,7 @@
     const scheduledResult = {
       mode: config.mode,
       workoutName: workout.name,
+      recoveryFingerprint: recoveryKey,
       selectedMasterySkill: policy.selectedMasterySkill,
       selectedSkillTrackKey: workout.name === 'Skill lab' ? getGoalTrackKey(profile ? profile.goal : 'pullup', profile, state) : null,
       secondarySkill: policy.secondaryMasterySkill || null,
@@ -4634,6 +4659,16 @@
     );
   }
 
+  function selectRecoveryCompatibleAddOn(addOns, requested, recovery, variantIndex) {
+    if (!requested) return null;
+    const ordered = [
+      addOns[variantIndex],
+      ...addOns.filter((_, index) => index !== variantIndex)
+    ].filter(Boolean);
+    const selected = ordered.find(addOn => isAddOnAllowedForRecovery(addOn, recovery));
+    return selected ? clone(selected) : null;
+  }
+
   function revalidateWorkoutForRecovery(workout, recovery) {
     if (!workout || !activeRecoveryRestrictions(recovery).length) return workout;
     const originalWorkoutName = workout.originalScheduledWorkout || workout.workoutName || 'Workout';
@@ -4672,10 +4707,8 @@
   function applyWorkoutAddOns(workout, addOns = {}, context = {}) {
     const variantIndex = Math.floor(Date.now() / 86400000) % 2;
     const recovery = getActiveRecovery(context.state || {});
-    const warmupCandidate = addOns.warmup ? clone(workoutAddOns.warmups[variantIndex]) : null;
-    const stretchCandidate = addOns.stretch ? clone(workoutAddOns.stretches[variantIndex]) : null;
-    const warmup = isAddOnAllowedForRecovery(warmupCandidate, recovery) ? warmupCandidate : null;
-    const stretch = isAddOnAllowedForRecovery(stretchCandidate, recovery) ? stretchCandidate : null;
+    const warmup = selectRecoveryCompatibleAddOn(workoutAddOns.warmups, addOns.warmup, recovery, variantIndex);
+    const stretch = selectRecoveryCompatibleAddOn(workoutAddOns.stretches, addOns.stretch, recovery, variantIndex);
     const addOnExercises = [warmup, stretch].filter(Boolean);
     const mainExercises = validateWorkoutSections(workout, addOnExercises, context);
     const expectedCount = getEnergyConfig(workout.mode || 'normal').exerciseCount;
@@ -5151,6 +5184,7 @@
     validateWorkoutSections,
     sessionTotalLabel,
     sanitizeWorkout,
+    recoveryFingerprint,
     normalizeExercise,
     normalizePrescriptionData,
     prescriptionToString,

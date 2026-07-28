@@ -405,6 +405,17 @@
       nextState.restTimerSeconds = 60;
       nextState.recovery = sanitizeRecovery(nextState.recovery);
       nextState.recoveries = sanitizeRecoveries(nextState.recoveries);
+      if (typeof workoutModule.recoveryFingerprint === 'function') {
+        const recoveryFingerprint = workoutModule.recoveryFingerprint(nextState);
+        if (nextState.current && (nextState.current.recoveryFingerprint || '') !== recoveryFingerprint) {
+          nextState.selectedEnergy = nextState.selectedEnergy || (energyOptions[nextState.current.mode] ? nextState.current.mode : null);
+          nextState.current = null;
+        }
+        if (nextState.generated && (nextState.generated.recoveryFingerprint || '') !== recoveryFingerprint) {
+          nextState.selectedEnergy = nextState.selectedEnergy || (energyOptions[nextState.generated.mode] ? nextState.generated.mode : null);
+          nextState.generated = null;
+        }
+      }
       nextState.pendingSessionRecords = sanitizePendingSessionRecords(nextState.pendingSessionRecords);
       nextState.progressInsights = sanitizeProgressInsights(nextState.progressInsights);
       nextState.restAdvice = sanitizeRestAdvice(nextState.restAdvice);
